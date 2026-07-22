@@ -47,6 +47,19 @@ export const REF = {
     rpm: 45,
     beltSpeed: 1.2,
   },
+  separator: {
+    width: 3,
+    depth: 1.5,
+    height: 0.55,
+    frameHeight: 0.9,
+    springHeight: 0.45,
+    rpm: 960,
+    amplitude: 4.5,
+  },
+  separatorLayout: {
+    offsetXFromElevator: 1.5,
+    offsetZFromElevator: 2.8,
+  },
 } as const;
 
 export function hopperCenterX() {
@@ -141,4 +154,35 @@ export function elevatorHeadOutlet(): [number, number, number] {
   const [ex, , ez] = elevatorPosition();
   const { height, depth } = REF.elevator;
   return [ex, height - 0.3, ez + depth / 2 + 0.55];
+}
+
+/* ==========================================================================
+   VIBRO SEPARATOR LAYOUT HELPERS
+   ========================================================================== */
+
+/** Vibro separator group origin — placed on +Z side of elevator, base on the ground (y = 0). */
+export function separatorPosition(): [number, number, number] {
+  const [ex, , ez] = elevatorPosition();
+  return [
+    ex + REF.separatorLayout.offsetXFromElevator,
+    0,
+    ez + REF.elevator.depth / 2 + REF.separatorLayout.offsetZFromElevator,
+  ];
+}
+
+/** Separator top feed inlet flange — world position (where elevator chute connects). */
+export function separatorInletWorldPos(): [number, number, number] {
+  const [sx, , sz] = separatorPosition();
+  const { height, frameHeight, springHeight } = REF.separator;
+  // Inlet flange top: frame + springs + deck + inlet riser
+  const y = frameHeight + springHeight + height + 0.4;
+  return [sx, y, sz];
+}
+
+/** Separator clean grain outlet — world position (front +Z, main product stream). */
+export function separatorCleanOutletPos(): [number, number, number] {
+  const [sx, , sz] = separatorPosition();
+  const { height, depth, frameHeight, springHeight } = REF.separator;
+  const deckMid = frameHeight + springHeight + height * 0.45;
+  return [sx, deckMid, sz + depth / 2 + 0.38];
 }

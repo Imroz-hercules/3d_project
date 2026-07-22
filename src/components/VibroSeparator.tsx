@@ -1,24 +1,25 @@
 'use client';
 
 /**
- * VibroSeparator.tsx - INDUSTRIAL PRE-CLEANER
+ * VibroSeparator.tsx - INDUSTRIAL PRE-CLEANER (wide & low deck)
  * ------------------------------------------------------------------------
- * A realistic industrial Vibro Separator (Pre-Cleaner) for a flour mill
- * digital twin. This is the first cleaning machine after the bucket elevator.
+ * A realistic industrial Vibro Separator for a flour mill digital twin.
+ * This is the first cleaning machine after the bucket elevator.
  *
- * Features:
- * - Static steel support frame with cross bracing
- * - Rubber spring mounts isolating the vibrating body
- * - Multi-deck vibrating screening box (animated)
- * - Top feed inlet
- * - Clean grain and waste outlet chutes
- * - Side-mounted electric drive motor with eccentric weights
- * - Inspection covers with bolts
- * - Interactive controls and floating data panel
+ * Layout (built upward from ground; group origin at y = 0):
  *
- * Usage:
- *   import { VibroSeparator } from './VibroSeparator';
- *   <VibroSeparator position={[0, 0, 0]} active={true} />
+ *   y = 0           base plates (frame feet)
+ *   y = 0 → Hf      steel frame: 4 legs + top ring + diagonal bracing
+ *   y = Hf → Hf+Hs  8 rubber spring mounts (4 per long side)
+ *   y = Hf+Hs → +Hb shallow, wide vibrating screening deck
+ *   y = top         feed inlet (top centre)
+ *
+ * Outlets:
+ *   - Clean grain outlet: +Z short end (front, main product)
+ *   - Coarse waste outlet: -Z short end (back)
+ *
+ * Dimensions default to a wide & low deck (L 3.0 × W 1.5 × deck 0.55 m),
+ * matching real vibro separator proportions.
  * ------------------------------------------------------------------------
  */
 
@@ -46,89 +47,139 @@ const COLORS = {
 } as const;
 
 /* ==========================================================================
-   STATIC SUPPORT FRAME
+   STATIC SUPPORT FRAME  (base plates → legs → top ring → bracing)
+   Builds upward from y = 0.  Group origin passed in is the ground.
    ========================================================================== */
 
-function StaticFrame({ width, depth, height }: { width: number; depth: number; height: number }) {
-  const legRadius = 0.12;
+function StaticFrame({
+  width,
+  depth,
+  frameHeight,
+}: {
+  width: number;
+  depth: number;
+  frameHeight: number;
+}) {
+  // Leg inset from the body footprint edges
+  const inset = 0.18;
+  const legHalf = 0.1; // leg cross-section half (0.2 × 0.2)
   const legPositions: V3[] = [
-    [width / 2 - 0.2, height / 2, depth / 2 - 0.2],
-    [-width / 2 + 0.2, height / 2, depth / 2 - 0.2],
-    [width / 2 - 0.2, height / 2, -depth / 2 + 0.2],
-    [-width / 2 + 0.2, height / 2, -depth / 2 + 0.2],
+    [width / 2 - inset, frameHeight / 2, depth / 2 - inset],
+    [-width / 2 + inset, frameHeight / 2, depth / 2 - inset],
+    [width / 2 - inset, frameHeight / 2, -depth / 2 + inset],
+    [-width / 2 + inset, frameHeight / 2, -depth / 2 + inset],
   ];
+
+  // Helper: a steel beam between two points
+  const Beam = ({ start, end, radius = 0.05 }: { start: V3; end: V3; radius?: number }) => {
+    const startV = new THREE.Vector3(...start);
+    const endV = new THREE.Vector3(...end);
+    const mid = startV.clone().add(endV).multiplyScalar(0.5);
+    const dir = endV.clone().sub(startV);
+    const length = dir.length();
+    const quat = new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      dir.clone().normalize()
+    );
+    return (
+      <mesh position={mid.toArray() as V3} quaternion={quat} castShadow>
+        <cylinderGeometry args={[radius, radius, length, 8]} />
+        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} />
+      </mesh>
+    );
+  };
+
+  // Top ring corner points (at frame top)
+  const topY = frameHeight;
+  const corners: V3[] = legPositions.map((p) => [p[0], topY, p[2]]);
 
   return (
     <group>
-      {/* Main Legs */}
+      {/* Legs */}
       {legPositions.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow receiveShadow>
-          <boxGeometry args={[0.2, height, 0.2]} />
+        <mesh key={`leg-${i}`} position={pos} castShadow receiveShadow>
+          <boxGeometry args={[legHalf * 2, frameHeight, legHalf * 2]} />
           <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.75} roughness={0.35} />
         </mesh>
       ))}
 
-      {/* Base Plates */}
+      {/* Base plates (on the ground) */}
       {legPositions.map((pos, i) => (
-        <mesh key={`base-${i}`} position={[pos[0], -height / 2 + 0.05, pos[2]]}>
+        <mesh key={`base-${i}`} position={[pos[0], 0.05, pos[2]]} castShadow>
           <boxGeometry args={[0.4, 0.1, 0.4]} />
           <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
         </mesh>
       ))}
 
-      {/* Top Cross Bracing (X pattern) */}
-      {[
-        { start: [width / 2 - 0.2, height / 2 - 0.3, depth / 2 - 0.2], end: [-width / 2 + 0.2, height / 2 - 0.3, -depth / 2 + 0.2] },
-        { start: [-width / 2 + 0.2, height / 2 - 0.3, depth / 2 - 0.2], end: [width / 2 - 0.2, height / 2 - 0.3, -depth / 2 + 0.2] },
-      ].map((brace, i) => {
-        const startV = new THREE.Vector3(...brace.start);
-        const endV = new THREE.Vector3(...brace.end);
-        const mid = startV.clone().add(endV).multiplyScalar(0.5);
-        const dir = endV.clone().sub(startV);
-        const length = dir.length();
-        const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir.normalize());
+      {/* Top rectangular ring (long + short beams connecting the 4 legs at top) */}
+      <Beam start={corners[0]} end={corners[1]} radius={0.06} />
+      <Beam start={corners[2]} end={corners[3]} radius={0.06} />
+      <Beam start={corners[0]} end={corners[2]} radius={0.06} />
+      <Beam start={corners[1]} end={corners[3]} radius={0.06} />
 
-        return (
-          <mesh key={`brace-${i}`} position={mid} quaternion={quat} castShadow>
-            <cylinderGeometry args={[0.06, 0.06, length, 8]} />
-            <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} />
-          </mesh>
-        );
-      })}
+      {/* Diagonal cross bracing under the deck (X pattern on the long axis) */}
+      <Beam
+        start={[corners[0][0], frameHeight - 0.2, corners[0][2]]}
+        end={[corners[3][0], frameHeight - 0.2, corners[3][2]]}
+        radius={0.045}
+      />
+      <Beam
+        start={[corners[1][0], frameHeight - 0.2, corners[1][2]]}
+        end={[corners[2][0], frameHeight - 0.2, corners[2][2]]}
+        radius={0.045}
+      />
     </group>
   );
 }
 
 /* ==========================================================================
    RUBBER SPRING MOUNTS
+   Sits between the frame top ring (y = frameHeight) and the deck bottom
+   (y = frameHeight + springHeight). 8 mounts: 4 per long side.
    ========================================================================== */
 
-function SpringMounts({ width, depth, y }: { width: number; depth: number; y: number }) {
-  const mountPositions: V3[] = [
-    [width / 2 - 0.3, y, depth / 2 - 0.3],
-    [-width / 2 + 0.3, y, depth / 2 - 0.3],
-    [width / 2 - 0.3, y, -depth / 2 + 0.3],
-    [-width / 2 + 0.3, y, -depth / 2 + 0.3],
-    [0, y, depth / 2 - 0.3],
-    [0, y, -depth / 2 + 0.3],
-  ];
+function SpringMounts({
+  width,
+  depth,
+  baseY,
+  springHeight,
+}: {
+  width: number;
+  depth: number;
+  baseY: number;
+  springHeight: number;
+}) {
+  // 2 rows (±Z), 4 columns along the length (X)
+  const cols = [-width / 2 + 0.4, -width / 6, width / 6, width / 2 - 0.4];
+  const rows = [depth / 2 - 0.25, -depth / 2 + 0.25];
+  const positions: V3[] = [];
+  cols.forEach((x) => rows.forEach((z) => positions.push([x, baseY + springHeight / 2, z])));
 
   return (
     <group>
-      {mountPositions.map((pos, i) => (
+      {positions.map((pos, i) => (
         <group key={i} position={pos}>
           {/* Rubber spring body */}
           <mesh castShadow>
-            <cylinderGeometry args={[0.15, 0.18, 0.6, 16]} />
+            <cylinderGeometry args={[0.13, 0.16, springHeight, 16]} />
             <meshStandardMaterial color={COLORS.rubberBlack} metalness={0.1} roughness={0.9} />
           </mesh>
-          {/* Metal rings on rubber */}
-          {[-0.2, 0, 0.2].map((ry, j) => (
+          {/* Steel retaining rings */}
+          {[-springHeight / 2 + 0.08, 0, springHeight / 2 - 0.08].map((ry, j) => (
             <mesh key={j} position={[0, ry, 0]}>
-              <torusGeometry args={[0.16, 0.015, 8, 16]} />
+              <torusGeometry args={[0.14, 0.014, 8, 16]} />
               <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
             </mesh>
           ))}
+          {/* Top + bottom spring caps */}
+          <mesh position={[0, springHeight / 2, 0]}>
+            <cylinderGeometry args={[0.16, 0.16, 0.03, 16]} />
+            <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
+          </mesh>
+          <mesh position={[0, -springHeight / 2, 0]}>
+            <cylinderGeometry args={[0.16, 0.16, 0.03, 16]} />
+            <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
+          </mesh>
         </group>
       ))}
     </group>
@@ -136,13 +187,14 @@ function SpringMounts({ width, depth, y }: { width: number; depth: number; y: nu
 }
 
 /* ==========================================================================
-   VIBRATING SCREENING BODY
+   VIBRATING SCREENING DECK (wide & shallow)
    ========================================================================== */
 
 function VibratingBody({
   width,
   depth,
   height,
+  baseY,
   active,
   hovered,
   onHover,
@@ -150,11 +202,13 @@ function VibratingBody({
   width: number;
   depth: number;
   height: number;
+  baseY: number;
   active: boolean;
   hovered: boolean;
   onHover: (v: boolean) => void;
 }) {
   const bodyRef = useRef<THREE.Group>(null!);
+  const centerY = baseY + height / 2;
 
   useFrame(({ clock }) => {
     if (!bodyRef.current) return;
@@ -162,13 +216,12 @@ function VibratingBody({
       // High-frequency, low-amplitude vibration
       const t = clock.elapsedTime * 60;
       bodyRef.current.position.x = Math.sin(t) * 0.008;
-      bodyRef.current.position.y = Math.cos(t * 1.3) * 0.004;
+      bodyRef.current.position.y = centerY + Math.cos(t * 1.3) * 0.004;
       bodyRef.current.rotation.z = Math.sin(t * 0.7) * 0.003;
       bodyRef.current.rotation.x = Math.cos(t * 0.9) * 0.002;
     } else {
-      // Smooth return to origin
       bodyRef.current.position.x = THREE.MathUtils.damp(bodyRef.current.position.x, 0, 5, 0.016);
-      bodyRef.current.position.y = THREE.MathUtils.damp(bodyRef.current.position.y, 0, 5, 0.016);
+      bodyRef.current.position.y = THREE.MathUtils.damp(bodyRef.current.position.y, centerY, 5, 0.016);
       bodyRef.current.rotation.z = THREE.MathUtils.damp(bodyRef.current.rotation.z, 0, 5, 0.016);
       bodyRef.current.rotation.x = THREE.MathUtils.damp(bodyRef.current.rotation.x, 0, 5, 0.016);
     }
@@ -177,10 +230,11 @@ function VibratingBody({
   return (
     <group
       ref={bodyRef}
+      position={[0, centerY, 0]}
       onPointerOver={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); onHover(true); }}
       onPointerOut={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); onHover(false); }}
     >
-      {/* Main screening box */}
+      {/* Main screening deck (wide & shallow) */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[width, height, depth]} />
         <meshStandardMaterial
@@ -192,80 +246,62 @@ function VibratingBody({
         />
       </mesh>
 
-      {/* Deck separation lines (visual detail) */}
-      {[-height * 0.25, height * 0.25].map((y, i) => (
-        <mesh key={i} position={[0, y, depth / 2 + 0.01]}>
-          <boxGeometry args={[width * 0.98, 0.03, 0.02]} />
-          <meshStandardMaterial color={COLORS.bodySteelDark} metalness={0.7} roughness={0.35} />
-        </mesh>
-      ))}
+      {/* Deck separation seams on both long faces */}
+      {[-width * 0.28, width * 0.28].map((x, i) =>
+        [depth / 2 + 0.012, -(depth / 2 + 0.012)].map((z, j) => (
+          <mesh key={`seam-${i}-${j}`} position={[x, 0, z]}>
+            <boxGeometry args={[0.03, height * 0.9, 0.02]} />
+            <meshStandardMaterial color={COLORS.bodySteelDark} metalness={0.7} roughness={0.35} />
+          </mesh>
+        ))
+      )}
 
-      {/* Inspection Doors */}
+      {/* Inspection doors on both long sides */}
       {[
-        { x: width * 0.35, y: 0, z: depth / 2 + 0.02 },
-        { x: -width * 0.35, y: 0, z: depth / 2 + 0.02 },
-      ].map((pos, i) => (
-        <group key={i} position={[pos.x, pos.y, pos.z]}>
+        { x: width * 0.0, z: depth / 2 + 0.02 },
+        { x: width * 0.0, z: -(depth / 2 + 0.02) },
+      ].map((p, i) => (
+        <group key={`door-${i}`} position={[p.x, 0, p.z]}>
           <mesh>
             <boxGeometry args={[width * 0.35, height * 0.6, 0.03]} />
             <meshStandardMaterial color={COLORS.bodySteelDark} metalness={0.7} roughness={0.35} />
           </mesh>
           {/* Door handle */}
           <mesh position={[width * 0.12, 0, 0.02]}>
-            <boxGeometry args={[0.04, 0.2, 0.04]} />
+            <boxGeometry args={[0.04, 0.14, 0.04]} />
             <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
           </mesh>
-          {/* Door bolts */}
-          {[
-            [-width * 0.15, height * 0.25, 0.02],
-            [width * 0.15, height * 0.25, 0.02],
-            [-width * 0.15, -height * 0.25, 0.02],
-            [width * 0.15, -height * 0.25, 0.02],
-          ].map((bpos, j) => (
-            <mesh key={j} position={bpos}>
-              <cylinderGeometry args={[0.025, 0.025, 0.03, 8]} />
-              <meshStandardMaterial color={COLORS.frameSteel} metalness={0.85} roughness={0.25} />
-            </mesh>
-          ))}
         </group>
       ))}
 
-      {/* Top Feed Inlet */}
-      <mesh position={[0, height / 2 + 0.4, 0]} castShadow>
-        <boxGeometry args={[width * 0.4, 0.8, depth * 0.5]} />
+      {/* Top feed inlet (centre top) */}
+      <mesh position={[0, height / 2 + 0.18, 0]} castShadow>
+        <boxGeometry args={[width * 0.32, 0.36, depth * 0.45]} />
         <meshStandardMaterial color={COLORS.bodySteel} metalness={0.65} roughness={0.4} />
       </mesh>
       {/* Inlet flange */}
-      <mesh position={[0, height / 2 + 0.82, 0]}>
-        <boxGeometry args={[width * 0.45, 0.06, depth * 0.55]} />
+      <mesh position={[0, height / 2 + 0.38, 0]}>
+        <boxGeometry args={[width * 0.38, 0.05, depth * 0.52]} />
         <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
 
-      {/* Clean Grain Outlet (Front Bottom) */}
-      <mesh position={[0, -height / 2 - 0.3, depth * 0.3]} castShadow>
-        <boxGeometry args={[width * 0.5, 0.6, depth * 0.4]} />
+      {/* Clean grain outlet — front short end (+Z) */}
+      <mesh position={[0, -height * 0.05, depth / 2 + 0.18]} castShadow>
+        <boxGeometry args={[width * 0.45, height * 0.5, 0.36]} />
         <meshStandardMaterial color={COLORS.bodySteel} metalness={0.65} roughness={0.4} />
       </mesh>
-      {/* Clean outlet flange */}
-      <mesh position={[0, -height / 2 - 0.62, depth * 0.3]}>
-        <boxGeometry args={[width * 0.55, 0.06, depth * 0.45]} />
+      <mesh position={[0, -height * 0.05, depth / 2 + 0.38]}>
+        <boxGeometry args={[width * 0.5, height * 0.55, 0.06]} />
         <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
 
-      {/* Waste Outlet (Back Bottom) */}
-      <mesh position={[0, -height / 2 - 0.3, -depth * 0.3]} castShadow>
-        <boxGeometry args={[width * 0.35, 0.6, depth * 0.3]} />
+      {/* Coarse waste outlet — back short end (-Z) */}
+      <mesh position={[0, -height * 0.15, -(depth / 2 + 0.16)]} castShadow>
+        <boxGeometry args={[width * 0.32, height * 0.45, 0.32]} />
         <meshStandardMaterial color={COLORS.bodySteelDark} metalness={0.65} roughness={0.4} />
       </mesh>
-      {/* Waste outlet flange */}
-      <mesh position={[0, -height / 2 - 0.62, -depth * 0.3]}>
-        <boxGeometry args={[width * 0.4, 0.06, depth * 0.35]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
-      </mesh>
-
-      {/* Drive Motor Mount */}
-      <mesh position={[width / 2 + 0.1, height * 0.2, 0]} castShadow>
-        <boxGeometry args={[0.2, 0.4, depth * 0.6]} />
+      <mesh position={[0, -height * 0.15, -(depth / 2 + 0.34)]}>
+        <boxGeometry args={[width * 0.37, height * 0.5, 0.06]} />
         <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
     </group>
@@ -273,7 +309,7 @@ function VibratingBody({
 }
 
 /* ==========================================================================
-   DRIVE MOTOR (Eccentric Vibration Motor)
+   DRIVE MOTOR (Eccentric Vibration Motor) — mounted on +X long side
    ========================================================================== */
 
 function DriveMotor({ position, active }: { position: V3; active: boolean }) {
@@ -282,7 +318,7 @@ function DriveMotor({ position, active }: { position: V3; active: boolean }) {
 
   useFrame((_, delta) => {
     if (fanRef.current && active) {
-      fanRef.current.rotation.z += delta * 15; // Fast spinning for vibration motor
+      fanRef.current.rotation.z += delta * 15;
     }
   });
 
@@ -292,9 +328,9 @@ function DriveMotor({ position, active }: { position: V3; active: boolean }) {
       onPointerOver={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); setHovered(false); }}
     >
-      {/* Motor body */}
+      {/* Motor body (horizontal axis along X) */}
       <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-        <cylinderGeometry args={[0.22, 0.22, 0.5, 24]} />
+        <cylinderGeometry args={[0.2, 0.2, 0.45, 24]} />
         <meshStandardMaterial
           color={hovered ? '#2a4a6f' : COLORS.motorBlue}
           metalness={0.6}
@@ -305,33 +341,23 @@ function DriveMotor({ position, active }: { position: V3; active: boolean }) {
       </mesh>
 
       {/* Cooling fins */}
-      {Array.from({ length: 10 }, (_, i) => {
-        const z = -0.2 + (i / 9) * 0.4;
+      {Array.from({ length: 9 }, (_, i) => {
+        const x = -0.18 + (i / 8) * 0.36;
         return (
-          <mesh key={i} position={[0, 0, z]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.24, 0.24, 0.015, 24]} />
+          <mesh key={i} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.22, 0.22, 0.015, 24]} />
             <meshStandardMaterial color={COLORS.motorDark} metalness={0.65} roughness={0.35} />
           </mesh>
         );
       })}
 
-      {/* Fan cover */}
-      <mesh position={[0, 0, 0.28]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.2, 0.2, 0.06, 24]} />
-        <meshStandardMaterial color={COLORS.motorDark} metalness={0.7} roughness={0.3} />
-      </mesh>
-
-      {/* Fan blades */}
-      <mesh ref={fanRef} position={[0, 0, 0.3]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.17, 0.17, 0.02, 8]} />
-        <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.75} roughness={0.3} />
-      </mesh>
-
-      {/* Eccentric weight housing (the part that causes vibration) */}
-      <mesh position={[0, 0, -0.3]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.15, 0.15, 0.15, 16]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
-      </mesh>
+      {/* Eccentric weight housings on both shaft ends */}
+      {[-0.3, 0.3].map((x, i) => (
+        <mesh key={i} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.14, 0.14, 0.14, 16]} />
+          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
+        </mesh>
+      ))}
 
       {/* Status indicator */}
       <mesh position={[0, 0.24, 0]}>
@@ -409,81 +435,94 @@ export interface VibroSeparatorProps {
   position?: V3;
   width?: number;
   depth?: number;
+  /** Deck (screening body) height — kept shallow for a wide/low machine. */
   height?: number;
+  frameHeight?: number;
+  springHeight?: number;
   rpm?: number;
   amplitude?: number;
   active?: boolean;
   label?: string;
+  showDataPanel?: boolean;
+  showClickText?: boolean;
 }
 
 export function VibroSeparatorComponent({
   position = [0, 0, 0],
   width = 3,
-  depth = 2,
-  height = 1.5,
+  depth = 1.5,
+  height = 0.55,
+  frameHeight = 0.9,
+  springHeight = 0.45,
   rpm = 960,
   amplitude = 4.5,
   active: controlledActive,
   label = 'VIBRO-01',
+  showDataPanel = true,
+  showClickText = true,
 }: VibroSeparatorProps) {
   const [internalActive, setInternalActive] = useState(false);
   const [bodyHovered, setBodyHovered] = useState(false);
   const active = controlledActive !== undefined ? controlledActive : internalActive;
 
-  const frameHeight = 1.2;
-  const springY = frameHeight / 2 + 0.3;
+  // Vertical stack (all measured from the ground, group origin y = 0)
+  const deckBaseY = frameHeight + springHeight; // deck bottom
+  const deckTopY = deckBaseY + height;          // deck top
+  const inletTopY = deckTopY + 0.4;             // feed inlet flange top
 
   return (
     <group position={position}>
-      {/* Static Base Frame */}
-      <StaticFrame width={width} depth={depth} height={frameHeight} />
+      {/* 1. Static base frame (base plates → legs → top ring) */}
+      <StaticFrame width={width} depth={depth} frameHeight={frameHeight} />
 
-      {/* Rubber Spring Mounts */}
-      <SpringMounts width={width} depth={depth} y={springY} />
+      {/* 2. Rubber spring mounts (frame top → deck bottom) */}
+      <SpringMounts width={width} depth={depth} baseY={frameHeight} springHeight={springHeight} />
 
-      {/* Vibrating Screening Body */}
+      {/* 3. Vibrating screening deck */}
       <VibratingBody
         width={width}
         depth={depth}
         height={height}
+        baseY={deckBaseY}
         active={active}
         hovered={bodyHovered}
         onHover={setBodyHovered}
       />
 
-      {/* Drive Motor */}
-      <DriveMotor
-        position={[width / 2 + 0.35, height * 0.2, 0]}
-        active={active}
-      />
+      {/* 4. Eccentric vibration motor (on the +X long side, mid-deck) */}
+      <DriveMotor position={[width / 2 + 0.3, deckBaseY + height / 2, 0]} active={active} />
 
-      {/* Data Panel */}
-      <DataPanel
-        position={[width / 2 + 1.8, height / 2 + 0.5, 0]}
-        active={active}
-        rpm={rpm}
-        amplitude={amplitude}
-        label={label}
-      />
+      {/* 5. Data panel */}
+      {showDataPanel && (
+        <DataPanel
+          position={[width / 2 + 1.7, deckTopY + 0.2, 0]}
+          active={active}
+          rpm={rpm}
+          amplitude={amplitude}
+          label={label}
+        />
+      )}
 
-      {/* Click instruction */}
-      <Text
-        position={[0, height / 2 + frameHeight / 2 + 1.2, 0]}
-        fontSize={0.12}
-        color={COLORS.accentYellow}
-        anchorX="center"
-        anchorY="middle"
-      >
-        {active ? '● CLICK TO STOP' : '○ CLICK TO START'}
-      </Text>
+      {/* 6. Click instruction */}
+      {showClickText && (
+        <Text
+          position={[0, inletTopY + 0.5, 0]}
+          fontSize={0.12}
+          color={COLORS.accentYellow}
+          anchorX="center"
+          anchorY="middle"
+        >
+          {active ? '● CLICK TO STOP' : '○ CLICK TO START'}
+        </Text>
+      )}
 
-      {/* Invisible click target for the whole machine */}
+      {/* 7. Invisible click target for the whole machine */}
       <mesh
-        position={[0, height / 2, 0]}
+        position={[0, deckTopY / 2, 0]}
         onClick={() => setInternalActive(!internalActive)}
         visible={false}
       >
-        <boxGeometry args={[width * 1.5, height + frameHeight, depth * 1.5]} />
+        <boxGeometry args={[width * 1.5, deckTopY, depth * 1.5]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
     </group>
@@ -491,17 +530,17 @@ export function VibroSeparatorComponent({
 }
 
 /* ==========================================================================
-   ENVIRONMENT
+   ENVIRONMENT (standalone scene)
    ========================================================================== */
 
 function Ground() {
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.61, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, 0]}>
         <circleGeometry args={[40, 64]} />
         <meshStandardMaterial color={COLORS.concrete} roughness={0.95} metalness={0.05} />
       </mesh>
-      <gridHelper args={[80, 80, '#5c5c54', '#79796e']} position={[0, -0.6, 0]} />
+      <gridHelper args={[80, 80, '#5c5c54', '#79796e']} position={[0, 0.01, 0]} />
     </group>
   );
 }
@@ -535,14 +574,16 @@ export function VibroSeparatorScene() {
   const [active, setActive] = useState(false);
 
   return (
-    <Canvas shadows camera={{ position: [8, 6, 8], fov: 40 }}>
+    <Canvas shadows camera={{ position: [6, 3.5, 6], fov: 40 }}>
       <Ground />
       <Sky sunPosition={[100, 30, 100]} turbidity={6} rayleigh={1} mieCoefficient={0.005} />
       <Lights />
       <VibroSeparatorComponent
         width={3}
-        depth={2}
-        height={1.5}
+        depth={1.5}
+        height={0.55}
+        frameHeight={0.9}
+        springHeight={0.45}
         rpm={960}
         amplitude={4.5}
         active={active}
@@ -554,7 +595,7 @@ export function VibroSeparatorScene() {
         minDistance={4}
         maxDistance={25}
         maxPolarAngle={Math.PI / 2.05}
-        target={[0, 1, 0]}
+        target={[0, 1.2, 0]}
       />
     </Canvas>
   );
