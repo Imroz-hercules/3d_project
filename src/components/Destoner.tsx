@@ -407,6 +407,8 @@ export interface DestonerProps {
   airflow?: number;
   active?: boolean;
   label?: string;
+  showDataPanel?: boolean;
+  showClickText?: boolean;
 }
 
 export function DestonerComponent({
@@ -418,6 +420,8 @@ export function DestonerComponent({
   airflow = 4500,
   active: controlledActive,
   label = 'DESTONER-01',
+  showDataPanel = true,
+  showClickText = true,
 }: DestonerProps) {
   const [internalActive, setInternalActive] = useState(false);
   const [bodyHovered, setBodyHovered] = useState(false);
@@ -425,6 +429,8 @@ export function DestonerComponent({
 
   const frameHeight = 1.2;
   const springY = frameHeight / 2 + 0.25;
+  /** Deck sits on rubber mounts (matches layoutConstants.destonerDeckY). */
+  const deckY = springY + 0.45;
 
   return (
     <group position={position}>
@@ -434,45 +440,47 @@ export function DestonerComponent({
       {/* Rubber Spring Mounts */}
       <RubberMounts width={length} depth={width} y={springY} />
 
-      {/* Vibrating Deck */}
-      <VibratingDeck
-        width={width}
-        depth={depth}
-        length={length}
-        active={active}
-        hovered={bodyHovered}
-        onHover={setBodyHovered}
-      />
+      {/* Vibrating Deck + motor elevated onto frame */}
+      <group position={[0, deckY, 0]}>
+        <VibratingDeck
+          width={width}
+          depth={depth}
+          length={length}
+          active={active}
+          hovered={bodyHovered}
+          onHover={setBodyHovered}
+        />
+        <DriveMotor
+          position={[0, -0.1, width / 2 + 0.35]}
+          active={active}
+        />
+      </group>
 
-      {/* Drive Motor */}
-      <DriveMotor
-        position={[0, -0.1, width / 2 + 0.35]}
-        active={active}
-      />
+      {showDataPanel && (
+        <DataPanel
+          position={[length / 2 + 1.8, deckY + 1, 0]}
+          active={active}
+          rpm={rpm}
+          airflow={airflow}
+          label={label}
+        />
+      )}
 
-      {/* Data Panel */}
-      <DataPanel
-        position={[length / 2 + 1.8, 1, 0]}
-        active={active}
-        rpm={rpm}
-        airflow={airflow}
-        label={label}
-      />
-
-      {/* Click instruction */}
-      <Text
-        position={[0, 2.5, 0]}
-        fontSize={0.12}
-        color={COLORS.accentYellow}
-        anchorX="center"
-        anchorY="middle"
-      >
-        {active ? '● CLICK TO STOP' : '○ CLICK TO START'}
-      </Text>
+      {showClickText && (
+        <Text
+          position={[0, deckY + 2.5, 0]}
+          fontSize={0.12}
+          color={COLORS.accentYellow}
+          anchorX="center"
+          anchorY="middle"
+        >
+          {active ? '● CLICK TO STOP' : '○ CLICK TO START'}
+        </Text>
+      )}
 
       {/* Invisible click target */}
       <mesh
-        position={[0, 1, 0]}
+        position={[0, deckY, 0]}
         onClick={() => setInternalActive(!internalActive)}
         visible={false}
       >

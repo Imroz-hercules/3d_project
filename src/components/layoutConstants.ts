@@ -60,6 +60,30 @@ export const REF = {
     offsetXFromElevator: 1.5,
     offsetZFromElevator: 2.8,
   },
+  destoner: {
+    length: 3.5,
+    width: 1.8,
+    depth: 1.2,
+    frameHeight: 1.2,
+    rpm: 900,
+    airflow: 4500,
+  },
+  destonerLayout: {
+    /** Gap from vibro clean outlet to destoner feed flange (metres). */
+    gapFromSeparator: 1.2,
+    /** Raise destoner so clean grain drops into magnetic separator inlet. */
+    elevateY: 1.5,
+  },
+  magnetic: {
+    length: 1.2,
+    width: 0.7,
+    height: 0.9,
+    legHeight: 1.2,
+  },
+  magneticLayout: {
+    /** Gap from destoner clean outlet to magnet inlet centre X (metres). */
+    gapFromDestoner: 1.4,
+  },
 } as const;
 
 export function hopperCenterX() {
@@ -185,4 +209,73 @@ export function separatorCleanOutletPos(): [number, number, number] {
   const { height, depth, frameHeight, springHeight } = REF.separator;
   const deckMid = frameHeight + springHeight + height * 0.45;
   return [sx, deckMid, sz + depth / 2 + 0.38];
+}
+
+/* ==========================================================================
+   DESTONER LAYOUT HELPERS
+   ========================================================================== */
+
+/** Deck centre Y relative to destoner group origin (sits on rubber mounts). */
+export function destonerDeckY() {
+  const { frameHeight } = REF.destoner;
+  const springY = frameHeight / 2 + 0.25;
+  return springY + 0.45;
+}
+
+/**
+ * Destoner group origin — downstream of vibro along +X, Z aligned with vibro clean outlet.
+ * Feed inlet faces −X toward the vibro discharge. Elevated for gravity feed to magnet.
+ */
+export function destonerPosition(): [number, number, number] {
+  const [sx, , sz] = separatorPosition();
+  const { length } = REF.destoner;
+  const { depth } = REF.separator;
+  const gap = REF.destonerLayout.gapFromSeparator;
+  // Inlet flange local X = −length/2 − 0.6
+  const x = sx + gap + length / 2 + 0.6;
+  const z = sz + depth / 2 + 0.38;
+  return [x, REF.destonerLayout.elevateY, z];
+}
+
+/** Destoner feed inlet flange — world position. */
+export function destonerInletWorldPos(): [number, number, number] {
+  const [dx, dy, dz] = destonerPosition();
+  const { length } = REF.destoner;
+  return [dx - length / 2 - 0.6, dy + destonerDeckY() + 0.5, dz];
+}
+
+/** Destoner clean grain outlet flange — world position. */
+export function destonerCleanOutletPos(): [number, number, number] {
+  const [dx, dy, dz] = destonerPosition();
+  const { length } = REF.destoner;
+  return [dx + length / 2 + 0.45, dy + destonerDeckY() - 0.3, dz];
+}
+
+/* ==========================================================================
+   MAGNETIC SEPARATOR LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Magnetic separator group origin — housing centre.
+ * Legs extend to y = −legHeight; place so feet sit on the ground.
+ */
+export function magneticPosition(): [number, number, number] {
+  const [ox, , oz] = destonerCleanOutletPos();
+  const { length, legHeight } = REF.magnetic;
+  const gap = REF.magneticLayout.gapFromDestoner;
+  return [ox + gap + length / 2, legHeight, oz];
+}
+
+/** Magnetic separator top feed inlet flange — world position. */
+export function magneticInletWorldPos(): [number, number, number] {
+  const [mx, my, mz] = magneticPosition();
+  const { height } = REF.magnetic;
+  return [mx, my + height / 2 + 0.52, mz];
+}
+
+/** Magnetic separator bottom outlet flange — world position. */
+export function magneticOutletWorldPos(): [number, number, number] {
+  const [mx, my, mz] = magneticPosition();
+  const { height } = REF.magnetic;
+  return [mx, my - height / 2 - 0.52, mz];
 }

@@ -3,6 +3,7 @@
 /**
  * MaterialHandlingLine — full flour mill line:
  * Silo → Hopper → Rotary Valve → Screw Conveyor → Bucket Elevator
+ * → Vibro Separator → Destoner → Magnetic Separator
  */
 
 import { useMemo, useState } from 'react';
@@ -13,6 +14,8 @@ import { RotaryValveComponent } from './RotaryValve';
 import { ScrewConveyorComponent } from './ScrewConveyor';
 import { BucketElevatorComponent } from './bucketElivter';
 import { VibroSeparatorComponent } from './VibroSeparator';
+import { DestonerComponent } from './Destoner';
+import { MagneticSeparatorComponent } from './MagneticSeparator';
 import { MaterialFlow } from './MaterialFlow';
 import {
   REF,
@@ -27,6 +30,13 @@ import {
   separatorCleanOutletPos,
   separatorInletWorldPos,
   separatorPosition,
+  destonerPosition,
+  destonerInletWorldPos,
+  destonerCleanOutletPos,
+  destonerDeckY,
+  magneticPosition,
+  magneticInletWorldPos,
+  magneticOutletWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -50,6 +60,8 @@ const VALVE_Y = valveCenterY();
 const SCREW_X = screwInletX();
 const ELEVATOR_POS = elevatorPosition();
 const SEPARATOR_POS = separatorPosition();
+const DESTONER_POS = destonerPosition();
+const MAGNETIC_POS = magneticPosition();
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -162,6 +174,61 @@ function ElevatorToSeparatorDuct() {
   );
 }
 
+/** Vibro clean outlet → destoner feed inlet. */
+function SeparatorToDestonerDuct() {
+  const start = separatorCleanOutletPos();
+  const end = destonerInletWorldPos();
+  return (
+    <>
+      <RoundDuct start={start} end={end} radius={0.22} />
+      <SquareFlange size={0.5} thickness={0.04} position={start} />
+      <SquareFlange size={0.5} thickness={0.04} position={end} />
+    </>
+  );
+}
+
+/** Destoner clean outlet → magnetic separator top inlet (horizontal then drop). */
+function DestonerToMagneticDuct() {
+  const start = destonerCleanOutletPos();
+  const end = magneticInletWorldPos();
+  const mid: V3 = [end[0], start[1], end[2]];
+  return (
+    <>
+      <RoundDuct start={start} end={mid} radius={0.18} />
+      <RoundDuct start={mid} end={end} radius={0.18} />
+      <SquareFlange size={0.42} thickness={0.04} position={start} />
+      <SquareFlange size={0.42} thickness={0.04} position={end} />
+    </>
+  );
+}
+
+/** Steel platform under elevated destoner. */
+function DestonerPlatform() {
+  const [dx, dy, dz] = DESTONER_POS;
+  const { length, width } = REF.destoner;
+  const legH = dy;
+  const legs: V3[] = [
+    [length / 2 - 0.25, legH / 2, width / 2 - 0.25],
+    [-length / 2 + 0.25, legH / 2, width / 2 - 0.25],
+    [length / 2 - 0.25, legH / 2, -width / 2 + 0.25],
+    [-length / 2 + 0.25, legH / 2, -width / 2 + 0.25],
+  ];
+  return (
+    <group position={[dx, 0, dz]}>
+      <mesh position={[0, dy - 0.06, 0]} receiveShadow castShadow>
+        <boxGeometry args={[length + 0.3, 0.12, width + 0.3]} />
+        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.7} roughness={0.4} />
+      </mesh>
+      {legs.map((pos, i) => (
+        <mesh key={i} position={pos} castShadow receiveShadow>
+          <boxGeometry args={[0.18, legH, 0.18]} />
+          <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 export function MaterialHandlingLine() {
   const [lineActive, setLineActive] = useState(true);
 
@@ -172,8 +239,15 @@ export function MaterialHandlingLine() {
   const headOutlet = elevatorHeadOutlet();
   const separatorInlet = separatorInletWorldPos();
   const separatorCleanOut = separatorCleanOutletPos();
+  const destonerInlet = destonerInletWorldPos();
+  const destonerCleanOut = destonerCleanOutletPos();
+  const magneticInlet = magneticInletWorldPos();
+  const magneticOutlet = magneticOutletWorldPos();
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
+  const [dx, dy, dz] = DESTONER_POS;
+  const [mx, my, mz] = MAGNETIC_POS;
+  const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
     const h = REF.elevator.height;
@@ -200,8 +274,38 @@ export function MaterialHandlingLine() {
       separatorInlet,
       [sepX, REF.separator.frameHeight / 2, sepZ],
       separatorCleanOut,
+      // → Destoner
+      destonerInlet,
+      [dx, dy + deckY, dz],
+      destonerCleanOut,
+      // → Magnetic separator
+      [magneticInlet[0], destonerCleanOut[1], magneticInlet[2]],
+      magneticInlet,
+      [mx, my, mz],
+      magneticOutlet,
     ];
-  }, [bridgeY, inletY, bootInlet, headOutlet, elevX, separatorInlet, separatorCleanOut, sepX, sepZ]);
+  }, [
+    bridgeY,
+    inletY,
+    bootInlet,
+    headOutlet,
+    elevX,
+    separatorInlet,
+    separatorCleanOut,
+    sepX,
+    sepZ,
+    destonerInlet,
+    destonerCleanOut,
+    dx,
+    dy,
+    dz,
+    deckY,
+    magneticInlet,
+    magneticOutlet,
+    mx,
+    my,
+    mz,
+  ]);
 
   return (
     <group onClick={() => setLineActive((v) => !v)}>
@@ -278,6 +382,36 @@ export function MaterialHandlingLine() {
         amplitude={REF.separator.amplitude}
         active={lineActive}
         label="VIBRO-01"
+        showDataPanel={false}
+        showClickText={false}
+      />
+
+      {/* Vibro → Destoner */}
+      <SeparatorToDestonerDuct />
+      <DestonerPlatform />
+
+      <DestonerComponent
+        position={DESTONER_POS}
+        length={REF.destoner.length}
+        width={REF.destoner.width}
+        depth={REF.destoner.depth}
+        rpm={REF.destoner.rpm}
+        airflow={REF.destoner.airflow}
+        active={lineActive}
+        label="DESTONER-01"
+        showDataPanel={false}
+        showClickText={false}
+      />
+
+      {/* Destoner → Magnetic Separator */}
+      <DestonerToMagneticDuct />
+
+      <MagneticSeparatorComponent
+        position={MAGNETIC_POS}
+        length={REF.magnetic.length}
+        width={REF.magnetic.width}
+        height={REF.magnetic.height}
+        active={lineActive}
         showDataPanel={false}
         showClickText={false}
       />
