@@ -230,6 +230,18 @@ export const REF = {
     /** Gap from sewing outlet to check-weigher inlet (metres). */
     gapFromSewing: 0.2,
   },
+  metalDetector: {
+    length: 2.5,
+    width: 0.9,
+    /** Belt / deck height — matches bag conveyor / check weigher. */
+    height: 0.85,
+    tunnelHeight: 1.0,
+    tunnelDepth: 0.8,
+  },
+  metalDetectorLayout: {
+    /** Gap from check-weigher outlet to metal-detector inlet (metres). */
+    gapFromCheckWeigher: 0.25,
+  },
 } as const;
 
 export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
@@ -860,4 +872,33 @@ export function checkWeigherOutletWorldPos(): [number, number, number] {
   const [cx, cy, cz] = checkWeigherPosition();
   const { length, height } = REF.checkWeigher;
   return [cx, cy + height, cz + length / 2];
+}
+
+/* ==========================================================================
+   METAL DETECTOR LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Metal detector group origin — packing cell after check weigher.
+ * Local length runs along +X; in the line it is rotated −90° so travel is +Z.
+ */
+export function metalDetectorPosition(): [number, number, number] {
+  const [ox, , oz] = checkWeigherOutletWorldPos();
+  const { length } = REF.metalDetector;
+  const gap = REF.metalDetectorLayout.gapFromCheckWeigher;
+  return [ox, REF.zones.packing.floorY, oz + gap + length / 2];
+}
+
+/** Infeed flange — receives accepted bags from −Z (after −90° rotation). */
+export function metalDetectorInletWorldPos(): [number, number, number] {
+  const [mx, my, mz] = metalDetectorPosition();
+  const { length, height } = REF.metalDetector;
+  return [mx, my + height, mz - length / 2];
+}
+
+/** Outfeed flange — clean bags continue toward palletizer. */
+export function metalDetectorOutletWorldPos(): [number, number, number] {
+  const [mx, my, mz] = metalDetectorPosition();
+  const { length, height } = REF.metalDetector;
+  return [mx, my + height, mz + length / 2];
 }
