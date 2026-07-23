@@ -6,7 +6,7 @@
  * Silo → Hopper → Valve → Screw → Elevator
  * → Vibro → Destoner → Magnet → Scourer → Dampener → Conditioning Bin
  * → Roller Mill → Plansifter → Purifier → Bran Finisher
- * → Flour Bins A/B/C → Packing Machine → Bag Conveyor → Bag Sewing
+ * → Flour Bins A/B/C → Packing Machine → Bag Conveyor → Bag Sewing → Check Weigher
  */
 
 import { useMemo, useState } from 'react';
@@ -30,6 +30,7 @@ import { FlourBinComponent } from './flourBin';
 import { PackingMachineComponent } from './packingMachine';
 import { BagConveyorComponent } from './bagconveyr';
 import { BagSewingMachineComponent } from './BagSewingMachine';
+import { CheckWeigherComponent } from './CheckWeigher';
 import { MaterialFlow } from './MaterialFlow';
 import { MezzanineBay, Walkway, AccessLadder } from './factory/PlantStructure';
 import {
@@ -86,6 +87,9 @@ import {
   bagSewingMachinePosition,
   bagSewingInletWorldPos,
   bagSewingOutletWorldPos,
+  checkWeigherPosition,
+  checkWeigherInletWorldPos,
+  checkWeigherOutletWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -124,6 +128,7 @@ const FLOUR_BIN_C_POS = flourBinPosition('C');
 const PACKING_POS = packingMachinePosition();
 const BAG_CONVEYOR_POS = bagConveyorPosition();
 const BAG_SEWING_POS = bagSewingMachinePosition();
+const CHECK_WEIGHER_POS = checkWeigherPosition();
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -567,6 +572,8 @@ export function MaterialHandlingLine() {
   const bagConvOutlet = bagConveyorOutletWorldPos();
   const sewingInlet = bagSewingInletWorldPos();
   const sewingOutlet = bagSewingOutletWorldPos();
+  const checkInlet = checkWeigherInletWorldPos();
+  const checkOutlet = checkWeigherOutletWorldPos();
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
   const [dx, dy, dz] = DESTONER_POS;
@@ -580,6 +587,7 @@ export function MaterialHandlingLine() {
   const [pkx, pky, pkz] = PACKING_POS;
   const [bcx, bcy, bcz] = BAG_CONVEYOR_POS;
   const [swx, swy, swz] = BAG_SEWING_POS;
+  const [cwx, cwy, cwz] = CHECK_WEIGHER_POS;
   const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
@@ -659,6 +667,9 @@ export function MaterialHandlingLine() {
       sewingInlet,
       [swx, swy + 1.0, swz],
       sewingOutlet,
+      checkInlet,
+      [cwx, cwy + REF.checkWeigher.height, cwz],
+      checkOutlet,
     ];
   }, [
     bridgeY,
@@ -725,6 +736,11 @@ export function MaterialHandlingLine() {
     swx,
     swy,
     swz,
+    checkInlet,
+    checkOutlet,
+    cwx,
+    cwy,
+    cwz,
   ]);
 
   return (
@@ -1009,6 +1025,19 @@ export function MaterialHandlingLine() {
         showDataPanel={false}
         showClickText={false}
       />
+
+      {/* Bag Sewing → Check Weigher (length along +Z toward metal detector) */}
+      <group position={CHECK_WEIGHER_POS} rotation={[0, -Math.PI / 2, 0]}>
+        <CheckWeigherComponent
+          position={[0, 0, 0]}
+          length={REF.checkWeigher.length}
+          width={REF.checkWeigher.width}
+          height={REF.checkWeigher.height}
+          active={lineActive}
+          showDataPanel={false}
+          showClickText={false}
+        />
+      </group>
 
       <MaterialFlow path={flowPath} active={lineActive} speed={0.07} />
     </group>

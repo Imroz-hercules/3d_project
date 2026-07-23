@@ -220,6 +220,16 @@ export const REF = {
     /** Gap from bag conveyor outlet to sewing gantry centre (metres). */
     gapFromConveyor: 0.15,
   },
+  checkWeigher: {
+    length: 2.2,
+    width: 0.9,
+    /** Belt / deck height — matches bag conveyor for continuous bag line. */
+    height: 0.85,
+  },
+  checkWeigherLayout: {
+    /** Gap from sewing outlet to check-weigher inlet (metres). */
+    gapFromSewing: 0.2,
+  },
 } as const;
 
 export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
@@ -821,4 +831,33 @@ export function bagSewingOutletWorldPos(): [number, number, number] {
   const [sx, sy, sz] = bagSewingMachinePosition();
   const { depth } = REF.bagSewing;
   return [sx, sy + REF.bagConveyor.height, sz + depth / 2 + 0.2];
+}
+
+/* ==========================================================================
+   CHECK WEIGHER LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Check weigher group origin — packing cell after bag sewing.
+ * Local length runs along +X; in the line it is rotated −90° so travel is +Z.
+ */
+export function checkWeigherPosition(): [number, number, number] {
+  const [ox, , oz] = bagSewingOutletWorldPos();
+  const { length } = REF.checkWeigher;
+  const gap = REF.checkWeigherLayout.gapFromSewing;
+  return [ox, REF.zones.packing.floorY, oz + gap + length / 2];
+}
+
+/** Infeed flange — receives sewn bags from −Z (after −90° rotation). */
+export function checkWeigherInletWorldPos(): [number, number, number] {
+  const [cx, cy, cz] = checkWeigherPosition();
+  const { length, height } = REF.checkWeigher;
+  return [cx, cy + height, cz - length / 2];
+}
+
+/** Outfeed flange — accepted bags continue toward metal detector. */
+export function checkWeigherOutletWorldPos(): [number, number, number] {
+  const [cx, cy, cz] = checkWeigherPosition();
+  const { length, height } = REF.checkWeigher;
+  return [cx, cy + height, cz + length / 2];
 }
