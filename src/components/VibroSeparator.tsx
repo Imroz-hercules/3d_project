@@ -27,6 +27,15 @@ import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintBlue,
+  matPaintDark,
+  matPaintedSteel,
+  matRubber,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+} from '../materials';
 
 type V3 = [number, number, number];
 
@@ -82,9 +91,8 @@ function StaticFrame({
       dir.clone().normalize()
     );
     return (
-      <mesh position={mid.toArray() as V3} quaternion={quat} castShadow>
+      <mesh position={mid.toArray() as V3} quaternion={quat} castShadow dispose={null} material={matStructureSteel}>
         <cylinderGeometry args={[radius, radius, length, 8]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} />
       </mesh>
     );
   };
@@ -97,17 +105,15 @@ function StaticFrame({
     <group>
       {/* Legs */}
       {legPositions.map((pos, i) => (
-        <mesh key={`leg-${i}`} position={pos} castShadow receiveShadow>
+        <mesh key={`leg-${i}`} position={pos} castShadow receiveShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[legHalf * 2, frameHeight, legHalf * 2]} />
-          <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.75} roughness={0.35} />
         </mesh>
       ))}
 
       {/* Base plates (on the ground) */}
       {legPositions.map((pos, i) => (
-        <mesh key={`base-${i}`} position={[pos[0], 0.05, pos[2]]} castShadow>
+        <mesh key={`base-${i}`} position={[pos[0], 0.05, pos[2]]} castShadow dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.4, 0.1, 0.4]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
         </mesh>
       ))}
 
@@ -160,25 +166,21 @@ function SpringMounts({
       {positions.map((pos, i) => (
         <group key={i} position={pos}>
           {/* Rubber spring body */}
-          <mesh castShadow>
+          <mesh castShadow dispose={null} material={matRubber}>
             <cylinderGeometry args={[0.13, 0.16, springHeight, 16]} />
-            <meshStandardMaterial color={COLORS.rubberBlack} metalness={0.1} roughness={0.9} />
           </mesh>
           {/* Steel retaining rings */}
           {[-springHeight / 2 + 0.08, 0, springHeight / 2 - 0.08].map((ry, j) => (
-            <mesh key={j} position={[0, ry, 0]}>
+            <mesh key={j} position={[0, ry, 0]} dispose={null} material={matStructureSteel}>
               <torusGeometry args={[0.14, 0.014, 8, 16]} />
-              <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
             </mesh>
           ))}
           {/* Top + bottom spring caps */}
-          <mesh position={[0, springHeight / 2, 0]}>
+          <mesh position={[0, springHeight / 2, 0]} dispose={null} material={matStructureSteel}>
             <cylinderGeometry args={[0.16, 0.16, 0.03, 16]} />
-            <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
           </mesh>
-          <mesh position={[0, -springHeight / 2, 0]}>
+          <mesh position={[0, -springHeight / 2, 0]} dispose={null} material={matStructureSteel}>
             <cylinderGeometry args={[0.16, 0.16, 0.03, 16]} />
-            <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
           </mesh>
         </group>
       ))}
@@ -235,23 +237,15 @@ function VibratingBody({
       onPointerOut={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); onHover(false); }}
     >
       {/* Main screening deck (wide & shallow) */}
-      <mesh castShadow receiveShadow>
+      <mesh castShadow receiveShadow dispose={null} material={matSteel} scale={hovered ? 1.01 : 1}>
         <boxGeometry args={[width, height, depth]} />
-        <meshStandardMaterial
-          color={hovered ? COLORS.bodySteelLight : COLORS.bodySteel}
-          metalness={0.65}
-          roughness={0.4}
-          emissive={hovered ? COLORS.accentCyan : '#000000'}
-          emissiveIntensity={hovered ? 0.15 : 0}
-        />
       </mesh>
 
       {/* Deck separation seams on both long faces */}
       {[-width * 0.28, width * 0.28].map((x, i) =>
         [depth / 2 + 0.012, -(depth / 2 + 0.012)].map((z, j) => (
-          <mesh key={`seam-${i}-${j}`} position={[x, 0, z]}>
+          <mesh key={`seam-${i}-${j}`} position={[x, 0, z]} dispose={null} material={matSteelDark}>
             <boxGeometry args={[0.03, height * 0.9, 0.02]} />
-            <meshStandardMaterial color={COLORS.bodySteelDark} metalness={0.7} roughness={0.35} />
           </mesh>
         ))
       )}
@@ -262,47 +256,39 @@ function VibratingBody({
         { x: width * 0.0, z: -(depth / 2 + 0.02) },
       ].map((p, i) => (
         <group key={`door-${i}`} position={[p.x, 0, p.z]}>
-          <mesh>
+          <mesh dispose={null} material={matSteelDark}>
             <boxGeometry args={[width * 0.35, height * 0.6, 0.03]} />
-            <meshStandardMaterial color={COLORS.bodySteelDark} metalness={0.7} roughness={0.35} />
           </mesh>
           {/* Door handle */}
-          <mesh position={[width * 0.12, 0, 0.02]}>
+          <mesh position={[width * 0.12, 0, 0.02]} dispose={null} material={matStructureSteel}>
             <boxGeometry args={[0.04, 0.14, 0.04]} />
-            <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
           </mesh>
         </group>
       ))}
 
       {/* Top feed inlet (centre top) */}
-      <mesh position={[0, height / 2 + 0.18, 0]} castShadow>
+      <mesh position={[0, height / 2 + 0.18, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[width * 0.32, 0.36, depth * 0.45]} />
-        <meshStandardMaterial color={COLORS.bodySteel} metalness={0.65} roughness={0.4} />
       </mesh>
       {/* Inlet flange */}
-      <mesh position={[0, height / 2 + 0.38, 0]}>
+      <mesh position={[0, height / 2 + 0.38, 0]} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[width * 0.38, 0.05, depth * 0.52]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Clean grain outlet — front short end (+Z) */}
-      <mesh position={[0, -height * 0.05, depth / 2 + 0.18]} castShadow>
+      <mesh position={[0, -height * 0.05, depth / 2 + 0.18]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[width * 0.45, height * 0.5, 0.36]} />
-        <meshStandardMaterial color={COLORS.bodySteel} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={[0, -height * 0.05, depth / 2 + 0.38]}>
+      <mesh position={[0, -height * 0.05, depth / 2 + 0.38]} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[width * 0.5, height * 0.55, 0.06]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Coarse waste outlet — back short end (-Z) */}
-      <mesh position={[0, -height * 0.15, -(depth / 2 + 0.16)]} castShadow>
+      <mesh position={[0, -height * 0.15, -(depth / 2 + 0.16)]} castShadow dispose={null} material={matSteelDark}>
         <boxGeometry args={[width * 0.32, height * 0.45, 0.32]} />
-        <meshStandardMaterial color={COLORS.bodySteelDark} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={[0, -height * 0.15, -(depth / 2 + 0.34)]}>
+      <mesh position={[0, -height * 0.15, -(depth / 2 + 0.34)]} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[width * 0.37, height * 0.5, 0.06]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
     </group>
   );
@@ -329,33 +315,24 @@ function DriveMotor({ position, active }: { position: V3; active: boolean }) {
       onPointerOut={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); setHovered(false); }}
     >
       {/* Motor body (horizontal axis along X) */}
-      <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matPaintBlue}>
         <cylinderGeometry args={[0.2, 0.2, 0.45, 24]} />
-        <meshStandardMaterial
-          color={hovered ? '#2a4a6f' : COLORS.motorBlue}
-          metalness={0.6}
-          roughness={0.4}
-          emissive={hovered ? COLORS.accentCyan : '#000000'}
-          emissiveIntensity={hovered ? 0.15 : 0}
-        />
       </mesh>
 
       {/* Cooling fins */}
       {Array.from({ length: 9 }, (_, i) => {
         const x = -0.18 + (i / 8) * 0.36;
         return (
-          <mesh key={i} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <mesh key={i} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matPaintDark}>
             <cylinderGeometry args={[0.22, 0.22, 0.015, 24]} />
-            <meshStandardMaterial color={COLORS.motorDark} metalness={0.65} roughness={0.35} />
           </mesh>
         );
       })}
 
       {/* Eccentric weight housings on both shaft ends */}
       {[-0.3, 0.3].map((x, i) => (
-        <mesh key={i} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <mesh key={i} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matStructureSteel}>
           <cylinderGeometry args={[0.14, 0.14, 0.14, 16]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
         </mesh>
       ))}
 

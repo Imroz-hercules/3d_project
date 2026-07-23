@@ -26,6 +26,13 @@ import React, { useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintedSteel,
+  matRailYellow,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+} from '../materials';
 
 type V3 = [number, number, number];
 
@@ -60,21 +67,18 @@ function SupportFrame({ length, depth }: { length: number; depth: number }) {
   return (
     <group>
       {legPositions.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow receiveShadow>
+        <mesh key={i} position={pos} castShadow receiveShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[0.12, legHeight, 0.12]} />
-          <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.75} roughness={0.35} />
         </mesh>
       ))}
       {legPositions.map((pos, i) => (
-        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]}>
+        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]} dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.25, 0.08, 0.25]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
         </mesh>
       ))}
       {/* Cross brace */}
-      <mesh position={[0, -legHeight / 2 + 0.3, 0]} castShadow>
+      <mesh position={[0, -legHeight / 2 + 0.3, 0]} castShadow dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[length - 0.3, 0.08, 0.08]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -88,35 +92,29 @@ function HousingAndChutes({ length, height, depth }: { length: number; height: n
   return (
     <group>
       {/* Main Steel Housing */}
-      <mesh castShadow receiveShadow>
+      <mesh castShadow receiveShadow dispose={null} material={matSteel}>
         <boxGeometry args={[length, height, depth]} />
-        <meshStandardMaterial color={COLORS.housingSteel} metalness={0.65} roughness={0.4} />
       </mesh>
 
       {/* Feed Inlet (Top) */}
-      <mesh position={[0, height / 2 + 0.25, 0]} castShadow>
+      <mesh position={[0, height / 2 + 0.25, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[length * 0.5, 0.5, depth * 0.7]} />
-        <meshStandardMaterial color={COLORS.housingSteel} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={[0, height / 2 + 0.52, 0]}>
+      <mesh position={[0, height / 2 + 0.52, 0]} dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[length * 0.55, 0.06, depth * 0.75]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Outlet Chute (Bottom) */}
-      <mesh position={[0, -height / 2 - 0.25, 0]} castShadow>
+      <mesh position={[0, -height / 2 - 0.25, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[length * 0.5, 0.5, depth * 0.7]} />
-        <meshStandardMaterial color={COLORS.housingSteel} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={[0, -height / 2 - 0.52, 0]}>
+      <mesh position={[0, -height / 2 - 0.52, 0]} dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[length * 0.55, 0.06, depth * 0.75]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Warning Label Plate */}
-      <mesh position={[0, 0, depth / 2 + 0.02]}>
+      <mesh position={[0, 0, depth / 2 + 0.02]} dispose={null} material={matRailYellow}>
         <boxGeometry args={[length * 0.4, 0.25, 0.01]} />
-        <meshStandardMaterial color={COLORS.warningYellow} metalness={0.3} roughness={0.6} />
       </mesh>
       <Text
         position={[0, 0, depth / 2 + 0.03]}
@@ -165,9 +163,8 @@ function MagneticBars({ metalDetected }: { metalDetected: boolean }) {
     <group>
       {/* Magnetic Bars */}
       {bars.map((bar) => (
-        <mesh key={bar.id} position={[bar.x, 0, bar.z]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh key={bar.id} position={[bar.x, 0, bar.z]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteel}>
           <cylinderGeometry args={[0.035, 0.035, 0.55, 16]} />
-          <meshStandardMaterial color={COLORS.magnetSilver} metalness={0.9} roughness={0.2} />
         </mesh>
       ))}
 
@@ -219,38 +216,29 @@ function InspectionDoor({
       onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onToggle(); }}
     >
       {/* Door Panel */}
-      <mesh position={[length / 2, 0, 0]} castShadow receiveShadow>
+      <mesh position={[length / 2, 0, 0]} castShadow receiveShadow dispose={null} material={matSteel} scale={hovered ? 1.01 : 1}>
         <boxGeometry args={[length, height, 0.06]} />
-        <meshStandardMaterial 
-          color={hovered ? COLORS.housingLight : COLORS.housingSteel} 
-          metalness={0.65} 
-          roughness={0.4} 
-        />
       </mesh>
 
       {/* Door Frame/Seal */}
-      <mesh position={[length / 2, 0, 0.04]}>
+      <mesh position={[length / 2, 0, 0.04]} dispose={null} material={matSteelDark}>
         <boxGeometry args={[length - 0.1, height - 0.1, 0.02]} />
-        <meshStandardMaterial color={COLORS.housingDark} metalness={0.7} roughness={0.35} />
       </mesh>
 
       {/* Hinges */}
       {[0.35, -0.35].map((y, i) => (
-        <mesh key={i} position={[0.05, y, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <mesh key={i} position={[0.05, y, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matPaintedSteel}>
           <cylinderGeometry args={[0.04, 0.04, 0.12, 12]} />
-          <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.8} roughness={0.3} />
         </mesh>
       ))}
 
       {/* Handle */}
       <group position={[length - 0.15, 0, 0.06]}>
-        <mesh>
+        <mesh dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.04, 0.2, 0.04]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
         </mesh>
-        <mesh position={[0, 0, 0.04]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0, 0.04]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matStructureSteel}>
           <cylinderGeometry args={[0.03, 0.03, 0.08, 12]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
         </mesh>
       </group>
     </group>
@@ -264,9 +252,8 @@ function InspectionDoor({
 function StatusLight({ position, metalDetected }: { position: V3; metalDetected: boolean }) {
   return (
     <group position={position}>
-      <mesh>
+      <mesh dispose={null} material={matPaintedSteel}>
         <cylinderGeometry args={[0.06, 0.06, 0.15, 16]} />
-        <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.7} roughness={0.3} />
       </mesh>
       <mesh position={[0, 0.1, 0]}>
         <sphereGeometry args={[0.06, 16, 16]} />

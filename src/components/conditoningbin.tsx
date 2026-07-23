@@ -29,6 +29,12 @@ import React, { useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintedSteel,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+} from '../materials';
 
 type V3 = [number, number, number];
 
@@ -64,17 +70,15 @@ function SupportLegs({ radius, legHeight }: { radius: number; legHeight: number 
     <group>
       {/* Legs */}
       {legPositions.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow receiveShadow>
+        <mesh key={i} position={pos} castShadow receiveShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[0.2, legHeight, 0.2]} />
-          <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.75} roughness={0.35} />
         </mesh>
       ))}
       
       {/* Base Plates */}
       {legPositions.map((pos, i) => (
-        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]}>
+        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]} dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.4, 0.1, 0.4]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
         </mesh>
       ))}
 
@@ -92,9 +96,8 @@ function SupportLegs({ radius, legHeight }: { radius: number; legHeight: number 
         const length = dir.length();
         const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), dir.normalize());
         return (
-          <mesh key={`brace-${i}`} position={mid} quaternion={quat} castShadow>
+          <mesh key={`brace-${i}`} position={mid} quaternion={quat} castShadow dispose={null} material={matStructureSteel}>
             <cylinderGeometry args={[0.04, 0.04, length, 8]} />
-            <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} />
           </mesh>
         );
       })}
@@ -123,9 +126,8 @@ function BinBodyAndCone({
   return (
     <group position={[0, totalHeight / 2, 0]}>
       {/* Cylindrical Body */}
-      <mesh castShadow receiveShadow>
+      <mesh castShadow receiveShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[radius, radius, height, 32]} />
-        <meshStandardMaterial color={COLORS.binSteel} metalness={0.65} roughness={0.4} />
       </mesh>
 
       {/* Vertical Seams/Ribs */}
@@ -134,17 +136,15 @@ function BinBodyAndCone({
         const x = Math.cos(angle) * (radius + 0.02);
         const z = Math.sin(angle) * (radius + 0.02);
         return (
-          <mesh key={i} position={[x, 0, z]}>
+          <mesh key={i} position={[x, 0, z]} dispose={null} material={matSteelDark}>
             <boxGeometry args={[0.05, height, 0.05]} />
-            <meshStandardMaterial color={COLORS.binSteelDark} metalness={0.7} roughness={0.35} />
           </mesh>
         );
       })}
 
       {/* Conical Bottom (Hopper) */}
-      <mesh position={[0, -height / 2 - coneHeight / 2, 0]} castShadow receiveShadow>
+      <mesh position={[0, -height / 2 - coneHeight / 2, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[radius, radius * 0.2, coneHeight, 32]} />
-        <meshStandardMaterial color={COLORS.coneSteel} metalness={0.65} roughness={0.4} />
       </mesh>
 
       {/* Grain Fill Material */}
@@ -154,9 +154,8 @@ function BinBodyAndCone({
       </mesh>
 
       {/* Top Roof (Flat with slight slope) */}
-      <mesh position={[0, height / 2 + 0.1, 0]}>
+      <mesh position={[0, height / 2 + 0.1, 0]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[radius + 0.1, radius + 0.1, 0.2, 32]} />
-        <meshStandardMaterial color={COLORS.binSteelDark} metalness={0.7} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -173,35 +172,29 @@ function InletOutletVent({ radius, height, coneHeight }: { radius: number; heigh
   return (
     <group>
       {/* Feed Inlet Pipe (Top Side) */}
-      <mesh position={[radius + 0.5, totalHeight - 0.5, 0]} rotation={[0, 0, Math.PI / 4]} castShadow>
+      <mesh position={[radius + 0.5, totalHeight - 0.5, 0]} rotation={[0, 0, Math.PI / 4]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.25, 0.25, 1.2, 24]} />
-        <meshStandardMaterial color={COLORS.pipeSteel} metalness={0.7} roughness={0.3} />
       </mesh>
       {/* Inlet Flange */}
-      <mesh position={[radius + 0.15, totalHeight - 0.15, 0]} rotation={[0, 0, Math.PI / 4]}>
+      <mesh position={[radius + 0.15, totalHeight - 0.15, 0]} rotation={[0, 0, Math.PI / 4]} dispose={null} material={matStructureSteel}>
         <cylinderGeometry args={[0.3, 0.3, 0.05, 24]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Vent Filter (Top Center) */}
-      <mesh position={[0, totalHeight + 0.3, 0]} castShadow>
+      <mesh position={[0, totalHeight + 0.3, 0]} castShadow dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.3, 0.3, 0.6, 24]} />
-        <meshStandardMaterial color={COLORS.binSteelDark} metalness={0.7} roughness={0.35} />
       </mesh>
-      <mesh position={[0, totalHeight + 0.65, 0]}>
+      <mesh position={[0, totalHeight + 0.65, 0]} dispose={null} material={matStructureSteel}>
         <cylinderGeometry args={[0.35, 0.35, 0.1, 24]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Outlet Pipe (Bottom) */}
-      <mesh position={[0, -coneHeight / 2 - 0.3, 0]} castShadow>
+      <mesh position={[0, -coneHeight / 2 - 0.3, 0]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[outletRadius, outletRadius, 0.6, 24]} />
-        <meshStandardMaterial color={COLORS.pipeSteel} metalness={0.7} roughness={0.3} />
       </mesh>
       {/* Outlet Flange */}
-      <mesh position={[0, -coneHeight / 2 - 0.65, 0]}>
+      <mesh position={[0, -coneHeight / 2 - 0.65, 0]} dispose={null} material={matStructureSteel}>
         <cylinderGeometry args={[outletRadius + 0.05, outletRadius + 0.05, 0.1, 24]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
     </group>
   );
@@ -230,9 +223,8 @@ function SensorsAndHatch({ radius, height, coneHeight, fillPercent }: { radius: 
         { y: fullAlarmY, label: 'FULL', active: isFull, color: COLORS.accentRed },
       ].map((sensor, i) => (
         <group key={i} position={[radius + 0.1, sensor.y, 0]}>
-          <mesh>
+          <mesh dispose={null} material={matStructureSteel}>
             <cylinderGeometry args={[0.03, 0.03, 0.4, 8]} />
-            <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.8} roughness={0.3} />
           </mesh>
           <mesh position={[0, 0.22, 0]}>
             <sphereGeometry args={[0.05, 12, 12]} />
@@ -255,14 +247,12 @@ function SensorsAndHatch({ radius, height, coneHeight, fillPercent }: { radius: 
       ))}
 
       {/* Inspection Hatch (Small door on the side) */}
-      <mesh position={[0, totalHeight * 0.4, radius + 0.02]}>
+      <mesh position={[0, totalHeight * 0.4, radius + 0.02]} dispose={null} material={matSteelDark}>
         <boxGeometry args={[0.6, 0.8, 0.05]} />
-        <meshStandardMaterial color={COLORS.binSteelDark} metalness={0.7} roughness={0.35} />
       </mesh>
       {/* Hatch Handle */}
-      <mesh position={[0.2, totalHeight * 0.4, radius + 0.06]}>
+      <mesh position={[0.2, totalHeight * 0.4, radius + 0.06]} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[0.04, 0.2, 0.04]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
       </mesh>
     </group>
   );

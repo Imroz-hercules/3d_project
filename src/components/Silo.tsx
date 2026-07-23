@@ -25,6 +25,14 @@ import React, { useMemo, useRef, useState, Suspense } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Sky, Environment, Text } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matDeck,
+  matPaintedSteel,
+  matRailYellow,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+} from '../materials';
 
 /* ==========================================================================
    1. CONFIG / DIMENSIONS
@@ -94,16 +102,12 @@ function Strut({
   start,
   end,
   radius = 0.05,
-  color = COLORS.steelDark,
-  metalness = 0.75,
-  roughness = 0.35,
+  material = matStructureSteel,
 }: {
   start: V3;
   end: V3;
   radius?: number;
-  color?: string;
-  metalness?: number;
-  roughness?: number;
+  material?: THREE.Material;
 }) {
   const { position, quaternion, length } = useMemo(() => {
     const startV = new THREE.Vector3(...start);
@@ -119,9 +123,8 @@ function Strut({
   }, [start, end]);
 
   return (
-    <mesh position={position} quaternion={quaternion} castShadow receiveShadow>
+    <mesh position={position} quaternion={quaternion} castShadow receiveShadow dispose={null} material={material}>
       <cylinderGeometry args={[radius, radius, length, 8]} />
-      <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} />
     </mesh>
   );
 }
@@ -196,6 +199,9 @@ function SiloBody({ hovered, onHover }: { hovered: boolean; onHover: (v: boolean
         position={[0, CYL_BOTTOM_Y + CYL_HEIGHT / 2, 0]}
         castShadow
         receiveShadow
+        dispose={null}
+        material={matSteel}
+        scale={hovered ? 1.01 : 1}
         onPointerOver={(e: ThreeEvent<PointerEvent>) => {
           e.stopPropagation();
           onHover(true);
@@ -206,18 +212,10 @@ function SiloBody({ hovered, onHover }: { hovered: boolean; onHover: (v: boolean
         }}
       >
         <cylinderGeometry args={[SILO_RADIUS, SILO_RADIUS, CYL_HEIGHT, 48, 1, false]} />
-        <meshStandardMaterial
-          color={COLORS.metal}
-          metalness={0.8}
-          roughness={0.3}
-          emissive={hovered ? '#3a6ea5' : '#000000'}
-          emissiveIntensity={hovered ? 0.25 : 0}
-        />
       </mesh>
       {ribs.map((y, i) => (
-        <mesh key={i} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+        <mesh key={i} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]} receiveShadow dispose={null} material={matSteelDark}>
           <torusGeometry args={[SILO_RADIUS + 0.02, 0.045, 8, 48]} />
-          <meshStandardMaterial color={COLORS.metalDark} metalness={0.75} roughness={0.4} />
         </mesh>
       ))}
     </group>
@@ -231,13 +229,11 @@ function SiloBody({ hovered, onHover }: { hovered: boolean; onHover: (v: boolean
 function Roof() {
   return (
     <group>
-      <mesh position={[0, CYL_TOP_Y + ROOF_HEIGHT / 2, 0]} castShadow>
+      <mesh position={[0, CYL_TOP_Y + ROOF_HEIGHT / 2, 0]} castShadow dispose={null} material={matSteel}>
         <coneGeometry args={[SILO_RADIUS + 0.15, ROOF_HEIGHT, 48]} />
-        <meshStandardMaterial color={COLORS.roof} metalness={0.7} roughness={0.35} />
       </mesh>
-      <mesh position={[0, ROOF_APEX_Y, 0]} castShadow>
+      <mesh position={[0, ROOF_APEX_Y, 0]} castShadow dispose={null} material={matSteelDark}>
         <sphereGeometry args={[0.12, 16, 16]} />
-        <meshStandardMaterial color={COLORS.metalDark} metalness={0.8} roughness={0.3} />
       </mesh>
     </group>
   );
@@ -249,11 +245,10 @@ function Roof() {
 
 function Hopper() {
   return (
-    <mesh position={[0, HOPPER_BOTTOM_Y + HOPPER_HEIGHT / 2, 0]} castShadow receiveShadow>
+    <mesh position={[0, HOPPER_BOTTOM_Y + HOPPER_HEIGHT / 2, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
       {/* radiusTop faces up toward the cylinder (wide), radiusBottom faces
           down toward the legs (narrow funnel point) */}
       <cylinderGeometry args={[SILO_RADIUS, HOPPER_BOTTOM_RADIUS, HOPPER_HEIGHT, 48]} />
-      <meshStandardMaterial color={COLORS.metalDark} metalness={0.75} roughness={0.4} />
     </mesh>
   );
 }
@@ -266,7 +261,7 @@ function Legs() {
   return (
     <>
       {legAngles.map((_, i) => (
-        <Strut key={i} start={legBase[i]} end={legTop[i]} radius={0.15} color={COLORS.steelDark} />
+        <Strut key={i} start={legBase[i]} end={legTop[i]} radius={0.15} material={matPaintedSteel} />
       ))}
     </>
   );
@@ -295,7 +290,7 @@ function CrossBraces() {
   return (
     <>
       {struts.map((s, i) => (
-        <Strut key={i} start={s.start} end={s.end} radius={0.045} color={COLORS.metalDark} />
+        <Strut key={i} start={s.start} end={s.end} radius={0.045} material={matStructureSteel} />
       ))}
     </>
   );
@@ -307,9 +302,8 @@ function CrossBraces() {
 
 function Platform() {
   return (
-    <mesh position={[0, PLATFORM_Y, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow castShadow>
+    <mesh position={[0, PLATFORM_Y, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow castShadow dispose={null} material={matDeck}>
       <ringGeometry args={[SILO_RADIUS + 0.03, SILO_RADIUS + PLATFORM_WIDTH, 48]} />
-      <meshStandardMaterial color={COLORS.steelDark} metalness={0.6} roughness={0.6} side={THREE.DoubleSide} />
     </mesh>
   );
 }
@@ -324,12 +318,11 @@ function GuardRail() {
       {angles.map((a, i) => {
         const base = polar(railRadius, a, PLATFORM_Y);
         const top: V3 = [base[0], PLATFORM_Y + RAIL_HEIGHT, base[2]];
-        return <Strut key={i} start={base} end={top} radius={0.03} color={COLORS.accentYellow} />;
+        return <Strut key={i} start={base} end={top} radius={0.03} material={matRailYellow} />;
       })}
       {[0.5, 1.0].map((h, i) => (
-        <mesh key={i} position={[0, PLATFORM_Y + RAIL_HEIGHT * h, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh key={i} position={[0, PLATFORM_Y + RAIL_HEIGHT * h, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matRailYellow}>
           <torusGeometry args={[railRadius, 0.025, 8, 48]} />
-          <meshStandardMaterial color={COLORS.accentYellow} metalness={0.5} roughness={0.5} />
         </mesh>
       ))}
     </group>
@@ -351,13 +344,13 @@ function Ladder() {
 
   return (
     <group>
-      <Strut start={[x, bottomY, -railGap]} end={[x, topY, -railGap]} radius={0.03} color={COLORS.metalDark} />
-      <Strut start={[x, bottomY, railGap]} end={[x, topY, railGap]} radius={0.03} color={COLORS.metalDark} />
+      <Strut start={[x, bottomY, -railGap]} end={[x, topY, -railGap]} radius={0.03} material={matStructureSteel} />
+      <Strut start={[x, bottomY, railGap]} end={[x, topY, railGap]} radius={0.03} material={matStructureSteel} />
       {rungs.map((y, i) => (
-        <Strut key={i} start={[x, y, -railGap]} end={[x, y, railGap]} radius={0.025} color={COLORS.accentRed} />
+        <Strut key={i} start={[x, y, -railGap]} end={[x, y, railGap]} radius={0.025} material={matStructureSteel} />
       ))}
       {/* grounding brace tying the ladder base back to the nearest leg */}
-      <Strut start={legTop[0]} end={[x, bottomY, -railGap]} radius={0.04} color={COLORS.metalDark} />
+      <Strut start={legTop[0]} end={[x, bottomY, -railGap]} radius={0.04} material={matStructureSteel} />
     </group>
   );
 }
@@ -402,7 +395,7 @@ function Hatch() {
       >
         <cylinderGeometry args={[hatchRadius, hatchRadius, 0.06, 32]} />
         <meshStandardMaterial
-          color={hovered ? COLORS.accentYellow : COLORS.metalDark}
+          color={hovered ? COLORS.accentYellow : '#8a9199'}
           metalness={0.7}
           roughness={0.35}
           emissive={hovered ? COLORS.accentYellow : '#000000'}
@@ -485,15 +478,13 @@ function RoofTurbine() {
 
   return (
     <group position={[-1.1, CYL_TOP_Y + 0.55, 0.4]}>
-      <mesh castShadow>
+      <mesh castShadow dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.12, 0.14, 0.35, 12]} />
-        <meshStandardMaterial color={COLORS.metalDark} metalness={0.7} roughness={0.4} />
       </mesh>
       <group ref={ref} position={[0, 0.2, 0]}>
         {fins.map((a, i) => (
-          <mesh key={i} position={[Math.cos(a) * 0.1, 0, Math.sin(a) * 0.1]} rotation={[0, -a, Math.PI / 8]} castShadow>
+          <mesh key={i} position={[Math.cos(a) * 0.1, 0, Math.sin(a) * 0.1]} rotation={[0, -a, Math.PI / 8]} castShadow dispose={null} material={matSteel}>
             <boxGeometry args={[0.22, 0.01, 0.09]} />
-            <meshStandardMaterial color={COLORS.metal} metalness={0.6} roughness={0.4} />
           </mesh>
         ))}
       </group>

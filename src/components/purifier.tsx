@@ -29,6 +29,15 @@ import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintBlue,
+  matPaintDark,
+  matPaintedSteel,
+  matRailYellow,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+} from '../materials';
 
 type V3 = [number, number, number];
 
@@ -66,25 +75,21 @@ function SupportFrame({ width, depth }: { width: number; depth: number }) {
   return (
     <group>
       {legPositions.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow receiveShadow>
+        <mesh key={i} position={pos} castShadow receiveShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[0.2, legHeight, 0.2]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} />
         </mesh>
       ))}
       {legPositions.map((pos, i) => (
-        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]}>
+        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]} dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.4, 0.1, 0.4]} />
-          <meshStandardMaterial color={COLORS.frameSteelLight} metalness={0.8} roughness={0.3} />
         </mesh>
       ))}
       {/* Heavy cross bracing */}
-      <mesh position={[0, -legHeight / 2 + 0.4, 0]} castShadow>
+      <mesh position={[0, -legHeight / 2 + 0.4, 0]} castShadow dispose={null} material={matStructureSteel}>
         <boxGeometry args={[width - 0.4, 0.12, 0.12]} />
-        <meshStandardMaterial color={COLORS.frameSteelLight} metalness={0.75} roughness={0.35} />
       </mesh>
-      <mesh position={[0, -legHeight / 2 + 0.4, 0]} rotation={[0, Math.PI / 2, 0]} castShadow>
+      <mesh position={[0, -legHeight / 2 + 0.4, 0]} rotation={[0, Math.PI / 2, 0]} castShadow dispose={null} material={matStructureSteel}>
         <boxGeometry args={[depth - 0.4, 0.12, 0.12]} />
-        <meshStandardMaterial color={COLORS.frameSteelLight} metalness={0.75} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -130,36 +135,31 @@ function SieveCabinet({
   return (
     <group ref={cabinetRef}>
       {/* Main Body */}
-      <mesh castShadow receiveShadow>
+      <mesh castShadow receiveShadow dispose={null} material={matSteel} scale={hovered ? 1.01 : 1}>
         <boxGeometry args={[width, height, depth]} />
-        <meshStandardMaterial color={hovered ? COLORS.cabinetLight : COLORS.cabinetSteel} metalness={0.65} roughness={0.4} />
       </mesh>
 
       {/* Horizontal Sieve Lines */}
       {Array.from({ length: 6 }, (_, i) => {
         const y = -height / 2 + 0.4 + i * (height / 7);
         return (
-          <mesh key={i} position={[0, y, depth / 2 + 0.01]}>
+          <mesh key={i} position={[0, y, depth / 2 + 0.01]} dispose={null} material={matSteelDark}>
             <boxGeometry args={[width * 0.98, 0.03, 0.02]} />
-            <meshStandardMaterial color={COLORS.cabinetDark} metalness={0.7} roughness={0.35} />
           </mesh>
         );
       })}
 
       {/* Top & Bottom Caps */}
-      <mesh position={[0, height / 2 + 0.05, 0]}>
+      <mesh position={[0, height / 2 + 0.05, 0]} dispose={null} material={matSteelDark}>
         <boxGeometry args={[width + 0.1, 0.1, depth + 0.1]} />
-        <meshStandardMaterial color={COLORS.cabinetDark} metalness={0.7} roughness={0.35} />
       </mesh>
-      <mesh position={[0, -height / 2 - 0.05, 0]}>
+      <mesh position={[0, -height / 2 - 0.05, 0]} dispose={null} material={matSteelDark}>
         <boxGeometry args={[width + 0.1, 0.1, depth + 0.1]} />
-        <meshStandardMaterial color={COLORS.cabinetDark} metalness={0.7} roughness={0.35} />
       </mesh>
 
       {/* Manufacturer Plate */}
-      <mesh position={[0, height * 0.3, depth / 2 + 0.02]}>
+      <mesh position={[0, height * 0.3, depth / 2 + 0.02]} dispose={null} material={matSteelDark}>
         <boxGeometry args={[width * 0.25, 0.2, 0.01]} />
-        <meshStandardMaterial color={COLORS.cabinetLight} metalness={0.8} roughness={0.25} />
       </mesh>
       <Text position={[0, height * 0.3, depth / 2 + 0.03]} fontSize={0.06} color={COLORS.frameSteel} anchorX="center" anchorY="middle" fontWeight="bold">
         PURIFIER PU-6
@@ -172,32 +172,26 @@ function SieveCabinet({
         onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onDoorToggle(); }}
       >
         <group ref={door1Ref} position={[-doorWidth / 2 - 0.02, 0, depth / 2 + 0.02]}>
-          <mesh castShadow receiveShadow>
+          <mesh castShadow receiveShadow dispose={null} material={matSteel}>
             <boxGeometry args={[doorWidth, doorHeight, 0.08]} />
-            <meshStandardMaterial color={COLORS.cabinetSteel} metalness={0.65} roughness={0.4} />
           </mesh>
-          <mesh position={[0, 0, 0.05]}>
+          <mesh position={[0, 0, 0.05]} dispose={null} material={matSteelDark}>
             <boxGeometry args={[doorWidth - 0.1, doorHeight - 0.1, 0.02]} />
-            <meshStandardMaterial color={COLORS.cabinetDark} metalness={0.7} roughness={0.35} />
           </mesh>
-          <mesh position={[doorWidth / 2 - 0.1, 0, 0.08]}>
+          <mesh position={[doorWidth / 2 - 0.1, 0, 0.08]} dispose={null} material={matStructureSteel}>
             <boxGeometry args={[0.05, 0.3, 0.05]} />
-            <meshStandardMaterial color={COLORS.frameSteelLight} metalness={0.8} roughness={0.25} />
           </mesh>
         </group>
 
         <group ref={door2Ref} position={[doorWidth / 2 + 0.02, 0, depth / 2 + 0.02]}>
-          <mesh castShadow receiveShadow>
+          <mesh castShadow receiveShadow dispose={null} material={matSteel}>
             <boxGeometry args={[doorWidth, doorHeight, 0.08]} />
-            <meshStandardMaterial color={COLORS.cabinetSteel} metalness={0.65} roughness={0.4} />
           </mesh>
-          <mesh position={[0, 0, 0.05]}>
+          <mesh position={[0, 0, 0.05]} dispose={null} material={matSteelDark}>
             <boxGeometry args={[doorWidth - 0.1, doorHeight - 0.1, 0.02]} />
-            <meshStandardMaterial color={COLORS.cabinetDark} metalness={0.7} roughness={0.35} />
           </mesh>
-          <mesh position={[-doorWidth / 2 + 0.1, 0, 0.08]}>
+          <mesh position={[-doorWidth / 2 + 0.1, 0, 0.08]} dispose={null} material={matStructureSteel}>
             <boxGeometry args={[0.05, 0.3, 0.05]} />
-            <meshStandardMaterial color={COLORS.frameSteelLight} metalness={0.8} roughness={0.25} />
           </mesh>
         </group>
       </group>
@@ -231,25 +225,21 @@ function AspirationDuct({ width, depth, height, position, damperOpen, onToggleDa
   return (
     <group position={position}>
       {/* Main Horizontal Duct */}
-      <mesh castShadow receiveShadow>
+      <mesh castShadow receiveShadow dispose={null} material={matSteel}>
         <boxGeometry args={[width * 0.9, height * 0.6, depth * 0.8]} />
-        <meshStandardMaterial color={COLORS.cabinetDark} metalness={0.65} roughness={0.4} />
       </mesh>
 
       {/* Vertical Exhaust Pipe */}
-      <mesh position={[width * 0.3, height * 0.6, 0]} castShadow>
+      <mesh position={[width * 0.3, height * 0.6, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[0.6, height * 0.8, 0.6]} />
-        <meshStandardMaterial color={COLORS.cabinetDark} metalness={0.65} roughness={0.4} />
       </mesh>
 
       {/* Exhaust Fan Housing (Top) */}
-      <mesh position={[width * 0.3, height * 1.1, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[width * 0.3, height * 1.1, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matPaintBlue}>
         <cylinderGeometry args={[0.35, 0.35, 0.2, 24]} />
-        <meshStandardMaterial color={COLORS.motorBlue} metalness={0.6} roughness={0.4} />
       </mesh>
-      <mesh ref={fanRef} position={[width * 0.3, height * 1.22, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh ref={fanRef} position={[width * 0.3, height * 1.22, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matStructureSteel}>
         <cylinderGeometry args={[0.3, 0.3, 0.05, 8]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.2} />
       </mesh>
 
       {/* Air Control Damper (Interactive sliding plate) */}
@@ -258,14 +248,12 @@ function AspirationDuct({ width, depth, height, position, damperOpen, onToggleDa
         onPointerOver={(e: ThreeEvent<PointerEvent>) => e.stopPropagation()}
         onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onToggleDamper(); }}
       >
-        <mesh ref={damperRef}>
+        <mesh ref={damperRef} dispose={null} material={matRailYellow}>
           <boxGeometry args={[0.4, 0.5, 0.04]} />
-          <meshStandardMaterial color={COLORS.accentYellow} metalness={0.5} roughness={0.5} />
         </mesh>
         {/* Damper Handle */}
-        <mesh position={[0, 0, 0.04]}>
+        <mesh position={[0, 0, 0.04]} dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.05, 0.15, 0.05]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
         </mesh>
         <Text position={[0, -0.4, 0.05]} fontSize={0.05} color="#ffffff" anchorX="center" anchorY="middle">
           AIR DAMPER
@@ -291,37 +279,31 @@ function VibrationMotor({ position, active }: { position: V3; active: boolean })
   return (
     <group position={position}>
       {/* Motor Body */}
-      <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matPaintBlue}>
         <cylinderGeometry args={[0.3, 0.3, 0.6, 24]} />
-        <meshStandardMaterial color={COLORS.motorBlue} metalness={0.6} roughness={0.4} />
       </mesh>
       {/* Cooling Fins */}
       {Array.from({ length: 10 }, (_, i) => {
         const z = -0.25 + (i / 9) * 0.5;
         return (
-          <mesh key={i} position={[0, 0, z]} rotation={[0, 0, Math.PI / 2]}>
+          <mesh key={i} position={[0, 0, z]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matPaintDark}>
             <cylinderGeometry args={[0.32, 0.32, 0.015, 24]} />
-            <meshStandardMaterial color={COLORS.motorDark} metalness={0.65} roughness={0.35} />
           </mesh>
         );
       })}
       {/* Fan */}
-      <mesh position={[0, 0, 0.35]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, 0, 0.35]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matPaintDark}>
         <cylinderGeometry args={[0.25, 0.25, 0.06, 24]} />
-        <meshStandardMaterial color={COLORS.motorDark} metalness={0.7} roughness={0.3} />
       </mesh>
-      <mesh ref={fanRef} position={[0, 0, 0.38]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh ref={fanRef} position={[0, 0, 0.38]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matStructureSteel}>
         <cylinderGeometry args={[0.2, 0.2, 0.03, 8]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.2} />
       </mesh>
       {/* Eccentric Weight Housing (Visible spinning part) */}
-      <mesh position={[0, 0, -0.35]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, 0, -0.35]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matPaintDark}>
         <cylinderGeometry args={[0.2, 0.2, 0.2, 16]} />
-        <meshStandardMaterial color={COLORS.frameSteelLight} metalness={0.8} roughness={0.25} />
       </mesh>
-      <mesh ref={weightRef} position={[0, 0, -0.45]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh ref={weightRef} position={[0, 0, -0.45]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[0.15, 0.15, 0.1]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.85} roughness={0.2} />
       </mesh>
       {/* Status LED */}
       <mesh position={[0, 0.32, 0]}>
@@ -347,25 +329,21 @@ function InletAndOutlets({ width, depth, height }: { width: number; depth: numbe
   return (
     <group>
       {/* Feed Inlet (Top) */}
-      <mesh position={[0, height / 2 + 0.4, 0]} castShadow>
+      <mesh position={[0, height / 2 + 0.4, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[0.6, 0.8, 0.6]} />
-        <meshStandardMaterial color={COLORS.cabinetSteel} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={[0, height / 2 + 0.82, 0]}>
+      <mesh position={[0, height / 2 + 0.82, 0]} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[0.65, 0.06, 0.65]} />
-        <meshStandardMaterial color={COLORS.frameSteelLight} metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Outlet Chutes (Bottom) */}
       {positions.map((x, i) => (
         <group key={i} position={[x, -height / 2 - 0.4, 0]}>
-          <mesh castShadow receiveShadow>
+          <mesh castShadow receiveShadow dispose={null} material={matSteel}>
             <boxGeometry args={[chuteWidth, 0.8, chuteDepth]} />
-            <meshStandardMaterial color={COLORS.cabinetSteel} metalness={0.65} roughness={0.4} />
           </mesh>
-          <mesh position={[0, -0.42, 0]}>
+          <mesh position={[0, -0.42, 0]} dispose={null} material={matStructureSteel}>
             <boxGeometry args={[chuteWidth + 0.05, 0.06, chuteDepth + 0.05]} />
-            <meshStandardMaterial color={COLORS.frameSteelLight} metalness={0.75} roughness={0.3} />
           </mesh>
           <Text position={[0, 0, chuteDepth / 2 + 0.05]} fontSize={0.05} color="#ffffff" anchorX="center" anchorY="middle" fontWeight="bold">
             {labels[i]}
@@ -387,29 +365,25 @@ function InletAndOutlets({ width, depth, height }: { width: number; depth: numbe
 function AccessLadder({ height, depth }: { height: number; depth: number }) {
   return (
     <group position={[0, 0, depth / 2 + 0.3]}>
-      <mesh position={[-0.3, 0, 0]} castShadow><boxGeometry args={[0.05, height * 0.8, 0.05]} /><meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} /></mesh>
-      <mesh position={[0.3, 0, 0]} castShadow><boxGeometry args={[0.05, height * 0.8, 0.05]} /><meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} /></mesh>
+      <mesh position={[-0.3, 0, 0]} castShadow dispose={null} material={matPaintedSteel}><boxGeometry args={[0.05, height * 0.8, 0.05]} /></mesh>
+      <mesh position={[0.3, 0, 0]} castShadow dispose={null} material={matPaintedSteel}><boxGeometry args={[0.05, height * 0.8, 0.05]} /></mesh>
       {Array.from({ length: 10 }, (_, i) => {
         const y = -height * 0.3 + i * (height * 0.6 / 9);
         return (
-          <mesh key={i} position={[0, y, 0.05]} castShadow>
+          <mesh key={i} position={[0, y, 0.05]} castShadow dispose={null} material={matStructureSteel}>
             <boxGeometry args={[0.5, 0.04, 0.04]} />
-            <meshStandardMaterial color={COLORS.frameSteelLight} metalness={0.8} roughness={0.3} />
           </mesh>
         );
       })}
-      <mesh position={[0, height * 0.4, 0.2]} castShadow>
+      <mesh position={[0, height * 0.4, 0.2]} castShadow dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[1.2, 0.08, 0.8]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
       </mesh>
-      <mesh position={[0, height * 0.4 + 0.4, 0.55]}>
+      <mesh position={[0, height * 0.4 + 0.4, 0.55]} dispose={null} material={matRailYellow}>
         <boxGeometry args={[1.2, 0.04, 0.04]} />
-        <meshStandardMaterial color={COLORS.accentYellow} metalness={0.6} roughness={0.4} />
       </mesh>
       {[-0.55, 0.55].map((x, i) => (
-        <mesh key={i} position={[x, height * 0.4 + 0.2, 0.55]}>
+        <mesh key={i} position={[x, height * 0.4 + 0.2, 0.55]} dispose={null} material={matRailYellow}>
           <boxGeometry args={[0.04, 0.4, 0.04]} />
-          <meshStandardMaterial color={COLORS.accentYellow} metalness={0.6} roughness={0.4} />
         </mesh>
       ))}
     </group>

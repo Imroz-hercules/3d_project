@@ -30,6 +30,16 @@ import React, { useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintBlue,
+  matPaintDark,
+  matPaintYellow,
+  matPaintedSteel,
+  matRubber,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+} from '../materials';
 
 type V3 = [number, number, number];
 
@@ -69,31 +79,26 @@ function SupportFrame({ length, radius }: { length: number; radius: number }) {
   return (
     <group>
       {legPositions.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow receiveShadow>
+        <mesh key={i} position={pos} castShadow receiveShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[0.15, legHeight, 0.15]} />
-          <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.75} roughness={0.35} />
         </mesh>
       ))}
       {legPositions.map((pos, i) => (
-        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]}>
+        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]} dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.3, 0.08, 0.3]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.3} />
         </mesh>
       ))}
       {/* Cross bracing */}
-      <mesh position={[0, -legHeight / 2 + 0.4, 0]} castShadow>
+      <mesh position={[0, -legHeight / 2 + 0.4, 0]} castShadow dispose={null} material={matStructureSteel}>
         <boxGeometry args={[length - 0.5, 0.08, 0.08]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} />
       </mesh>
-      <mesh position={[0, -legHeight / 2 + 0.4, 0]} rotation={[0, Math.PI / 2, 0]} castShadow>
+      <mesh position={[0, -legHeight / 2 + 0.4, 0]} rotation={[0, Math.PI / 2, 0]} castShadow dispose={null} material={matStructureSteel}>
         <boxGeometry args={[radius * 1.8, 0.08, 0.08]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.35} />
       </mesh>
       {/* Vibration dampers (rubber mounts) */}
       {legPositions.map((pos, i) => (
-        <mesh key={`damper-${i}`} position={[pos[0], -legHeight / 2 + 0.15, pos[2]]}>
+        <mesh key={`damper-${i}`} position={[pos[0], -legHeight / 2 + 0.15, pos[2]]} dispose={null} material={matRubber}>
           <cylinderGeometry args={[0.08, 0.1, 0.1, 16]} />
-          <meshStandardMaterial color="#2a2a2a" metalness={0.1} roughness={0.9} />
         </mesh>
       ))}
     </group>
@@ -108,26 +113,22 @@ function MainHousing({ length, radius }: { length: number; radius: number }) {
   return (
     <group>
       {/* Main Cylinder Body */}
-      <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
+      <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[radius, radius, length, 32]} />
-        <meshStandardMaterial color={COLORS.housingSteel} metalness={0.65} roughness={0.4} />
       </mesh>
 
       {/* End Caps */}
-      <mesh position={[-length / 2, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[-length / 2, 0, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[radius, radius, 0.12, 32]} />
-        <meshStandardMaterial color={COLORS.housingDark} metalness={0.7} roughness={0.35} />
       </mesh>
-      <mesh position={[length / 2, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[length / 2, 0, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[radius, radius, 0.12, 32]} />
-        <meshStandardMaterial color={COLORS.housingDark} metalness={0.7} roughness={0.35} />
       </mesh>
 
       {/* Reinforcement Rings */}
       {[-length / 3, 0, length / 3].map((x, i) => (
-        <mesh key={i} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <mesh key={i} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteelDark}>
           <torusGeometry args={[radius + 0.02, 0.04, 8, 32]} />
-          <meshStandardMaterial color={COLORS.housingDark} metalness={0.75} roughness={0.3} />
         </mesh>
       ))}
 
@@ -144,15 +145,13 @@ function MainHousing({ length, radius }: { length: number; radius: number }) {
         />
       </mesh>
       {/* Sight glass frame */}
-      <mesh position={[0, radius * 0.6, radius + 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, radius * 0.6, radius + 0.02]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matStructureSteel}>
         <torusGeometry args={[0.17, 0.025, 8, 24]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
       </mesh>
 
       {/* Warning Label */}
-      <mesh position={[0, -radius * 0.5, -radius - 0.02]} rotation={[0, Math.PI, 0]}>
+      <mesh position={[0, -radius * 0.5, -radius - 0.02]} rotation={[0, Math.PI, 0]} dispose={null} material={matPaintYellow}>
         <boxGeometry args={[length * 0.3, 0.2, 0.01]} />
-        <meshStandardMaterial color={COLORS.accentYellow} metalness={0.3} roughness={0.6} />
       </mesh>
       <Text
         position={[0, -radius * 0.5, -radius - 0.03]}
@@ -200,9 +199,8 @@ function MixingRotor({ length, radius, active }: { length: number; radius: numbe
   return (
     <group ref={rotorRef}>
       {/* Central Shaft */}
-      <mesh rotation={[0, 0, Math.PI / 2]}>
+      <mesh rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.06, 0.06, length * 0.85, 16]} />
-        <meshStandardMaterial color={COLORS.rotorSteel} metalness={0.85} roughness={0.2} />
       </mesh>
 
       {/* Mixing Paddles */}
@@ -211,14 +209,12 @@ function MixingRotor({ length, radius, active }: { length: number; radius: numbe
         const z = Math.sin(p.angle) * (radius * 0.5);
         return (
           <group key={p.id} position={[p.x, y, z]} rotation={[0, 0, p.angle]}>
-            <mesh castShadow>
+            <mesh castShadow dispose={null} material={matSteelDark}>
               <boxGeometry args={[0.12, 0.03, radius * 0.45]} />
-              <meshStandardMaterial color={COLORS.rotorDark} metalness={0.8} roughness={0.25} />
             </mesh>
             {/* Paddle edge */}
-            <mesh position={[0, 0, radius * 0.22]}>
+            <mesh position={[0, 0, radius * 0.22]} dispose={null} material={matSteel}>
               <boxGeometry args={[0.12, 0.05, 0.06]} />
-              <meshStandardMaterial color={COLORS.rotorSteel} metalness={0.85} roughness={0.2} />
             </mesh>
           </group>
         );
@@ -245,15 +241,13 @@ function WaterSpraySystem({ length, radius, active }: { length: number; radius: 
   return (
     <group>
       {/* Water Supply Pipe (Vertical) */}
-      <mesh position={[0, radius + 0.5, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+      <mesh position={[0, radius + 0.5, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.08, 0.08, 1.0, 24]} />
-        <meshStandardMaterial color={COLORS.waterPipe} metalness={0.7} roughness={0.3} />
       </mesh>
 
       {/* Water Flow Meter */}
-      <mesh position={[0, radius + 0.8, 0]} castShadow>
+      <mesh position={[0, radius + 0.8, 0]} castShadow dispose={null} material={matStructureSteel}>
         <boxGeometry args={[0.2, 0.25, 0.2]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
       <mesh position={[0, radius + 0.8, 0.11]}>
         <cylinderGeometry args={[0.08, 0.08, 0.02, 24]} />
@@ -265,23 +259,20 @@ function WaterSpraySystem({ length, radius, active }: { length: number; radius: 
       </mesh>
 
       {/* Spray Manifold (Horizontal pipe) */}
-      <mesh position={[0, radius + 0.15, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh position={[0, radius + 0.15, 0]} rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.06, 0.06, length * 0.7, 24]} />
-        <meshStandardMaterial color={COLORS.waterPipe} metalness={0.7} roughness={0.3} />
       </mesh>
 
       {/* Spray Nozzles */}
       {nozzlePositions.map((x, i) => (
         <group key={i} position={[x, radius + 0.05, 0]}>
           {/* Nozzle body */}
-          <mesh>
+          <mesh dispose={null} material={matStructureSteel}>
             <cylinderGeometry args={[0.04, 0.05, 0.12, 16]} />
-            <meshStandardMaterial color={COLORS.frameSteel} metalness={0.8} roughness={0.25} />
           </mesh>
           {/* Nozzle tip */}
-          <mesh position={[0, -0.08, 0]}>
+          <mesh position={[0, -0.08, 0]} dispose={null} material={matSteel}>
             <cylinderGeometry args={[0.025, 0.04, 0.04, 16]} />
-            <meshStandardMaterial color={COLORS.waterPipe} metalness={0.75} roughness={0.3} />
           </mesh>
         </group>
       ))}
@@ -309,23 +300,19 @@ function InletOutlet({ length, radius }: { length: number; radius: number }) {
   return (
     <group>
       {/* Feed Inlet (Top Left) */}
-      <mesh position={[-length / 3, radius + 0.35, 0]} castShadow>
+      <mesh position={[-length / 3, radius + 0.35, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[0.45, 0.7, 0.55]} />
-        <meshStandardMaterial color={COLORS.housingSteel} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={[-length / 3, radius + 0.72, 0]}>
+      <mesh position={[-length / 3, radius + 0.72, 0]} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[0.5, 0.06, 0.6]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Outlet (Bottom Right) */}
-      <mesh position={[length / 3, -radius - 0.35, 0]} castShadow>
+      <mesh position={[length / 3, -radius - 0.35, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[0.45, 0.7, 0.55]} />
-        <meshStandardMaterial color={COLORS.housingSteel} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={[length / 3, -radius - 0.72, 0]}>
+      <mesh position={[length / 3, -radius - 0.72, 0]} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[0.5, 0.06, 0.6]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.75} roughness={0.3} />
       </mesh>
     </group>
   );
@@ -352,50 +339,38 @@ function DriveMotorGearbox({ position, active }: { position: V3; active: boolean
       onPointerOut={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); setHovered(false); }}
     >
       {/* Gearbox */}
-      <mesh castShadow>
+      <mesh castShadow dispose={null} material={matPaintDark}>
         <boxGeometry args={[0.4, 0.4, 0.35]} />
-        <meshStandardMaterial color={COLORS.gearboxGray} metalness={0.7} roughness={0.35} />
       </mesh>
 
       {/* Motor Body */}
-      <mesh position={[0, 0, 0.35]} rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh position={[0, 0, 0.35]} rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matPaintBlue}>
         <cylinderGeometry args={[0.22, 0.22, 0.5, 24]} />
-        <meshStandardMaterial
-          color={hovered ? '#2a4a6f' : COLORS.motorBlue}
-          metalness={0.6}
-          roughness={0.4}
-          emissive={hovered ? COLORS.accentCyan : '#000000'}
-          emissiveIntensity={hovered ? 0.15 : 0}
-        />
       </mesh>
 
       {/* Cooling Fins */}
       {Array.from({ length: 10 }, (_, i) => {
         const z = 0.35 - 0.2 + (i / 9) * 0.4;
         return (
-          <mesh key={i} position={[0, 0, z]} rotation={[0, 0, Math.PI / 2]}>
+          <mesh key={i} position={[0, 0, z]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matPaintDark}>
             <cylinderGeometry args={[0.24, 0.24, 0.015, 24]} />
-            <meshStandardMaterial color={COLORS.motorDark} metalness={0.65} roughness={0.35} />
           </mesh>
         );
       })}
 
       {/* Fan Cover */}
-      <mesh position={[0, 0, 0.62]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, 0, 0.62]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matPaintDark}>
         <cylinderGeometry args={[0.2, 0.2, 0.06, 24]} />
-        <meshStandardMaterial color={COLORS.motorDark} metalness={0.7} roughness={0.3} />
       </mesh>
 
       {/* Fan Blades */}
-      <mesh ref={fanRef} position={[0, 0, 0.64]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh ref={fanRef} position={[0, 0, 0.64]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matStructureSteel}>
         <cylinderGeometry args={[0.16, 0.16, 0.02, 8]} />
-        <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.75} roughness={0.3} />
       </mesh>
 
       {/* Shaft Coupling */}
-      <mesh position={[0, 0, -0.2]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, 0, -0.2]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.08, 0.08, 0.15, 16]} />
-        <meshStandardMaterial color={COLORS.rotorSteel} metalness={0.85} roughness={0.2} />
       </mesh>
 
       {/* Status LED */}

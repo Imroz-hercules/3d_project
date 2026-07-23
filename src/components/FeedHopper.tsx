@@ -7,19 +7,11 @@
 
 import { useMemo } from 'react';
 import * as THREE from 'three';
+import { matPaintedSteel, matSteel } from '../materials';
 import { FlourFill } from './MaterialFlow';
 import { REF, hopperFunnelTopY, hopperOutletY, hopperTopY } from './layoutConstants';
 
 type V3 = [number, number, number];
-
-const COLORS = {
-  body: '#7a8288',
-  bodyDark: '#5c6369',
-  bodyLight: '#959ca3',
-  flange: '#8a9199',
-  base: '#6e6e6a',
-  lid: '#8a9199',
-} as const;
 
 function taperedGeo(topW: number, topD: number, botW: number, botD: number, h: number) {
   const geo = new THREE.BufferGeometry();
@@ -59,44 +51,37 @@ export function FeedHopperComponent({
   return (
     <group position={position}>
       {/* Base pad */}
-      <mesh position={[0, baseHeight / 2, 0]} castShadow receiveShadow>
+      <mesh position={[0, baseHeight / 2, 0]} castShadow receiveShadow dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[width + 0.2, baseHeight, depth + 0.2]} />
-        <meshStandardMaterial color={COLORS.base} metalness={0.35} roughness={0.75} />
       </mesh>
 
       {/* Funnel — wide top connects to box, narrow outlet at bottom */}
       <group position={[0, outletY, 0]}>
-        <mesh geometry={funnelGeo} castShadow receiveShadow>
-          <meshStandardMaterial color={COLORS.body} metalness={0.55} roughness={0.5} />
+        <mesh geometry={funnelGeo} castShadow receiveShadow dispose={null} material={matSteel}>
         </mesh>
-        <mesh position={[0, -0.025, 0]}>
+        <mesh position={[0, -0.025, 0]} dispose={null} material={matSteel}>
           <boxGeometry args={[outletSize + 0.14, 0.05, outletSize + 0.14]} />
-          <meshStandardMaterial color={COLORS.flange} metalness={0.7} roughness={0.35} />
         </mesh>
       </group>
 
       {/* Box body on top of funnel */}
-      <mesh position={[0, funnelTopY + boxHeight / 2, 0]} castShadow receiveShadow>
+      <mesh position={[0, funnelTopY + boxHeight / 2, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
         <boxGeometry args={[width, boxHeight, depth]} />
-        <meshStandardMaterial color={COLORS.body} metalness={0.55} roughness={0.5} />
       </mesh>
 
       {/* Inlet collar on lid (receives vertical duct from above) */}
-      <mesh position={[0, funnelTopY + boxHeight + 0.04, 0]} castShadow>
+      <mesh position={[0, funnelTopY + boxHeight + 0.04, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[width * 0.45, 0.08, depth * 0.45]} />
-        <meshStandardMaterial color={COLORS.bodyLight} metalness={0.65} roughness={0.4} />
       </mesh>
 
       {/* Lid */}
-      <mesh position={[0, lidTopY - lidHeight / 2, 0]} castShadow>
+      <mesh position={[0, lidTopY - lidHeight / 2, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[width + 0.06, lidHeight, depth + 0.06]} />
-        <meshStandardMaterial color={COLORS.lid} metalness={0.65} roughness={0.4} />
       </mesh>
 
       {/* Vent */}
-      <mesh position={[width * 0.28, lidTopY + 0.1, 0]} castShadow>
+      <mesh position={[width * 0.28, lidTopY + 0.1, 0]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.035, 0.035, 0.18, 10]} />
-        <meshStandardMaterial color={COLORS.bodyLight} metalness={0.6} roughness={0.4} />
       </mesh>
 
       {showFlourFill && (
