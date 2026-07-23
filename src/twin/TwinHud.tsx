@@ -38,10 +38,16 @@ export function TwinHud() {
 
   useEffect(() => {
     let raf = 0;
+    let acc = 0;
     const loop = (t: number) => {
       const dt = Math.min(0.1, (t - last.current) / 1000);
       last.current = t;
-      tickSimulation(dt);
+      // Demo PLC tags at ~10 Hz — not every paint frame (avoids re-rendering the HUD/3D tree at 60Hz)
+      acc += dt;
+      if (acc >= 0.1) {
+        tickSimulation(acc);
+        acc = 0;
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);

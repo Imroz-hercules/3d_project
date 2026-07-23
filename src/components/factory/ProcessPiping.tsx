@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 /**
  * Shared process piping primitives for the flour mill digital twin.
@@ -25,9 +25,9 @@ const COLORS = {
   belt: '#3a3f45',
   beltFrame: '#5a6268',
   reject: '#5a5550',
-  /** Flour pneumatic — slightly lighter stainless look. */
+  /** Flour pneumatic â€” slightly lighter stainless look. */
   pneumatic: '#b8c0c8',
-  /** Dust utilities — darker than product ducts. */
+  /** Dust utilities â€” darker than product ducts. */
   dust: '#4a5058',
 } as const;
 
@@ -37,21 +37,34 @@ export const PIPE_COLORS = {
   dust: COLORS.dust,
 } as const;
 
-const matBelt = new THREE.MeshStandardMaterial({
-  color: COLORS.belt,
-  metalness: 0.25,
-  roughness: 0.75,
-});
-const matBeltFrame = new THREE.MeshStandardMaterial({
-  color: COLORS.beltFrame,
-  metalness: 0.65,
-  roughness: 0.4,
-});
-const matReject = new THREE.MeshStandardMaterial({
-  color: COLORS.reject,
-  metalness: 0.45,
-  roughness: 0.55,
-});
+function pinMat<T extends THREE.Material>(mat: T): T {
+  mat.dispose = () => {
+    /* shared */
+  };
+  return mat;
+}
+
+const matBelt = pinMat(
+  new THREE.MeshStandardMaterial({
+    color: COLORS.belt,
+    metalness: 0.1,
+    roughness: 0.8,
+  })
+);
+const matBeltFrame = pinMat(
+  new THREE.MeshStandardMaterial({
+    color: COLORS.beltFrame,
+    metalness: 0.15,
+    roughness: 0.55,
+  })
+);
+const matReject = pinMat(
+  new THREE.MeshStandardMaterial({
+    color: COLORS.reject,
+    metalness: 0.12,
+    roughness: 0.65,
+  })
+);
 
 function ductMat(color: string = COLORS.steel): THREE.MeshStandardMaterial {
   if (color === COLORS.pneumatic) return matPneumatic;
@@ -75,7 +88,7 @@ export function SquareFlange({
 }) {
   return (
     <group position={position}>
-      <mesh castShadow={false} receiveShadow={false} material={matFlange}>
+      <mesh castShadow={false} receiveShadow={false} dispose={null} material={matFlange}>
         <boxGeometry args={[size, thickness, size]} />
       </mesh>
     </group>
@@ -104,7 +117,7 @@ export function RoundDuct({
     dir.clone().normalize()
   );
   return (
-    <mesh position={mid.toArray() as V3} quaternion={quat} castShadow={false} receiveShadow={false} material={ductMat(color)}>
+    <mesh position={mid.toArray() as V3} quaternion={quat} castShadow={false} receiveShadow={false} dispose={null} material={ductMat(color)}>
       <cylinderGeometry args={[radius, radius, len, 8]} />
     </mesh>
   );
@@ -113,7 +126,7 @@ export function RoundDuct({
 /** Soft elbow sphere at a pipe corner so segments read as engineered bends. */
 export function PipeElbow({ position, radius }: { position: V3; radius: number }) {
   return (
-    <mesh position={position} castShadow={false} receiveShadow={false} material={matSteelDark}>
+    <mesh position={position} castShadow={false} receiveShadow={false} dispose={null} material={matSteelDark}>
       <sphereGeometry args={[radius * 1.08, 8, 6]} />
     </mesh>
   );
@@ -132,13 +145,13 @@ export function PipeSupport({
   const clampW = radius * 2.4;
   return (
     <group position={position}>
-      <mesh position={[0, -radius - 0.03, 0]} castShadow={false} material={matFlange}>
+      <mesh position={[0, -radius - 0.03, 0]} castShadow={false} dispose={null} material={matFlange}>
         <boxGeometry args={[clampW, 0.05, clampW * 0.55]} />
       </mesh>
-      <mesh position={[0, -radius - drop / 2, 0]} castShadow={false} material={matSteelDark}>
+      <mesh position={[0, -radius - drop / 2, 0]} castShadow={false} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.03, 0.03, drop, 6]} />
       </mesh>
-      <mesh position={[0, -radius - drop, 0]} castShadow={false} material={matFlange}>
+      <mesh position={[0, -radius - drop, 0]} castShadow={false} dispose={null} material={matFlange}>
         <boxGeometry args={[0.18, 0.06, 0.18]} />
       </mesh>
     </group>
@@ -234,7 +247,7 @@ export function GravityChute({
   return (
     <group>
       <group position={mid.toArray() as V3} quaternion={quat}>
-        <mesh castShadow={false} receiveShadow={false} material={matSteel}>
+        <mesh castShadow={false} receiveShadow={false} dispose={null} material={matSteel}>
           <cylinderGeometry args={[bottomSize / 2, topSize / 2, len, 4]} />
         </mesh>
       </group>
@@ -248,14 +261,14 @@ export function GravityChute({
 export function RejectBin({ position, label }: { position: V3; label?: string }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.35, 0]} castShadow={false} receiveShadow={false} material={matReject}>
+      <mesh position={[0, 0.35, 0]} castShadow={false} receiveShadow={false} dispose={null} material={matReject}>
         <boxGeometry args={[0.7, 0.7, 0.55]} />
       </mesh>
-      <mesh position={[0, 0.72, 0]} castShadow={false} material={matFlange}>
+      <mesh position={[0, 0.72, 0]} castShadow={false} dispose={null} material={matFlange}>
         <boxGeometry args={[0.78, 0.05, 0.62]} />
       </mesh>
       {label && (
-        <mesh position={[0, 0.4, 0.28]} material={matPaintYellow}>
+        <mesh position={[0, 0.4, 0.28]} dispose={null} material={matPaintYellow}>
           <boxGeometry args={[0.5, 0.12, 0.02]} />
         </mesh>
       )}
@@ -289,24 +302,24 @@ export function BeltBridge({
   if (len < 0.02) return null;
   const mid = new THREE.Vector3().addVectors(startV, endV).multiplyScalar(0.5);
   const yaw = Math.atan2(dir.x, dir.z);
-  // Local +Z along travel when rotation Y = yaw — but packing runs +X, so use X-aligned box
+  // Local +Z along travel when rotation Y = yaw â€” but packing runs +X, so use X-aligned box
   const alongX = Math.abs(dir.x) >= Math.abs(dir.z);
   return (
     <group position={mid.toArray() as V3} rotation={alongX ? [0, 0, 0] : [0, yaw, 0]}>
-      <mesh castShadow={false} receiveShadow={false} material={matBelt}>
+      <mesh castShadow={false} receiveShadow={false} dispose={null} material={matBelt}>
         <boxGeometry args={alongX ? [len, thickness, width] : [width, thickness, len]} />
       </mesh>
-      <mesh position={alongX ? [0, -0.06, width / 2 + 0.02] : [width / 2 + 0.02, -0.06, 0]} castShadow={false} material={matBeltFrame}>
+      <mesh position={alongX ? [0, -0.06, width / 2 + 0.02] : [width / 2 + 0.02, -0.06, 0]} castShadow={false} dispose={null} material={matBeltFrame}>
         <boxGeometry args={alongX ? [len, 0.1, 0.04] : [0.04, 0.1, len]} />
       </mesh>
-      <mesh position={alongX ? [0, -0.06, -(width / 2 + 0.02)] : [-(width / 2 + 0.02), -0.06, 0]} castShadow={false} material={matBeltFrame}>
+      <mesh position={alongX ? [0, -0.06, -(width / 2 + 0.02)] : [-(width / 2 + 0.02), -0.06, 0]} castShadow={false} dispose={null} material={matBeltFrame}>
         <boxGeometry args={alongX ? [len, 0.1, 0.04] : [0.04, 0.1, len]} />
       </mesh>
       {/* End flanges / skirt plates */}
-      <mesh position={alongX ? [-len / 2, 0, 0] : [0, 0, -len / 2]} castShadow={false} material={matFlange}>
+      <mesh position={alongX ? [-len / 2, 0, 0] : [0, 0, -len / 2]} castShadow={false} dispose={null} material={matFlange}>
         <boxGeometry args={alongX ? [0.04, thickness + 0.04, width + 0.06] : [width + 0.06, thickness + 0.04, 0.04]} />
       </mesh>
-      <mesh position={alongX ? [len / 2, 0, 0] : [0, 0, len / 2]} castShadow={false} material={matFlange}>
+      <mesh position={alongX ? [len / 2, 0, 0] : [0, 0, len / 2]} castShadow={false} dispose={null} material={matFlange}>
         <boxGeometry args={alongX ? [0.04, thickness + 0.04, width + 0.06] : [width + 0.06, thickness + 0.04, 0.04]} />
       </mesh>
     </group>
@@ -317,7 +330,7 @@ export function BeltBridge({
    PNEUMATIC FLOUR KIT
    ========================================================================== */
 
-/** 90° pneumatic elbow (torus segment look via sphere + short stubs). */
+/** 90Â° pneumatic elbow (torus segment look via sphere + short stubs). */
 export function PneumaticElbow({
   position,
   radius,
@@ -328,7 +341,7 @@ export function PneumaticElbow({
   color?: string;
 }) {
   return (
-    <mesh position={position} castShadow={false} receiveShadow={false} material={ductMat(color)}>
+    <mesh position={position} castShadow={false} receiveShadow={false} dispose={null} material={ductMat(color)}>
       <sphereGeometry args={[radius * 1.15, 10, 8]} />
     </mesh>
   );
@@ -347,10 +360,10 @@ export function PneumaticTee({
   const r = radius;
   return (
     <group position={position}>
-      <mesh castShadow={false} receiveShadow={false} rotation={[0, 0, Math.PI / 2]} material={ductMat(color)}>
+      <mesh castShadow={false} receiveShadow={false} rotation={[0, 0, Math.PI / 2]} dispose={null} material={ductMat(color)}>
         <cylinderGeometry args={[r * 1.05, r * 1.05, r * 3.2, 8]} />
       </mesh>
-      <mesh castShadow={false} receiveShadow={false} material={ductMat(color)}>
+      <mesh castShadow={false} receiveShadow={false} dispose={null} material={ductMat(color)}>
         <cylinderGeometry args={[r * 1.05, r * 1.05, r * 2.2, 8]} />
       </mesh>
     </group>
@@ -383,7 +396,7 @@ export function PipeReducer({
   );
   return (
     <group>
-      <mesh position={mid.toArray() as V3} quaternion={quat} castShadow={false} receiveShadow={false} material={ductMat(color)}>
+      <mesh position={mid.toArray() as V3} quaternion={quat} castShadow={false} receiveShadow={false} dispose={null} material={ductMat(color)}>
         <cylinderGeometry args={[endRadius, startRadius, len, 10]} />
       </mesh>
       <SquareFlange size={startRadius * 2.4} thickness={0.035} position={start} />
@@ -404,13 +417,13 @@ export function PneumaticValve({
 }) {
   return (
     <group position={position}>
-      <mesh castShadow={false} material={matSteelDark}>
+      <mesh castShadow={false} dispose={null} material={matSteelDark}>
         <boxGeometry args={[radius * 2.6, radius * 2.6, radius * 1.4]} />
       </mesh>
-      <mesh position={[0, radius * 1.6, 0]} castShadow={false} material={ductMat(color)}>
+      <mesh position={[0, radius * 1.6, 0]} castShadow={false} dispose={null} material={ductMat(color)}>
         <cylinderGeometry args={[0.04, 0.04, radius * 0.9, 6]} />
       </mesh>
-      <mesh position={[0, radius * 2.15, 0]} castShadow={false} material={matPaintYellow}>
+      <mesh position={[0, radius * 2.15, 0]} castShadow={false} dispose={null} material={matPaintYellow}>
         <boxGeometry args={[0.16, 0.08, 0.1]} />
       </mesh>
     </group>
@@ -418,7 +431,7 @@ export function PneumaticValve({
 }
 
 /**
- * Flour pneumatic run — ElbowedPipe with stainless color + elbow spheres.
+ * Flour pneumatic run â€” ElbowedPipe with stainless color + elbow spheres.
  * Prefer this over raw product ducts for closed flour transfer.
  */
 export function PneumaticPipe({
@@ -440,3 +453,4 @@ export function PneumaticPipe({
     />
   );
 }
+

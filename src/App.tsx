@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Sky, Stats } from "@react-three/drei";
-import { useState, type CSSProperties } from "react";
+import { OrbitControls, Sky, Stats, Environment } from "@react-three/drei";
+import { Suspense, useState, type CSSProperties } from "react";
 
 import MaterialHandlingLine from "./components/MaterialHandlingLine";
 import { BuildingEnvelope } from "./components/factory/BuildingEnvelope";
@@ -59,17 +59,21 @@ function App() {
         }}
       >
         {import.meta.env.DEV && <Stats />}
-        <ambientLight intensity={0.85} />
-        <directionalLight position={[40, 55, 30]} intensity={1.15} />
-        <hemisphereLight args={["#d8e8ff", "#6a6a5a", 0.65]} />
-        <Sky sunPosition={[100, 30, 100]} turbidity={6} rayleigh={1} mieCoefficient={0.005} />
+        <ambientLight intensity={1.05} />
+        <directionalLight position={[40, 55, 30]} intensity={0.95} />
+        <hemisphereLight args={["#e8f0ff", "#8a8a7a", 0.75]} />
+        <Sky sunPosition={[100, 40, 100]} turbidity={4} rayleigh={0.8} mieCoefficient={0.004} />
+        {/* Lightweight IBL so metal materials are not black; warehouse is cheaper than city */}
+        <Suspense fallback={null}>
+          <Environment preset="warehouse" environmentIntensity={0.4} resolution={256} />
+        </Suspense>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
           <circleGeometry args={[groundR, 48]} />
-          <meshStandardMaterial color="#a8a89e" roughness={0.92} metalness={0.02} />
+          <meshStandardMaterial color="#c0c0b6" roughness={0.95} metalness={0} />
         </mesh>
         <gridHelper
-          args={[gridSize, Math.min(40, Math.max(20, Math.round(gridSize / 4))), "#5c5c54", "#79796e"]}
-          position={[0, 0, 0]}
+          args={[gridSize, Math.min(32, Math.max(16, Math.round(gridSize / 5))), "#9a9a90", "#b0b0a6"]}
+          position={[0, 0.02, 0]}
         />
 
         <group position={[-cx, 0, -cz]}>

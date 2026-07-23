@@ -8,7 +8,7 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { selectMachine } from './tags';
-import { useTwinState } from './useTwinState';
+import { useMachineSelectAlarm } from './useTwinState';
 import type { MachineId } from './types';
 
 type V3 = [number, number, number];
@@ -22,10 +22,8 @@ export function SelectableMachine({
   position: V3;
   size?: V3;
 }) {
-  const twin = useTwinState();
-  const selected = twin.selectedId === id;
+  const { selected, alarm } = useMachineSelectAlarm(id);
   const ringRef = useRef<THREE.Mesh>(null!);
-  const alarm = twin.machines[id]?.alarm ?? 'OFF';
 
   useFrame(({ clock }) => {
     if (!ringRef.current) return;

@@ -14,16 +14,16 @@ import {
 type V3 = [number, number, number];
 
 const COLORS = {
-  wall: '#8a9298',
-  wallInner: '#6a7278',
-  trim: '#5a6268',
-  roof: '#4a5258',
+  wall: '#9aa2a8',
+  wallInner: '#7a8288',
+  trim: '#6a7278',
+  roof: '#5a6268',
   skylight: '#a8c8e0',
   window: '#7eb8d4',
-  column: '#3a454c',
-  shutter: '#3a424a',
-  dock: '#5a5550',
-  office: '#5a636c',
+  column: '#7a848c',
+  shutter: '#5a626a',
+  dock: '#6a6560',
+  office: '#6a737c',
   light: '#e8e4d4',
 } as const;
 
@@ -103,21 +103,21 @@ function RollingShutter({
     <group position={position} rotation={rotation}>
       <mesh position={[0, height / 2, 0]} castShadow>
         <boxGeometry args={[width + 0.3, height, 0.12]} />
-        <meshStandardMaterial color={COLORS.shutter} metalness={0.22} roughness={0.55} />
+        <meshStandardMaterial color={COLORS.shutter} metalness={0.08} roughness={0.7} />
       </mesh>
       {Array.from({ length: slats }, (_, i) => {
         const y = 0.15 + (i / (slats - 1)) * (height - 0.3);
         return (
           <mesh key={i} position={[0, y, 0.07]}>
             <boxGeometry args={[width, 0.06, 0.02]} />
-            <meshStandardMaterial color={COLORS.trim} metalness={0.2} roughness={0.55} />
+            <meshStandardMaterial color={COLORS.trim} metalness={0.08} roughness={0.7} />
           </mesh>
         );
       })}
       {/* Drum housing */}
       <mesh position={[0, height + 0.2, 0]} castShadow>
         <boxGeometry args={[width + 0.4, 0.35, 0.35]} />
-        <meshStandardMaterial color={COLORS.trim} metalness={0.25} roughness={0.55} />
+        <meshStandardMaterial color={COLORS.trim} metalness={0.08} roughness={0.7} />
       </mesh>
     </group>
   );
@@ -129,15 +129,15 @@ function RoofTruss({ length, position }: { length: number; position: V3 }) {
     <group position={position}>
       <mesh position={[0, 0, 0]} castShadow>
         <boxGeometry args={[0.12, 0.12, length]} />
-        <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
+        <meshStandardMaterial color={COLORS.column} metalness={0.08} roughness={0.7} />
       </mesh>
       <mesh position={[0, peak / 2, length / 4]} rotation={[0.35, 0, 0]} castShadow>
         <boxGeometry args={[0.1, 0.1, length / 2 + 0.3]} />
-        <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
+        <meshStandardMaterial color={COLORS.column} metalness={0.08} roughness={0.7} />
       </mesh>
       <mesh position={[0, peak / 2, -length / 4]} rotation={[-0.35, 0, 0]} castShadow>
         <boxGeometry args={[0.1, 0.1, length / 2 + 0.3]} />
-        <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
+        <meshStandardMaterial color={COLORS.column} metalness={0.08} roughness={0.7} />
       </mesh>
     </group>
   );
@@ -148,7 +148,7 @@ function HighBayLight({ position }: { position: V3 }) {
     <group position={position}>
       <mesh castShadow>
         <cylinderGeometry args={[0.35, 0.45, 0.25, 12]} />
-        <meshStandardMaterial color={COLORS.trim} metalness={0.25} roughness={0.55} />
+        <meshStandardMaterial color={COLORS.trim} metalness={0.08} roughness={0.7} />
       </mesh>
       <mesh position={[0, -0.08, 0]}>
         <cylinderGeometry args={[0.32, 0.32, 0.06, 12]} />
@@ -170,11 +170,11 @@ function DockBay({ position, width = 3.2, height = 3.6 }: { position: V3; width?
       {/* Dock leveler plate */}
       <mesh position={[0, 0.6, -1.2]} castShadow receiveShadow>
         <boxGeometry args={[width * 0.9, 0.15, 2.0]} />
-        <meshStandardMaterial color={COLORS.dock} metalness={0.2} roughness={0.55} />
+        <meshStandardMaterial color={COLORS.dock} metalness={0.08} roughness={0.7} />
       </mesh>
       <mesh position={[0, 1.15, -2.0]} castShadow>
         <boxGeometry args={[width + 0.4, 2.3, 0.4]} />
-        <meshStandardMaterial color={COLORS.trim} metalness={0.22} roughness={0.55} />
+        <meshStandardMaterial color={COLORS.trim} metalness={0.08} roughness={0.7} />
       </mesh>
     </group>
   );
@@ -212,7 +212,7 @@ export function BuildingEnvelope({
         return [minZ + 0.4, maxZ - 0.4].map((z, j) => (
           <mesh key={`cx-${i}-${j}`} position={[x, wallH / 2, z]} castShadow>
             <boxGeometry args={[0.35, wallH, 0.35]} />
-            <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
+            <meshStandardMaterial color={COLORS.column} metalness={0.08} roughness={0.7} />
           </mesh>
         ));
       })}
@@ -221,7 +221,7 @@ export function BuildingEnvelope({
         return [minX + 0.4, maxX - 0.4].map((x, j) => (
           <mesh key={`cz-${i}-${j}`} position={[x, wallH / 2, z]} castShadow>
             <boxGeometry args={[0.35, wallH, 0.35]} />
-            <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
+            <meshStandardMaterial color={COLORS.column} metalness={0.08} roughness={0.7} />
           </mesh>
         ));
       })}
@@ -369,4 +369,5 @@ export function BuildingEnvelope({
 }
 
 export default BuildingEnvelope;
+
 

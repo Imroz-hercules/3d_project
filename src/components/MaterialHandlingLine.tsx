@@ -35,7 +35,7 @@ import { PalletizerComponent } from './Palletizer';
 import { WarehouseStaging } from './WarehouseStaging';
 import { MaterialFlow, DustMotes } from './MaterialFlow';
 import { SelectableMachine } from '../twin/SelectableMachine';
-import { useTwinState } from '../twin/useTwinState';
+import { useLineActive } from '../twin/useTwinState';
 import { MezzanineBay, Walkway, AccessLadder, SafetyRailing, SteelFrameBay, SteelPlatform } from './factory/PlantStructure';
 import {
   BeltBridge,
@@ -584,8 +584,7 @@ function DestonerPlatform() {
 }
 
 export function MaterialHandlingLine() {
-  const twin = useTwinState();
-  const lineActive = twin.lineActive;
+  const lineActive = useLineActive();
   const [wx, wy, wz] = warehouseStagingPosition();
   const [cx, , cz] = plantCenter();
   // App mounts this line under position={[-cx,0,-cz]} — convert to world for distance checks.

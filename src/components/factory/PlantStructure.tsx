@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 /**
  * Shared low-poly plant structure primitives for the flour mill digital twin.
- * Platforms, railings, ladders, walkways, and mezzanine bays — assembled in
+ * Platforms, railings, ladders, walkways, and mezzanine bays â€” assembled in
  * MaterialHandlingLine rather than duplicated inside each machine.
  */
 
@@ -19,22 +19,33 @@ type V3 = [number, number, number];
 
 const COLORS = {
   steel: '#3a454c',
-  steelLight: '#4a555c',
-  deck: '#5a6268',
+  steelLight: '#5a656c',
+  deck: '#6a7278',
   rail: '#e0a92c',
-  kick: '#4a5058',
+  kick: '#5a6068',
 } as const;
 
-const matSteelLight = new THREE.MeshStandardMaterial({
-  color: COLORS.steelLight,
-  metalness: 0.28,
-  roughness: 0.55,
-});
-const matKick = new THREE.MeshStandardMaterial({
-  color: COLORS.kick,
-  metalness: 0.25,
-  roughness: 0.6,
-});
+function pinLocal<T extends THREE.Material>(mat: T): T {
+  mat.dispose = () => {
+    /* shared */
+  };
+  return mat;
+}
+
+const matSteelLight = pinLocal(
+  new THREE.MeshStandardMaterial({
+    color: COLORS.steelLight,
+    metalness: 0.12,
+    roughness: 0.6,
+  })
+);
+const matKick = pinLocal(
+  new THREE.MeshStandardMaterial({
+    color: COLORS.kick,
+    metalness: 0.1,
+    roughness: 0.65,
+  })
+);
 
 /* ==========================================================================
    STEEL PLATFORM
@@ -55,21 +66,21 @@ export function SteelPlatform({
 }) {
   return (
     <group position={position}>
-      <mesh position={[0, thickness / 2, 0]} receiveShadow castShadow={false} material={matDeck}>
+      <mesh position={[0, thickness / 2, 0]} receiveShadow castShadow={false} dispose={null} material={matDeck}>
         <boxGeometry args={[width, thickness, depth]} />
       </mesh>
       {showBeams && (
         <>
-          <mesh position={[0, -0.06, depth / 2 - 0.06]} castShadow={false} material={matStructureSteel}>
+          <mesh position={[0, -0.06, depth / 2 - 0.06]} castShadow={false} dispose={null} material={matStructureSteel}>
             <boxGeometry args={[width, 0.12, 0.12]} />
           </mesh>
-          <mesh position={[0, -0.06, -(depth / 2 - 0.06)]} castShadow={false} material={matStructureSteel}>
+          <mesh position={[0, -0.06, -(depth / 2 - 0.06)]} castShadow={false} dispose={null} material={matStructureSteel}>
             <boxGeometry args={[width, 0.12, 0.12]} />
           </mesh>
-          <mesh position={[width / 2 - 0.06, -0.06, 0]} castShadow={false} material={matStructureSteel}>
+          <mesh position={[width / 2 - 0.06, -0.06, 0]} castShadow={false} dispose={null} material={matStructureSteel}>
             <boxGeometry args={[0.12, 0.12, depth]} />
           </mesh>
-          <mesh position={[-(width / 2 - 0.06), -0.06, 0]} castShadow={false} material={matStructureSteel}>
+          <mesh position={[-(width / 2 - 0.06), -0.06, 0]} castShadow={false} dispose={null} material={matStructureSteel}>
             <boxGeometry args={[0.12, 0.12, depth]} />
           </mesh>
         </>
@@ -111,15 +122,15 @@ export function SafetyRailing({
         ))}
       </Instances>
       {/* Top rail */}
-      <mesh position={[0, height, 0]} castShadow={false} material={matRailYellow}>
+      <mesh position={[0, height, 0]} castShadow={false} dispose={null} material={matRailYellow}>
         <boxGeometry args={[length, 0.04, 0.04]} />
       </mesh>
       {/* Mid rail */}
-      <mesh position={[0, height * 0.55, 0]} castShadow={false} material={matRailYellow}>
+      <mesh position={[0, height * 0.55, 0]} castShadow={false} dispose={null} material={matRailYellow}>
         <boxGeometry args={[length, 0.03, 0.03]} />
       </mesh>
       {/* Kick plate */}
-      <mesh position={[0, 0.08, 0]} castShadow={false} material={matKick}>
+      <mesh position={[0, 0.08, 0]} castShadow={false} dispose={null} material={matKick}>
         <boxGeometry args={[length, 0.12, 0.03]} />
       </mesh>
     </group>
@@ -148,10 +159,10 @@ export function AccessLadder({
 
   return (
     <group position={position} rotation={rotation}>
-      <mesh position={[-half, height / 2, 0]} castShadow={false} material={matStructureSteel}>
+      <mesh position={[-half, height / 2, 0]} castShadow={false} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[0.05, height, 0.05]} />
       </mesh>
-      <mesh position={[half, height / 2, 0]} castShadow={false} material={matStructureSteel}>
+      <mesh position={[half, height / 2, 0]} castShadow={false} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[0.05, height, 0.05]} />
       </mesh>
       <Instances limit={rungCount} range={rungCount} castShadow={false}>
@@ -169,7 +180,7 @@ export function AccessLadder({
               key={i}
               position={[0, height * t, 0.28]}
               rotation={[Math.PI / 2, 0, 0]}
-              material={matSteelLight}
+              dispose={null} material={matSteelLight}
             >
               <torusGeometry args={[0.38, 0.025, 6, 12]} />
             </mesh>
@@ -205,7 +216,7 @@ function SupportColumns({
   return (
     <>
       {corners.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow={false} receiveShadow={false} material={matStructureSteel}>
+        <mesh key={i} position={pos} castShadow={false} receiveShadow={false} dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.18, height, 0.18]} />
         </mesh>
       ))}
@@ -231,7 +242,7 @@ export function BasePlate({
       position={[position[0], position[1] + thickness / 2, position[2]]}
       receiveShadow
       castShadow={false}
-      material={matSteelLight}
+      dispose={null} material={matSteelLight}
     >
       <boxGeometry args={[size, thickness, size]} />
     </mesh>
@@ -252,7 +263,7 @@ export function SteelColumn({
   return (
     <group position={position}>
       {basePlate && <BasePlate size={size * 2.2} />}
-      <mesh position={[0, height / 2, 0]} castShadow={false} receiveShadow={false} material={matStructureSteel}>
+      <mesh position={[0, height / 2, 0]} castShadow={false} receiveShadow={false} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[size, height, size]} />
       </mesh>
     </group>
@@ -273,14 +284,14 @@ export function SteelBeam({
 }) {
   return (
     <group position={position} rotation={rotation}>
-      <mesh castShadow={false} receiveShadow={false} material={matSteelLight}>
+      <mesh castShadow={false} receiveShadow={false} dispose={null} material={matSteelLight}>
         <boxGeometry args={[length, size, size * 0.7]} />
       </mesh>
     </group>
   );
 }
 
-/** X-brace in the XZ plane of a rectangular bay face (width × height). */
+/** X-brace in the XZ plane of a rectangular bay face (width Ã— height). */
 export function BraceX({
   width,
   height,
@@ -298,10 +309,10 @@ export function BraceX({
   const angle = Math.atan2(height, width);
   return (
     <group position={position} rotation={rotation}>
-      <mesh rotation={[0, 0, angle]} castShadow={false} material={matStructureSteel}>
+      <mesh rotation={[0, 0, angle]} castShadow={false} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[len, thickness, thickness]} />
       </mesh>
-      <mesh rotation={[0, 0, -angle]} castShadow={false} material={matStructureSteel}>
+      <mesh rotation={[0, 0, -angle]} castShadow={false} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[len, thickness, thickness]} />
       </mesh>
     </group>
@@ -362,7 +373,7 @@ export function SteelFrameBay({
 }
 
 /* ==========================================================================
-   WALKWAY — platform + side railings
+   WALKWAY â€” platform + side railings
    ========================================================================== */
 
 export function Walkway({
@@ -390,7 +401,7 @@ export function Walkway({
 }
 
 /* ==========================================================================
-   MEZZANINE BAY — deck + columns + perimeter rails + ladder
+   MEZZANINE BAY â€” deck + columns + perimeter rails + ladder
    ========================================================================== */
 
 export function MezzanineBay({
@@ -467,3 +478,4 @@ export function MezzanineBay({
     </group>
   );
 }
+
