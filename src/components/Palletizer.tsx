@@ -462,23 +462,32 @@ function EmptyPalletMagazine({ position }: { position: V3 }) {
    PALLET OUTFEED CONVEYOR
    ========================================================================== */
 
-function PalletOutfeedConveyor({ position }: { position: V3 }) {
+function PalletOutfeedConveyor({ position, active = true }: { position: V3; active?: boolean }) {
   const length = 2.8;
+  const rollersRef = useRef<THREE.Group>(null!);
+  useFrame((_, delta) => {
+    if (!rollersRef.current || !active) return;
+    rollersRef.current.children.forEach((child) => {
+      child.rotation.x += delta * 2.5;
+    });
+  });
   return (
     <group position={position}>
       <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
         <boxGeometry args={[length, 0.12, 1.35]} />
         <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.4} />
       </mesh>
-      {Array.from({ length: 7 }, (_, i) => {
-        const x = -length / 2 + 0.25 + i * 0.4;
-        return (
-          <mesh key={i} position={[x, 0.22, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.06, 0.06, 1.2, 12]} />
-            <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
-          </mesh>
-        );
-      })}
+      <group ref={rollersRef}>
+        {Array.from({ length: 7 }, (_, i) => {
+          const x = -length / 2 + 0.25 + i * 0.4;
+          return (
+            <mesh key={i} position={[x, 0.22, 0]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.06, 0.06, 1.2, 12]} />
+              <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
+            </mesh>
+          );
+        })}
+      </group>
       {[
         [-length / 2 + 0.15, 0.2, 0.6],
         [length / 2 - 0.15, 0.2, 0.6],
@@ -490,6 +499,43 @@ function PalletOutfeedConveyor({ position }: { position: V3 }) {
           <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.4} />
         </mesh>
       ))}
+    </group>
+  );
+}
+
+/** Wrapped pallet slides along outfeed toward forklift bay when complete. */
+function AnimatedOutfeedPallet({
+  start,
+  end,
+  active,
+  palletComplete,
+}: {
+  start: V3;
+  end: V3;
+  active: boolean;
+  palletComplete: boolean;
+}) {
+  const groupRef = useRef<THREE.Group>(null!);
+  const progress = useRef(0);
+
+  useFrame((_, delta) => {
+    if (!groupRef.current) return;
+    if (palletComplete && active) {
+      progress.current = Math.min(1, progress.current + delta * 0.22);
+    } else if (!palletComplete) {
+      progress.current = Math.max(0, progress.current - delta * 0.5);
+    }
+    const t = progress.current;
+    groupRef.current.position.set(
+      start[0] + (end[0] - start[0]) * t,
+      start[1],
+      start[2] + (end[2] - start[2]) * t
+    );
+  });
+
+  return (
+    <group ref={groupRef} position={start}>
+      <WoodenPallet position={[0, 0, 0]} hasBags bagCount={64} wrapped />
     </group>
   );
 }
@@ -518,39 +564,6 @@ function ForkliftLoadingBay({ position }: { position: V3 }) {
           <meshStandardMaterial color={COLORS.floorMark} roughness={0.8} />
         </mesh>
       ))}
-
-      {/* Simple forklift silhouette waiting */}
-      <group position={[-0.9, 0, 0]}>
-        <mesh position={[0, 0.55, 0]} castShadow>
-          <boxGeometry args={[1.4, 1.0, 0.9]} />
-          <meshStandardMaterial color={COLORS.forkliftYellow} metalness={0.4} roughness={0.5} />
-        </mesh>
-        <mesh position={[0.55, 0.85, 0]} castShadow>
-          <boxGeometry args={[0.5, 0.55, 0.85]} />
-          <meshStandardMaterial color="#2a3038" metalness={0.3} roughness={0.6} />
-        </mesh>
-        {/* Mast */}
-        <mesh position={[-0.55, 1.2, 0]} castShadow>
-          <boxGeometry args={[0.12, 2.0, 0.55]} />
-          <meshStandardMaterial color={COLORS.forkliftGray} metalness={0.7} roughness={0.35} />
-        </mesh>
-        {/* Forks */}
-        <mesh position={[-1.15, 0.35, 0.22]} castShadow>
-          <boxGeometry args={[1.0, 0.06, 0.12]} />
-          <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
-        </mesh>
-        <mesh position={[-1.15, 0.35, -0.22]} castShadow>
-          <boxGeometry args={[1.0, 0.06, 0.12]} />
-          <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
-        </mesh>
-        {/* Wheels */}
-        {[[0.4, 0.22, 0.5], [0.4, 0.22, -0.5], [-0.35, 0.22, 0.5], [-0.35, 0.22, -0.5]].map((pos, i) => (
-          <mesh key={i} position={pos as V3} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.22, 0.22, 0.16, 16]} />
-            <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
-          </mesh>
-        ))}
-      </group>
 
       <Text position={[0.7, 0.05, 1.35]} fontSize={0.1} color={COLORS.floorMark} anchorX="center" anchorY="middle">
         FORKLIFT ZONE
@@ -851,10 +864,15 @@ export function PalletizerComponent({
       />
 
       {/* Pallet outfeed → forklift bay */}
-      <PalletOutfeedConveyor position={[cellSize / 2 + 0.9, 0, 0.9]} />
+      <PalletOutfeedConveyor position={[cellSize / 2 + 0.9, 0, 0.9]} active={active} />
 
-      {/* Completed stretch-wrapped pallet ready for pickup */}
-      <WoodenPallet position={[cellSize / 2 + 1.6, 0.24, 0.9]} hasBags bagCount={64} wrapped />
+      {/* Completed stretch-wrapped pallet slides to bay when cycle completes */}
+      <AnimatedOutfeedPallet
+        start={[cellSize / 2 + 0.4, 0.24, 0.9]}
+        end={[cellSize / 2 + 3.2, 0.24, 0.9]}
+        active={active}
+        palletComplete={palletComplete}
+      />
 
       {/* Forklift loading area outside the cell */}
       <ForkliftLoadingBay position={[cellSize / 2 + 3.6, 0, 0.9]} />

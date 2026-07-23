@@ -284,6 +284,16 @@ export const REF = {
     plcDepth: 0.5,
     plcHeight: 1.8,
   },
+  /** Warehouse staging past palletizer forklift zone (+X). */
+  warehouse: {
+    bayCount: 3,
+    aisleCount: 2,
+    baySpacingX: 1.8,
+    aisleSpacingZ: 2.6,
+    rackHeight: 3.2,
+    /** Gap from palletizer cell centre to warehouse origin (metres). */
+    gapFromPalletizer: 9.5,
+  },
 } as const;
 
 export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
@@ -976,6 +986,29 @@ export function palletizerOutletWorldPos(): [number, number, number] {
   return [px + cellSize / 2 + 5.2, py + height, pz];
 }
 
+/**
+ * Warehouse staging origin — packing centreline, +X past forklift bay.
+ * Racks sit on either side of a forklift aisle along +X.
+ */
+export function warehouseStagingPosition(): [number, number, number] {
+  const [px, , pz] = palletizerPosition();
+  return [px + REF.warehouse.gapFromPalletizer, REF.zones.packing.floorY, pz];
+}
+
+/** Stretch-wrapper stub between palletizer outfeed and forklift bay (world). */
+export function stretchWrapperPosition(): [number, number, number] {
+  const [px, , pz] = palletizerPosition();
+  const { cellSize } = REF.palletizer;
+  return [px + cellSize / 2 + 2.4, 0, pz + 0.9];
+}
+
+/** Truck dock stub at far +X end of warehouse. */
+export function truckDockPosition(): [number, number, number] {
+  const [wx, , wz] = warehouseStagingPosition();
+  const { bayCount, baySpacingX } = REF.warehouse;
+  return [wx + bayCount * baySpacingX + 4.5, 0, wz];
+}
+
 /* ==========================================================================
    DUST COLLECTION LAYOUT HELPERS
    ========================================================================== */
@@ -1174,6 +1207,8 @@ export function plantBounds(): { minX: number; maxX: number; minZ: number; maxZ:
     dustHeaderPointAtX(dustHeaderSpan().endX),
     mccPosition(),
     plcCabinetPosition(),
+    warehouseStagingPosition(),
+    truckDockPosition(),
   ];
   let minX = Infinity;
   let maxX = -Infinity;

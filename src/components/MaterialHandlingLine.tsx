@@ -32,6 +32,7 @@ import { BagSewingMachineComponent } from './BagSewingMachine';
 import { CheckWeigherComponent } from './CheckWeigher';
 import { MetalDetectorComponent } from './MetalDetector';
 import { PalletizerComponent } from './Palletizer';
+import { WarehouseStaging } from './WarehouseStaging';
 import { MaterialFlow, DustMotes } from './MaterialFlow';
 import { MezzanineBay, Walkway, AccessLadder, SafetyRailing, SteelFrameBay, SteelPlatform } from './factory/PlantStructure';
 import {
@@ -1121,6 +1122,8 @@ export function MaterialHandlingLine() {
         showDataPanel={false}
         showClickText={false}
       />
+
+      <WarehouseStaging active={lineActive} />
 
       {/* Packing cell belt bridges + byproduct gravity chutes */}
       <PackingCellBridges />

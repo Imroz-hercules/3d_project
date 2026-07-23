@@ -53,7 +53,6 @@ Grain Silo
 ### Still open (this roadmap)
 
 - Building envelope (walls, roof, docks)
-- Warehouse & logistics (staging, forklift path)
 - True digital-twin SCADA (click → PLC tags, alarms, trends)
 
 ---
@@ -81,9 +80,9 @@ Goal: packing → warehouse handoff feels complete. Machines stay movable.
 - [x] Active stacking pallet
 - [x] Stretch-wrapped finished pallet
 - [x] Forklift loading bay (static)
-- [ ] Pallet conveyor animation (full pallet moves to bay)
-- [ ] Warehouse staging racks (2–4 finished pallet positions)
-- [ ] Optional: stretch-wrapper machine stub between outfeed and bay
+- [x] Pallet conveyor animation (full pallet moves to bay)
+- [x] Warehouse staging racks (2–4 finished pallet positions)
+- [x] Optional: stretch-wrapper machine stub between outfeed and bay
 
 ### Working steps
 
@@ -395,9 +394,9 @@ Keep real-time lights few; bake atmosphere with emissive meshes where possible.
 
 ## Phase 14 — Forklift animation
 
-- [ ] Path: warehouse staging → palletizer bay → truck dock
-- [ ] States: drive → fork down → lift → reverse → dock
-- [ ] Sync with pallet-complete events later (Stage 5)
+- [x] Path: warehouse staging → palletizer bay → truck dock
+- [x] States: drive → fork down → lift → reverse → dock
+- [x] Sync with pallet-complete events later (Stage 5)
 
 Start with a looped demo path; wire to events later.
 
@@ -405,10 +404,10 @@ Start with a looped demo path; wire to events later.
 
 ## Phase 15 — Warehouse
 
-- [ ] Pallet racking (2 aisles × N bays)
-- [ ] Floor lane markings
-- [ ] Staging positions for wrapped pallets
-- [ ] Optional stretch-film / label station stub
+- [x] Pallet racking (2 aisles × N bays)
+- [x] Floor lane markings
+- [x] Staging positions for wrapped pallets
+- [x] Optional stretch-film / label station stub
 
 Place warehouse on +X beyond palletizer forklift zone (same packing centreline).
 
@@ -514,8 +513,8 @@ simulate.ts  →  tag store  →  React UI overlay
 | 11 | Safety props | 4 | Medium | Partial (robot cell) |
 | 12 | Sensors / tags | 5 | High | Not started |
 | 13 | Material animation | 2→5 | Critical | Sprint 3 done (wheat/flour/dust + motors) |
-| 14 | Forklift animation | 4 | Medium | Static forklift |
-| 15 | Warehouse | 4 | Medium | Not started |
+| 14 | Forklift animation | 4 | Medium | Sprint 6 done (looped demo) |
+| 15 | Warehouse | 4 | Medium | Sprint 6 done |
 | 16 | Building envelope | 4 | High (later) | Not started |
 | 17 | SCADA / twin UX | 5 | Critical | Not started |
 
