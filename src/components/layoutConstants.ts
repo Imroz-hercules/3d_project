@@ -136,6 +136,16 @@ export const REF = {
      */
     gapFromMill: 3.2,
   },
+  purifier: {
+    width: 3.5,
+    height: 2.0,
+    depth: 2.2,
+    legHeight: 1.2,
+  },
+  purifierLayout: {
+    /** Gap from plansifter centre to purifier centre X (metres). */
+    gapFromPlansifter: 3.5,
+  },
 } as const;
 
 export function hopperCenterX() {
@@ -497,10 +507,48 @@ export function plansifterFlourOutletWorldPos(): [number, number, number] {
   return [px - spacing * 1.5, py - height / 2 - 0.82, pz];
 }
 
+/** Plansifter semolina outlet flange — feeds the purifier. */
+export function plansifterSemolinaOutletWorldPos(): [number, number, number] {
+  const [px, py, pz] = plansifterPosition();
+  const { width, height } = REF.plansifter;
+  const spacing = width * 0.25;
+  return [px - spacing * 0.5, py - height / 2 - 0.82, pz];
+}
+
 /** Plansifter oversize / return outlet flange — world position. */
 export function plansifterOversizeOutletWorldPos(): [number, number, number] {
   const [px, py, pz] = plansifterPosition();
   const { width, height } = REF.plansifter;
   const spacing = width * 0.25;
   return [px + spacing * 1.5, py - height / 2 - 0.82, pz];
+}
+
+/* ==========================================================================
+   PURIFIER LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Purifier group origin — housing centre.
+ * Legs extend to y = −legHeight; place so feet sit on the ground.
+ */
+export function purifierPosition(): [number, number, number] {
+  const [px, , pz] = plansifterPosition();
+  const { legHeight } = REF.purifier;
+  const gap = REF.purifierLayout.gapFromPlansifter;
+  return [px + gap, legHeight, pz];
+}
+
+/** Purifier top feed inlet flange — world position. */
+export function purifierInletWorldPos(): [number, number, number] {
+  const [ux, uy, uz] = purifierPosition();
+  const { height } = REF.purifier;
+  return [ux, uy + height / 2 + 0.82, uz];
+}
+
+/** Purifier clean semolina outlet flange — world position. */
+export function purifierSemolinaOutletWorldPos(): [number, number, number] {
+  const [ux, uy, uz] = purifierPosition();
+  const { width, height } = REF.purifier;
+  const spacing = width * 0.3;
+  return [ux - spacing, uy - height / 2 - 0.82, uz];
 }

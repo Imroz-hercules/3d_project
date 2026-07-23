@@ -4,7 +4,7 @@
  * MaterialHandlingLine — full flour mill line:
  * Silo → Hopper → Rotary Valve → Screw Conveyor → Bucket Elevator
  * → Vibro Separator → Destoner → Magnetic Separator → Scourer → Dampener
- * → Conditioning Bin → Roller Mill → Plansifter
+ * → Conditioning Bin → Roller Mill → Plansifter → Purifier
  */
 
 import { useMemo, useState } from 'react';
@@ -22,6 +22,7 @@ import { DampenerComponent } from './damping';
 import { ConditioningBinComponent } from './conditoningbin';
 import { RollerMillComponent } from './rollermill';
 import { PlansifterComponent } from './plansifter';
+import { PurifierComponent } from './purifier';
 import { MaterialFlow } from './MaterialFlow';
 import {
   REF,
@@ -57,7 +58,10 @@ import {
   rollerMillOutletWorldPos,
   plansifterPosition,
   plansifterInletWorldPos,
-  plansifterFlourOutletWorldPos,
+  plansifterSemolinaOutletWorldPos,
+  purifierPosition,
+  purifierInletWorldPos,
+  purifierSemolinaOutletWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -88,6 +92,7 @@ const DAMPENER_POS = dampenerPosition();
 const CONDITIONING_BIN_POS = conditioningBinPosition();
 const ROLLER_MILL_POS = rollerMillPosition();
 const PLANSIFTER_POS = plansifterPosition();
+const PURIFIER_POS = purifierPosition();
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -303,6 +308,21 @@ function RollerMillToPlansifterDuct() {
   );
 }
 
+/** Plansifter semolina outlet → purifier feed (horizontal then rise). */
+function PlansifterToPurifierDuct() {
+  const start = plansifterSemolinaOutletWorldPos();
+  const end = purifierInletWorldPos();
+  const mid: V3 = [end[0], start[1], end[2]];
+  return (
+    <>
+      <RoundDuct start={start} end={mid} radius={0.18} />
+      <RoundDuct start={mid} end={end} radius={0.18} />
+      <SquareFlange size={0.42} thickness={0.04} position={start} />
+      <SquareFlange size={0.42} thickness={0.04} position={end} />
+    </>
+  );
+}
+
 /** Steel platform under elevated destoner. */
 function DestonerPlatform() {
   const [dx, dy, dz] = DESTONER_POS;
@@ -353,7 +373,9 @@ export function MaterialHandlingLine() {
   const millInlet = rollerMillInletWorldPos();
   const millOutlet = rollerMillOutletWorldPos();
   const sifterInlet = plansifterInletWorldPos();
-  const flourOutlet = plansifterFlourOutletWorldPos();
+  const semolinaOutlet = plansifterSemolinaOutletWorldPos();
+  const purifierInlet = purifierInletWorldPos();
+  const purifierSemolinaOut = purifierSemolinaOutletWorldPos();
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
   const [dx, dy, dz] = DESTONER_POS;
@@ -363,6 +385,7 @@ export function MaterialHandlingLine() {
   const [binX, , binZ] = CONDITIONING_BIN_POS;
   const [rmx, rmy, rmz] = ROLLER_MILL_POS;
   const [psx, psy, psz] = PLANSIFTER_POS;
+  const [pux, puy, puz] = PURIFIER_POS;
   const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
@@ -419,11 +442,15 @@ export function MaterialHandlingLine() {
       millInlet,
       [rmx, rmy, rmz],
       millOutlet,
-      // → Plansifter (primary flour stream)
+      // → Plansifter → Purifier (semolina stream)
       [sifterInlet[0], millOutlet[1], sifterInlet[2]],
       sifterInlet,
       [psx, psy, psz],
-      flourOutlet,
+      semolinaOutlet,
+      [purifierInlet[0], semolinaOutlet[1], purifierInlet[2]],
+      purifierInlet,
+      [pux, puy, puz],
+      purifierSemolinaOut,
     ];
   }, [
     bridgeY,
@@ -466,10 +493,15 @@ export function MaterialHandlingLine() {
     rmy,
     rmz,
     sifterInlet,
-    flourOutlet,
+    semolinaOutlet,
     psx,
     psy,
     psz,
+    purifierInlet,
+    purifierSemolinaOut,
+    pux,
+    puy,
+    puz,
   ]);
 
   return (
@@ -644,6 +676,19 @@ export function MaterialHandlingLine() {
         height={REF.plansifter.height}
         depth={REF.plansifter.depth}
         frameHeight={REF.plansifter.frameHeight}
+        active={lineActive}
+        showDataPanel={false}
+        showClickText={false}
+      />
+
+      {/* Plansifter semolina → Purifier */}
+      <PlansifterToPurifierDuct />
+
+      <PurifierComponent
+        position={PURIFIER_POS}
+        width={REF.purifier.width}
+        height={REF.purifier.height}
+        depth={REF.purifier.depth}
         active={lineActive}
         showDataPanel={false}
         showClickText={false}
