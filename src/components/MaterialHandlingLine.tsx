@@ -4,7 +4,7 @@
  * MaterialHandlingLine — full flour mill line:
  * Silo → Hopper → Rotary Valve → Screw Conveyor → Bucket Elevator
  * → Vibro Separator → Destoner → Magnetic Separator → Scourer → Dampener
- * → Conditioning Bin
+ * → Conditioning Bin → Roller Mill
  */
 
 import { useMemo, useState } from 'react';
@@ -20,6 +20,7 @@ import { MagneticSeparatorComponent } from './MagneticSeparator';
 import { ScourerComponent } from './scourer';
 import { DampenerComponent } from './damping';
 import { ConditioningBinComponent } from './conditoningbin';
+import { RollerMillComponent } from './rollermill';
 import { MaterialFlow } from './MaterialFlow';
 import {
   REF,
@@ -50,6 +51,9 @@ import {
   conditioningBinPosition,
   conditioningBinInletWorldPos,
   conditioningBinOutletWorldPos,
+  rollerMillPosition,
+  rollerMillInletWorldPos,
+  rollerMillOutletWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -78,6 +82,7 @@ const MAGNETIC_POS = magneticPosition();
 const SCOURER_POS = scourerPosition();
 const DAMPENER_POS = dampenerPosition();
 const CONDITIONING_BIN_POS = conditioningBinPosition();
+const ROLLER_MILL_POS = rollerMillPosition();
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -263,6 +268,21 @@ function DampenerToConditioningBinDuct() {
   );
 }
 
+/** Conditioning bin outlet → roller mill feed hopper (horizontal then rise). */
+function ConditioningBinToRollerMillDuct() {
+  const start = conditioningBinOutletWorldPos();
+  const end = rollerMillInletWorldPos();
+  const mid: V3 = [end[0], start[1], end[2]];
+  return (
+    <>
+      <RoundDuct start={start} end={mid} radius={0.22} />
+      <RoundDuct start={mid} end={end} radius={0.22} />
+      <SquareFlange size={0.5} thickness={0.04} position={start} />
+      <SquareFlange size={0.5} thickness={0.04} position={end} />
+    </>
+  );
+}
+
 /** Steel platform under elevated destoner. */
 function DestonerPlatform() {
   const [dx, dy, dz] = DESTONER_POS;
@@ -310,6 +330,8 @@ export function MaterialHandlingLine() {
   const dampenerOutlet = dampenerOutletWorldPos();
   const binInlet = conditioningBinInletWorldPos();
   const binOutlet = conditioningBinOutletWorldPos();
+  const millInlet = rollerMillInletWorldPos();
+  const millOutlet = rollerMillOutletWorldPos();
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
   const [dx, dy, dz] = DESTONER_POS;
@@ -317,6 +339,7 @@ export function MaterialHandlingLine() {
   const [scx, scy, scz] = SCOURER_POS;
   const [dampX, dampY, dampZ] = DAMPENER_POS;
   const [binX, , binZ] = CONDITIONING_BIN_POS;
+  const [rmx, rmy, rmz] = ROLLER_MILL_POS;
   const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
@@ -368,6 +391,11 @@ export function MaterialHandlingLine() {
       binInlet,
       [binX, binInlet[1] * 0.55, binZ],
       binOutlet,
+      // → Roller mill
+      [millInlet[0], binOutlet[1], millInlet[2]],
+      millInlet,
+      [rmx, rmy, rmz],
+      millOutlet,
     ];
   }, [
     bridgeY,
@@ -404,6 +432,11 @@ export function MaterialHandlingLine() {
     binOutlet,
     binX,
     binZ,
+    millInlet,
+    millOutlet,
+    rmx,
+    rmy,
+    rmz,
   ]);
 
   return (
@@ -555,6 +588,19 @@ export function MaterialHandlingLine() {
           showDataPanel={false}
         />
       </group>
+
+      {/* Conditioning Bin → Roller Mill */}
+      <ConditioningBinToRollerMillDuct />
+
+      <RollerMillComponent
+        position={ROLLER_MILL_POS}
+        width={REF.rollerMill.width}
+        height={REF.rollerMill.height}
+        depth={REF.rollerMill.depth}
+        active={lineActive}
+        showDataPanel={false}
+        showClickText={false}
+      />
 
       <MaterialFlow path={flowPath} active={lineActive} speed={0.07} />
     </group>

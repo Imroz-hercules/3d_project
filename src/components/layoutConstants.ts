@@ -113,6 +113,16 @@ export const REF = {
     /** Gap from dampener outlet to bin feed flange (metres). */
     gapFromDampener: 2.0,
   },
+  rollerMill: {
+    width: 2.5,
+    height: 2.2,
+    depth: 1.8,
+    legHeight: 1.5,
+  },
+  rollerMillLayout: {
+    /** Gap from conditioning bin outlet to mill centre X (metres). */
+    gapFromBin: 2.5,
+  },
 } as const;
 
 export function hopperCenterX() {
@@ -408,4 +418,35 @@ export function conditioningBinOutletWorldPos(): [number, number, number] {
   const { coneHeight } = REF.conditioningBin;
   const lift = conditioningBinBodyLift();
   return [bx, by + lift - coneHeight / 2 - 0.65, bz];
+}
+
+/* ==========================================================================
+   ROLLER MILL LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Roller mill group origin — housing centre.
+ * Legs extend to y = −legHeight; place so feet sit on the ground.
+ */
+export function rollerMillPosition(): [number, number, number] {
+  const [ox, , oz] = conditioningBinOutletWorldPos();
+  const { legHeight } = REF.rollerMill;
+  const gap = REF.rollerMillLayout.gapFromBin;
+  return [ox + gap, legHeight, oz];
+}
+
+/** Roller mill feed hopper top flange — world position. */
+export function rollerMillInletWorldPos(): [number, number, number] {
+  const [mx, my, mz] = rollerMillPosition();
+  const { height } = REF.rollerMill;
+  // Hopper centre at height/2 + 0.4, top flange +0.42
+  return [mx, my + height / 2 + 0.82, mz];
+}
+
+/** Roller mill outlet chute bottom flange — world position. */
+export function rollerMillOutletWorldPos(): [number, number, number] {
+  const [mx, my, mz] = rollerMillPosition();
+  const { height } = REF.rollerMill;
+  // Outlet centre at −height/2 − 0.4, bottom flange −0.42
+  return [mx, my - height / 2 - 0.82, mz];
 }
