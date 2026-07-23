@@ -458,6 +458,7 @@ export interface PurifierProps {
   active?: boolean;
   showDataPanel?: boolean;
   showClickText?: boolean;
+  showAccessLadder?: boolean;
 }
 
 export function PurifierComponent({
@@ -468,6 +469,7 @@ export function PurifierComponent({
   active: controlledActive = true,
   showDataPanel = true,
   showClickText = true,
+  showAccessLadder = true,
 }: PurifierProps) {
   const [internalActive, setInternalActive] = useState(false);
   const [doorsOpen, setDoorsOpen] = useState(false);
@@ -491,7 +493,7 @@ export function PurifierComponent({
 
       <VibrationMotor position={[width / 2 + 0.5, 0, 0]} active={active} />
       <InletAndOutlets width={width} depth={depth} height={height} />
-      <AccessLadder height={height} depth={depth} />
+      {showAccessLadder && <AccessLadder height={height} depth={depth} />}
 
       {/* Animations */}
       {active && (

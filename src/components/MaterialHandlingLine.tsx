@@ -1,10 +1,11 @@
 'use client';
 
 /**
- * MaterialHandlingLine — full flour mill line:
- * Silo → Hopper → Rotary Valve → Screw Conveyor → Bucket Elevator
- * → Vibro Separator → Destoner → Magnetic Separator → Scourer → Dampener
- * → Conditioning Bin → Roller Mill → Plansifter → Purifier → Bran Finisher
+ * MaterialHandlingLine — hybrid flour mill plant:
+ * Raw (Z=0) → Cleaning/Conditioning (+Z aisle) → Milling (−Z decks)
+ * Silo → Hopper → Valve → Screw → Elevator
+ * → Vibro → Destoner → Magnet → Scourer → Dampener → Conditioning Bin
+ * → Roller Mill → Plansifter → Purifier → Bran Finisher
  */
 
 import { useMemo, useState } from 'react';
@@ -25,6 +26,7 @@ import { PlansifterComponent } from './plansifter';
 import { PurifierComponent } from './purifier';
 import { BranFinisherComponent } from './branFinsiher';
 import { MaterialFlow } from './MaterialFlow';
+import { MezzanineBay, Walkway, AccessLadder } from './factory/PlantStructure';
 import {
   REF,
   ductBridgeY,
@@ -283,15 +285,17 @@ function DampenerToConditioningBinDuct() {
   );
 }
 
-/** Conditioning bin outlet → roller mill feed hopper (horizontal then rise). */
+/** Conditioning bin outlet → roller mill (cross-aisle X then Z, then rise). */
 function ConditioningBinToRollerMillDuct() {
   const start = conditioningBinOutletWorldPos();
   const end = rollerMillInletWorldPos();
-  const mid: V3 = [end[0], start[1], end[2]];
+  const midX: V3 = [end[0], start[1], start[2]];
+  const midZ: V3 = [end[0], start[1], end[2]];
   return (
     <>
-      <RoundDuct start={start} end={mid} radius={0.22} />
-      <RoundDuct start={mid} end={end} radius={0.22} />
+      <RoundDuct start={start} end={midX} radius={0.22} />
+      <RoundDuct start={midX} end={midZ} radius={0.22} />
+      <RoundDuct start={midZ} end={end} radius={0.22} />
       <SquareFlange size={0.5} thickness={0.04} position={start} />
       <SquareFlange size={0.5} thickness={0.04} position={end} />
     </>
@@ -328,7 +332,7 @@ function PlansifterToPurifierDuct() {
   );
 }
 
-/** Purifier bran outlet → bran finisher feed (horizontal then rise). */
+/** Purifier bran outlet → bran finisher (drop from upper deck to mill deck). */
 function PurifierToBranFinisherDuct() {
   const start = purifierBranOutletWorldPos();
   const end = branFinisherInletWorldPos();
@@ -340,6 +344,77 @@ function PurifierToBranFinisherDuct() {
       <SquareFlange size={0.4} thickness={0.04} position={start} />
       <SquareFlange size={0.4} thickness={0.04} position={end} />
     </>
+  );
+}
+
+/** Steel platforms, walkways, and mezzanines for hybrid plant zones. */
+function PlantInfrastructure() {
+  const millDeckY = REF.zones.milling.millDeckY;
+  const upperDeckY = REF.zones.milling.upperDeckY;
+  const [rmx, , rmz] = ROLLER_MILL_POS;
+  const [psx, , psz] = PLANSIFTER_POS;
+  const [pux] = PURIFIER_POS;
+  const [elevX, , elevZ] = ELEVATOR_POS;
+  const [sepX, , sepZ] = SEPARATOR_POS;
+
+  const millBayWidth = REF.rollerMill.width + 3.2;
+  const upperBayWidth = Math.max(8, pux - psx + 5);
+  const upperBayCenterX = (psx + pux) / 2;
+
+  return (
+    <group>
+      {/* Transfer walkway: elevator head area toward cleaning aisle */}
+      <Walkway
+        length={Math.abs(sepZ - elevZ) * 0.55}
+        width={1.1}
+        position={[elevX + 1.2, 3.2, (elevZ + sepZ) * 0.35]}
+        rotation={[0, Math.PI / 2, 0]}
+        railBothSides
+      />
+      <AccessLadder height={3.2} caged position={[elevX + 1.2, 0, elevZ + 0.8]} />
+
+      {/* Cleaning aisle short operator walk beside vibro */}
+      <Walkway
+        length={4}
+        width={1.0}
+        position={[sepX, 0.02, sepZ - REF.separator.depth / 2 - 0.7]}
+        railBothSides={false}
+      />
+
+      {/* Milling mezzanine — roller mill deck */}
+      <MezzanineBay
+        width={millBayWidth}
+        depth={5.2}
+        deckY={millDeckY}
+        position={[rmx, 0, rmz]}
+        ladder
+        ladderSide="posZ"
+        openSides={['negZ']}
+      />
+
+      {/* Inter-deck ladder mill → upper gallery */}
+      <AccessLadder
+        height={upperDeckY - millDeckY}
+        caged
+        position={[psx - 2.2, millDeckY, psz + 2.0]}
+      />
+
+      {/* Upper gallery — plansifter + purifier */}
+      <MezzanineBay
+        width={upperBayWidth}
+        depth={5.5}
+        deckY={upperDeckY}
+        position={[upperBayCenterX, 0, psz]}
+        ladder={false}
+        openSides={['posZ', 'negZ']}
+      />
+      <Walkway
+        length={upperBayWidth - 1}
+        width={1.3}
+        position={[upperBayCenterX, upperDeckY, psz + 2.4]}
+        railBothSides
+      />
+    </group>
   );
 }
 
@@ -460,7 +535,8 @@ export function MaterialHandlingLine() {
       binInlet,
       [binX, binInlet[1] * 0.55, binZ],
       binOutlet,
-      // → Roller mill
+      // → Roller mill (cross-aisle: +X, then −Z, then rise to mill deck)
+      [millInlet[0], binOutlet[1], binOutlet[2]],
       [millInlet[0], binOutlet[1], millInlet[2]],
       millInlet,
       [rmx, rmy, rmz],
@@ -538,6 +614,8 @@ export function MaterialHandlingLine() {
 
   return (
     <group onClick={() => setLineActive((v) => !v)}>
+      <PlantInfrastructure />
+
       <SiloModel />
 
       <SlideGate position={[0, SILO_OUTLET_Y, 0]} />
@@ -711,6 +789,7 @@ export function MaterialHandlingLine() {
         active={lineActive}
         showDataPanel={false}
         showClickText={false}
+        showAccessLadder={false}
       />
 
       {/* Plansifter semolina → Purifier */}
@@ -724,6 +803,7 @@ export function MaterialHandlingLine() {
         active={lineActive}
         showDataPanel={false}
         showClickText={false}
+        showAccessLadder={false}
       />
 
       {/* Purifier bran → Bran Finisher */}

@@ -517,6 +517,7 @@ export interface PlansifterProps {
   active?: boolean;
   showDataPanel?: boolean;
   showClickText?: boolean;
+  showAccessLadder?: boolean;
 }
 
 export function PlansifterComponent({
@@ -528,6 +529,7 @@ export function PlansifterComponent({
   active: controlledActive = true,
   showDataPanel = true,
   showClickText = true,
+  showAccessLadder = true,
 }: PlansifterProps) {
   const [internalActive, setInternalActive] = useState(false);
   const [doorsOpen, setDoorsOpen] = useState(false);
@@ -561,7 +563,7 @@ export function PlansifterComponent({
       <OutletChutes width={width} depth={depth} position={[0, -height / 2 - 0.4, 0]} />
 
       {/* 7. Access Ladder & Platform */}
-      <AccessLadder height={frameHeight} depth={depth} />
+      {showAccessLadder && <AccessLadder height={frameHeight} depth={depth} />}
 
       {/* 8. Particle Animations (Multi-stream) */}
       {active && (
