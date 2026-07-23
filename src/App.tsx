@@ -1,16 +1,18 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Sky, Stats, Environment } from "@react-three/drei";
+import { OrbitControls, Sky, Stats, Environment, ContactShadows } from "@react-three/drei";
 import { Suspense, useState, type CSSProperties } from "react";
 
 import MaterialHandlingLine from "./components/MaterialHandlingLine";
 import { BuildingEnvelope } from "./components/factory/BuildingEnvelope";
+import { IndustrialFloor } from "./components/factory/IndustrialFloor";
 import { plantCenter, plantGroundRadius } from "./components/layoutConstants";
+import { PlantMaterialsProvider } from "./materials";
+import { HDRI_FACTORY } from "./materials/paths";
 import { TwinHud } from "./twin/TwinHud";
 
 function App() {
   const [cx, , cz] = plantCenter();
   const groundR = plantGroundRadius();
-  const gridSize = Math.ceil(groundR * 2);
   const [showBuilding, setShowBuilding] = useState(true);
   const [cutaway, setCutaway] = useState(true);
 
@@ -49,8 +51,12 @@ function App() {
 
       <Canvas
         shadows={false}
-        dpr={[1, 1]}
-        gl={{ antialias: false, powerPreference: "high-performance" }}
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: true,
+          powerPreference: "high-performance",
+          toneMappingExposure: 1.05,
+        }}
         camera={{
           position: [groundR * 0.55, groundR * 0.7, groundR * 0.65],
           fov: 48,
@@ -59,27 +65,30 @@ function App() {
         }}
       >
         {import.meta.env.DEV && <Stats />}
-        <ambientLight intensity={1.05} />
-        <directionalLight position={[40, 55, 30]} intensity={0.95} />
-        <hemisphereLight args={["#e8f0ff", "#8a8a7a", 0.75]} />
-        <Sky sunPosition={[100, 40, 100]} turbidity={4} rayleigh={0.8} mieCoefficient={0.004} />
-        {/* Lightweight IBL so metal materials are not black; warehouse is cheaper than city */}
-        <Suspense fallback={null}>
-          <Environment preset="warehouse" environmentIntensity={0.4} resolution={256} />
-        </Suspense>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-          <circleGeometry args={[groundR, 48]} />
-          <meshStandardMaterial color="#c0c0b6" roughness={0.95} metalness={0} />
-        </mesh>
-        <gridHelper
-          args={[gridSize, Math.min(32, Math.max(16, Math.round(gridSize / 5))), "#9a9a90", "#b0b0a6"]}
-          position={[0, 0.02, 0]}
-        />
+        <ambientLight intensity={0.28} />
+        <hemisphereLight args={["#dfe7f2", "#6a6a5e", 0.35]} />
+        <directionalLight position={[30, 50, 20]} intensity={1.85} />
+        <Sky sunPosition={[100, 40, 100]} turbidity={3} rayleigh={0.6} mieCoefficient={0.003} />
 
-        <group position={[-cx, 0, -cz]}>
-          <MaterialHandlingLine />
-          {showBuilding && <BuildingEnvelope cutaway={cutaway} showLights={false} />}
-        </group>
+        <Suspense fallback={null}>
+          <Environment files={HDRI_FACTORY} environmentIntensity={0.55} background={false} />
+          <PlantMaterialsProvider enableTextures>
+            <IndustrialFloor radius={groundR} />
+            <group position={[-cx, 0, -cz]}>
+              <MaterialHandlingLine />
+              {showBuilding && <BuildingEnvelope cutaway={cutaway} showLights={false} />}
+            </group>
+            <ContactShadows
+              position={[0, 0.01, 0]}
+              opacity={0.35}
+              scale={groundR * 2.2}
+              blur={2.5}
+              far={40}
+              resolution={512}
+              frames={1}
+            />
+          </PlantMaterialsProvider>
+        </Suspense>
 
         <OrbitControls
           makeDefault

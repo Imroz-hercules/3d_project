@@ -7,45 +7,21 @@
  */
 
 import type { ReactNode } from 'react';
-import * as THREE from 'three';
 import { Instances, Instance } from '@react-three/drei';
 import {
-  matDeck,
+  matGalvanized,
+  matPaintDark,
+  matPaintedSteel,
   matRailYellow,
   matStructureSteel,
 } from '../../perf/sharedMaterials';
 
 type V3 = [number, number, number];
 
-const COLORS = {
-  steel: '#3a454c',
-  steelLight: '#5a656c',
-  deck: '#6a7278',
-  rail: '#e0a92c',
-  kick: '#5a6068',
-} as const;
-
-function pinLocal<T extends THREE.Material>(mat: T): T {
-  mat.dispose = () => {
-    /* shared */
-  };
-  return mat;
-}
-
-const matSteelLight = pinLocal(
-  new THREE.MeshStandardMaterial({
-    color: COLORS.steelLight,
-    metalness: 0.12,
-    roughness: 0.6,
-  })
-);
-const matKick = pinLocal(
-  new THREE.MeshStandardMaterial({
-    color: COLORS.kick,
-    metalness: 0.1,
-    roughness: 0.65,
-  })
-);
+/** Style guide: decks = galvanized; posts = structure/painted; rails = safety yellow */
+const matDeck = matGalvanized;
+const matSteelLight = matPaintedSteel;
+const matKick = matPaintDark;
 
 /* ==========================================================================
    STEEL PLATFORM
@@ -114,9 +90,8 @@ export function SafetyRailing({
 
   return (
     <group position={position} rotation={rotation}>
-      <Instances limit={postCount} range={postCount} castShadow={false}>
+      <Instances limit={postCount} range={postCount} castShadow={false} material={matSteelLight}>
         <boxGeometry args={[0.05, height, 0.05]} />
-        <meshStandardMaterial color={COLORS.steelLight} metalness={0.28} roughness={0.55} />
         {posts.map((x, i) => (
           <Instance key={i} position={[x, height / 2, 0]} />
         ))}
@@ -165,9 +140,8 @@ export function AccessLadder({
       <mesh position={[half, height / 2, 0]} castShadow={false} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[0.05, height, 0.05]} />
       </mesh>
-      <Instances limit={rungCount} range={rungCount} castShadow={false}>
+      <Instances limit={rungCount} range={rungCount} castShadow={false} material={matSteelLight}>
         <boxGeometry args={[width - 0.05, 0.035, 0.04]} />
-        <meshStandardMaterial color={COLORS.steelLight} metalness={0.28} roughness={0.55} />
         {Array.from({ length: rungCount }, (_, i) => {
           const y = 0.15 + (i / (rungCount - 1)) * (height - 0.3);
           return <Instance key={i} position={[0, y, 0.02]} />;

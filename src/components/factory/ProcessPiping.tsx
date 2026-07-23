@@ -12,8 +12,10 @@ import {
   matFlange,
   matPaintYellow,
   matPneumatic,
+  matRubber,
   matSteel,
   matSteelDark,
+  matStructureSteel,
 } from '../../perf/sharedMaterials';
 
 export type V3 = [number, number, number];
@@ -25,9 +27,9 @@ const COLORS = {
   belt: '#3a3f45',
   beltFrame: '#5a6268',
   reject: '#5a5550',
-  /** Flour pneumatic â€” slightly lighter stainless look. */
+  /** Flour pneumatic — slightly lighter stainless look. */
   pneumatic: '#b8c0c8',
-  /** Dust utilities â€” darker than product ducts. */
+  /** Dust utilities — darker than product ducts. */
   dust: '#4a5058',
 } as const;
 
@@ -37,34 +39,9 @@ export const PIPE_COLORS = {
   dust: COLORS.dust,
 } as const;
 
-function pinMat<T extends THREE.Material>(mat: T): T {
-  mat.dispose = () => {
-    /* shared */
-  };
-  return mat;
-}
-
-const matBelt = pinMat(
-  new THREE.MeshStandardMaterial({
-    color: COLORS.belt,
-    metalness: 0.1,
-    roughness: 0.8,
-  })
-);
-const matBeltFrame = pinMat(
-  new THREE.MeshStandardMaterial({
-    color: COLORS.beltFrame,
-    metalness: 0.15,
-    roughness: 0.55,
-  })
-);
-const matReject = pinMat(
-  new THREE.MeshStandardMaterial({
-    color: COLORS.reject,
-    metalness: 0.12,
-    roughness: 0.65,
-  })
-);
+const matBelt = matRubber;
+const matBeltFrame = matStructureSteel;
+const matReject = matSteelDark;
 
 function ductMat(color: string = COLORS.steel): THREE.MeshStandardMaterial {
   if (color === COLORS.pneumatic) return matPneumatic;

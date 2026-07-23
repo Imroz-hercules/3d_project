@@ -29,24 +29,34 @@ import {
   checkWeigherPosition,
   metalDetectorPosition,
 } from '../layoutConstants';
+import {
+  matGalvanized,
+  matPaintDark,
+  matPaintYellow,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+} from '../../perf/sharedMaterials';
 
 type V3 = [number, number, number];
 
+/** Emissive / button colors stay local; bodies use shared PBR mats. */
 const COLORS = {
-  tray: '#9aa3ab',
-  trayDark: '#7a848c',
-  cabinet: '#2a3036',
-  cabinetDoor: '#3a424a',
-  accent: '#c9a227',
   hmiBezel: '#1a1e22',
   hmiScreen: '#1e3a4a',
   hmiGlow: '#3ecf8e',
   estop: '#c62828',
   start: '#2e7d32',
   stop: '#ef6c00',
-  conduit: '#6a7278',
-  label: '#d4d8dc',
 } as const;
+
+const matTray = matGalvanized;
+const matTrayDark = matSteelDark;
+const matCabinet = matPaintDark;
+const matCabinetDoor = matStructureSteel;
+const matConduit = matSteel;
+const matAccent = matPaintYellow;
+const matPlinth = matStructureSteel;
 
 /* ==========================================================================
    PRIMITIVES
@@ -74,27 +84,23 @@ function CableTraySegment({
   return (
     <group position={mid} rotation={[pitch, yaw, 0]}>
       {/* Tray bottom */}
-      <mesh castShadow receiveShadow>
+      <mesh castShadow={false} receiveShadow={false} dispose={null} material={matTray}>
         <boxGeometry args={[width, depth * 0.35, len]} />
-        <meshStandardMaterial color={COLORS.tray} metalness={0.55} roughness={0.4} />
       </mesh>
       {/* Side rails */}
-      <mesh position={[width / 2 - 0.02, depth * 0.35, 0]} castShadow>
+      <mesh position={[width / 2 - 0.02, depth * 0.35, 0]} castShadow={false} dispose={null} material={matTrayDark}>
         <boxGeometry args={[0.04, depth, len]} />
-        <meshStandardMaterial color={COLORS.trayDark} metalness={0.6} roughness={0.4} />
       </mesh>
-      <mesh position={[-(width / 2 - 0.02), depth * 0.35, 0]} castShadow>
+      <mesh position={[-(width / 2 - 0.02), depth * 0.35, 0]} castShadow={false} dispose={null} material={matTrayDark}>
         <boxGeometry args={[0.04, depth, len]} />
-        <meshStandardMaterial color={COLORS.trayDark} metalness={0.6} roughness={0.4} />
       </mesh>
       {/* Rung hints */}
       {Array.from({ length: Math.max(1, Math.floor(len / 0.8)) }, (_, i) => {
         const t = (i + 1) / (Math.floor(len / 0.8) + 1);
         const z = -len / 2 + t * len;
         return (
-          <mesh key={i} position={[0, depth * 0.15, z]}>
+          <mesh key={i} position={[0, depth * 0.15, z]} dispose={null} material={matTrayDark}>
             <boxGeometry args={[width - 0.06, 0.02, 0.04]} />
-            <meshStandardMaterial color={COLORS.trayDark} metalness={0.5} roughness={0.45} />
           </mesh>
         );
       })}
@@ -116,24 +122,23 @@ function CableDrop({
   return (
     <group>
       <CableTraySegment start={trayPoint} end={elbow} width={0.12} depth={0.08} />
-      <mesh position={[target[0], midY, trayPoint[2]]} castShadow>
+      <mesh position={[target[0], midY, trayPoint[2]]} castShadow={false} dispose={null} material={matConduit}>
         <cylinderGeometry args={[0.035, 0.035, dropH, 8]} />
-        <meshStandardMaterial color={COLORS.conduit} metalness={0.65} roughness={0.4} />
       </mesh>
       {/* Short run from tray Z to machine Z at target height */}
       <mesh
         position={[target[0], target[1], (trayPoint[2] + target[2]) / 2]}
         rotation={[Math.PI / 2, 0, 0]}
-        castShadow
+        castShadow={false}
+        dispose={null}
+        material={matConduit}
       >
         <cylinderGeometry
           args={[0.03, 0.03, Math.max(0.05, Math.abs(trayPoint[2] - target[2])), 8]}
         />
-        <meshStandardMaterial color={COLORS.conduit} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={target} castShadow>
+      <mesh position={target} castShadow={false} dispose={null} material={matCabinet}>
         <boxGeometry args={[0.18, 0.14, 0.12]} />
-        <meshStandardMaterial color={COLORS.cabinet} metalness={0.5} roughness={0.5} />
       </mesh>
     </group>
   );
@@ -153,21 +158,18 @@ function LocalControlPanel({
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
       {/* Pedestal / stand */}
-      <mesh position={[0, -0.55, 0]} castShadow>
+      <mesh position={[0, -0.55, 0]} castShadow={false} dispose={null} material={matTrayDark}>
         <cylinderGeometry args={[0.06, 0.08, 1.1, 10]} />
-        <meshStandardMaterial color={COLORS.trayDark} metalness={0.6} roughness={0.4} />
       </mesh>
-      <mesh position={[0, -1.08, 0]} castShadow receiveShadow>
+      <mesh position={[0, -1.08, 0]} castShadow={false} receiveShadow={false} dispose={null} material={matCabinet}>
         <cylinderGeometry args={[0.22, 0.22, 0.06, 16]} />
-        <meshStandardMaterial color={COLORS.cabinet} metalness={0.5} roughness={0.5} />
       </mesh>
       {/* Enclosure */}
-      <mesh castShadow receiveShadow>
+      <mesh castShadow={false} receiveShadow={false} dispose={null} material={matCabinet}>
         <boxGeometry args={[0.55, 0.7, 0.22]} />
-        <meshStandardMaterial color={COLORS.cabinet} metalness={0.45} roughness={0.5} />
       </mesh>
       {/* HMI screen */}
-      <mesh position={[0, 0.12, 0.12]} castShadow>
+      <mesh position={[0, 0.12, 0.12]} castShadow={false}>
         <boxGeometry args={[0.38, 0.28, 0.03]} />
         <meshStandardMaterial color={COLORS.hmiBezel} metalness={0.4} roughness={0.55} />
       </mesh>
@@ -181,22 +183,21 @@ function LocalControlPanel({
         />
       </mesh>
       {/* Start / Stop / E-stop */}
-      <mesh position={[-0.14, -0.2, 0.12]} castShadow>
+      <mesh position={[-0.14, -0.2, 0.12]} castShadow={false}>
         <cylinderGeometry args={[0.045, 0.045, 0.04, 12]} />
         <meshStandardMaterial color={COLORS.start} metalness={0.3} roughness={0.5} />
       </mesh>
-      <mesh position={[0, -0.2, 0.12]} castShadow>
+      <mesh position={[0, -0.2, 0.12]} castShadow={false}>
         <cylinderGeometry args={[0.045, 0.045, 0.04, 12]} />
         <meshStandardMaterial color={COLORS.stop} metalness={0.3} roughness={0.5} />
       </mesh>
-      <mesh position={[0.14, -0.2, 0.12]} castShadow>
+      <mesh position={[0.14, -0.2, 0.12]} castShadow={false}>
         <cylinderGeometry args={[0.055, 0.055, 0.05, 12]} />
         <meshStandardMaterial color={COLORS.estop} metalness={0.25} roughness={0.45} />
       </mesh>
       {/* Label plate */}
-      <mesh position={[0, 0.32, 0.12]}>
+      <mesh position={[0, 0.32, 0.12]} dispose={null} material={matAccent}>
         <boxGeometry args={[0.42, 0.08, 0.015]} />
-        <meshStandardMaterial color={COLORS.accent} metalness={0.35} roughness={0.55} />
       </mesh>
     </group>
   );
@@ -211,27 +212,23 @@ function MccLineup({ active = true }: { active?: boolean }) {
   return (
     <group position={[mx, 0, mz]}>
       {/* Base plinth */}
-      <mesh position={[0, 0.08, 0]} receiveShadow castShadow>
+      <mesh position={[0, 0.08, 0]} receiveShadow={false} castShadow={false} dispose={null} material={matPlinth}>
         <boxGeometry args={[w + 0.15, 0.16, d + 0.15]} />
-        <meshStandardMaterial color="#3a4046" metalness={0.5} roughness={0.55} />
       </mesh>
       {Array.from({ length: sections }, (_, i) => {
         const x = -w / 2 + sectionW / 2 + i * sectionW;
         return (
           <group key={i} position={[x, h / 2 + 0.16, 0]}>
-            <mesh castShadow receiveShadow>
+            <mesh castShadow={false} receiveShadow={false} dispose={null} material={matCabinet}>
               <boxGeometry args={[sectionW - 0.04, h, d]} />
-              <meshStandardMaterial color={COLORS.cabinet} metalness={0.5} roughness={0.45} />
             </mesh>
             {/* Door seam */}
-            <mesh position={[0, 0, d / 2 + 0.01]}>
+            <mesh position={[0, 0, d / 2 + 0.01]} dispose={null} material={matCabinetDoor}>
               <boxGeometry args={[sectionW - 0.1, h - 0.15, 0.02]} />
-              <meshStandardMaterial color={COLORS.cabinetDoor} metalness={0.45} roughness={0.5} />
             </mesh>
             {/* Handle */}
-            <mesh position={[sectionW * 0.28, 0, d / 2 + 0.04]} castShadow>
+            <mesh position={[sectionW * 0.28, 0, d / 2 + 0.04]} castShadow={false} dispose={null} material={matTray}>
               <boxGeometry args={[0.04, 0.22, 0.04]} />
-              <meshStandardMaterial color={COLORS.tray} metalness={0.7} roughness={0.35} />
             </mesh>
             {/* Status lamp */}
             <mesh position={[0, h * 0.35, d / 2 + 0.03]}>
@@ -244,18 +241,16 @@ function MccLineup({ active = true }: { active?: boolean }) {
             </mesh>
             {/* Vent louvers */}
             {[-0.25, 0, 0.25].map((vy) => (
-              <mesh key={vy} position={[0, vy - 0.15, d / 2 + 0.02]}>
+              <mesh key={vy} position={[0, vy - 0.15, d / 2 + 0.02]} dispose={null} material={matPaintDark}>
                 <boxGeometry args={[sectionW * 0.55, 0.03, 0.01]} />
-                <meshStandardMaterial color="#1a1e22" metalness={0.4} roughness={0.6} />
               </mesh>
             ))}
           </group>
         );
       })}
       {/* Nameplate */}
-      <mesh position={[0, h + 0.28, d / 2 + 0.02]}>
+      <mesh position={[0, h + 0.28, d / 2 + 0.02]} dispose={null} material={matAccent}>
         <boxGeometry args={[1.4, 0.2, 0.03]} />
-        <meshStandardMaterial color={COLORS.accent} metalness={0.35} roughness={0.55} />
       </mesh>
     </group>
   );
@@ -266,13 +261,11 @@ function PlcCabinet({ active = true }: { active?: boolean }) {
   const { plcWidth: w, plcDepth: d, plcHeight: h } = REF.electrical;
   return (
     <group position={[px, 0, pz]}>
-      <mesh position={[0, 0.06, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0.06, 0]} castShadow={false} receiveShadow={false} dispose={null} material={matPlinth}>
         <boxGeometry args={[w + 0.1, 0.12, d + 0.1]} />
-        <meshStandardMaterial color="#3a4046" metalness={0.5} roughness={0.55} />
       </mesh>
-      <mesh position={[0, h / 2 + 0.12, 0]} castShadow receiveShadow>
+      <mesh position={[0, h / 2 + 0.12, 0]} castShadow={false} receiveShadow={false} dispose={null} material={matCabinet}>
         <boxGeometry args={[w, h, d]} />
-        <meshStandardMaterial color={COLORS.cabinet} metalness={0.5} roughness={0.45} />
       </mesh>
       <mesh position={[0, h * 0.55, d / 2 + 0.02]}>
         <boxGeometry args={[w * 0.7, h * 0.35, 0.02]} />
@@ -282,13 +275,12 @@ function PlcCabinet({ active = true }: { active?: boolean }) {
           emissiveIntensity={active ? 0.35 : 0.05}
         />
       </mesh>
-      <mesh position={[0, h * 0.15, d / 2 + 0.03]} castShadow>
+      <mesh position={[0, h * 0.15, d / 2 + 0.03]} castShadow={false}>
         <cylinderGeometry args={[0.06, 0.06, 0.05, 12]} />
         <meshStandardMaterial color={COLORS.estop} metalness={0.25} roughness={0.45} />
       </mesh>
-      <mesh position={[0, h + 0.22, d / 2]}>
+      <mesh position={[0, h + 0.22, d / 2]} dispose={null} material={matAccent}>
         <boxGeometry args={[0.55, 0.12, 0.02]} />
-        <meshStandardMaterial color={COLORS.accent} metalness={0.35} roughness={0.55} />
       </mesh>
     </group>
   );
