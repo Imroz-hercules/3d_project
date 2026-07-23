@@ -123,6 +123,19 @@ export const REF = {
     /** Gap from conditioning bin outlet to mill centre X (metres). */
     gapFromBin: 2.5,
   },
+  plansifter: {
+    width: 2.5,
+    height: 3.5,
+    depth: 2.0,
+    frameHeight: 6.0,
+  },
+  plansifterLayout: {
+    /**
+     * Gap from roller mill outlet to plansifter centre X (metres).
+     * Extra space left for multiple discharge chutes underneath.
+     */
+    gapFromMill: 3.2,
+  },
 } as const;
 
 export function hopperCenterX() {
@@ -449,4 +462,45 @@ export function rollerMillOutletWorldPos(): [number, number, number] {
   const { height } = REF.rollerMill;
   // Outlet centre at −height/2 − 0.4, bottom flange −0.42
   return [mx, my - height / 2 - 0.82, mz];
+}
+
+/* ==========================================================================
+   PLANSIFTER LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Plansifter group origin — cabinet centre.
+ * Demo places ground at y ≈ −frameHeight/2; elevate so frame bases sit on y = 0
+ * and outlet chutes clear the floor with room for discharge ducts.
+ */
+export function plansifterPosition(): [number, number, number] {
+  const [ox, , oz] = rollerMillOutletWorldPos();
+  const { frameHeight } = REF.plansifter;
+  const gap = REF.plansifterLayout.gapFromMill;
+  return [ox + gap, frameHeight / 2, oz];
+}
+
+/** Plansifter top feed inlet flange — world position. */
+export function plansifterInletWorldPos(): [number, number, number] {
+  const [px, py, pz] = plansifterPosition();
+  const { height } = REF.plansifter;
+  // Feed inlet centre at height/2 + 0.8, top flange +0.42
+  return [px, py + height / 2 + 1.22, pz];
+}
+
+/** Plansifter flour outlet flange (primary product stream) — world position. */
+export function plansifterFlourOutletWorldPos(): [number, number, number] {
+  const [px, py, pz] = plansifterPosition();
+  const { width, height } = REF.plansifter;
+  const spacing = width * 0.25;
+  // Flour is leftmost chute; outlet group at −height/2 − 0.4, flange −0.42
+  return [px - spacing * 1.5, py - height / 2 - 0.82, pz];
+}
+
+/** Plansifter oversize / return outlet flange — world position. */
+export function plansifterOversizeOutletWorldPos(): [number, number, number] {
+  const [px, py, pz] = plansifterPosition();
+  const { width, height } = REF.plansifter;
+  const spacing = width * 0.25;
+  return [px + spacing * 1.5, py - height / 2 - 0.82, pz];
 }
