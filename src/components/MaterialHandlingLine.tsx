@@ -9,7 +9,7 @@
  * → Flour Bins A/B/C → Packing Machine → Bag Conveyor → Bag Sewing → Check Weigher → Metal Detector → Palletizer
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import SiloModel, { SILO_OUTLET_Y, SILO_OUTLET_RADIUS } from './Silo';
 import { FeedHopperComponent } from './FeedHopper';
 import { RotaryValveComponent } from './RotaryValve';
@@ -34,6 +34,8 @@ import { MetalDetectorComponent } from './MetalDetector';
 import { PalletizerComponent } from './Palletizer';
 import { WarehouseStaging } from './WarehouseStaging';
 import { MaterialFlow, DustMotes } from './MaterialFlow';
+import { SelectableMachine } from '../twin/SelectableMachine';
+import { useTwinState } from '../twin/useTwinState';
 import { MezzanineBay, Walkway, AccessLadder, SafetyRailing, SteelFrameBay, SteelPlatform } from './factory/PlantStructure';
 import {
   BeltBridge,
@@ -579,7 +581,8 @@ function DestonerPlatform() {
 }
 
 export function MaterialHandlingLine() {
-  const [lineActive, setLineActive] = useState(true);
+  const twin = useTwinState();
+  const lineActive = twin.lineActive;
 
   const bridgeY = ductBridgeY();
   const inletY = hopperTopY() + 0.02;
@@ -804,10 +807,20 @@ export function MaterialHandlingLine() {
   ]);
 
   return (
-    <group onClick={() => setLineActive((v) => !v)}>
+    <group>
       <PlantInfrastructure />
       <DustCollection active={lineActive} />
       <Electrical active={lineActive} />
+
+      <SelectableMachine id="silo" position={[0, 2, 0]} size={[3.2, 6, 3.2]} />
+      <SelectableMachine id="elevator" position={ELEVATOR_POS} size={[2.2, 7, 2.2]} />
+      <SelectableMachine id="vibro" position={SEPARATOR_POS} size={[3.5, 3, 2.2]} />
+      <SelectableMachine id="roller_mill" position={ROLLER_MILL_POS} size={[3.2, 4, 2.8]} />
+      <SelectableMachine id="flour_bin_a" position={FLOUR_BIN_A_POS} size={[3, 8, 3]} />
+      <SelectableMachine id="packing" position={PACKING_POS} size={[3, 4, 2.5]} />
+      <SelectableMachine id="check_weigher" position={CHECK_WEIGHER_POS} size={[2.8, 2.5, 1.6]} />
+      <SelectableMachine id="metal_detector" position={METAL_DETECTOR_POS} size={[3, 2.8, 1.8]} />
+      <SelectableMachine id="palletizer" position={PALLETIZER_POS} size={[6, 4, 6]} />
 
       <SiloModel />
 

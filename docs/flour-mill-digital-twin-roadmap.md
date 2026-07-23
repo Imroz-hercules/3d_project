@@ -52,8 +52,9 @@ Grain Silo
 
 ### Still open (this roadmap)
 
-- True digital-twin SCADA (click → PLC tags, alarms, trends)
 - Safety props polish (extinguishers, floor markings plant-wide)
+- Optional: swap demo simulate layer for MQTT / OPC-UA / REST
+- Optional: drive machine motors directly from twin tags (currently shared `lineActive`)
 
 ---
 
@@ -464,17 +465,24 @@ Attach logical sensors (even if simulated) to each asset.
 2. Create `src/twin/simulate.ts` — updates tags when line is active.
 3. Machine panels read from tags, not only local `useState`.
 
+### Status
+
+- [x] Tag store + machine tag map (`src/twin/tags.ts`)
+- [x] Demo simulate loop (`src/twin/simulate.ts`)
+- [x] Click hotspot + selection ring (`SelectableMachine`)
+- [x] TwinHud overlay (tags, alarms, maintenance, sparkline)
+
 ---
 
 ## Phase 17 — SCADA / digital twin features
 
 ### Interaction
 
-- [ ] Click machine → highlight outline / emissive pulse
-- [ ] Side panel or world `DataPanel` shows live tags
-- [ ] Alarm banner when any `Alarm !== OFF`
-- [ ] Maintenance badge (hours run / next service)
-- [ ] Optional simple trend sparkline (canvas or SVG overlay)
+- [x] Click machine → highlight outline / emissive pulse
+- [x] Side panel or world `DataPanel` shows live tags
+- [x] Alarm banner when any `Alarm !== OFF`
+- [x] Maintenance badge (hours run / next service)
+- [x] Optional simple trend sparkline (canvas or SVG overlay)
 
 ### Architecture sketch
 
@@ -511,12 +519,12 @@ simulate.ts  →  tag store  →  React UI overlay
 | 9 | Electrical | 3 | Medium | Sprint 4 done |
 | 10 | Lighting | 4 | Medium | Partial (high-bay in envelope) |
 | 11 | Safety props | 4 | Medium | Partial (robot cell) |
-| 12 | Sensors / tags | 5 | High | Not started |
+| 12 | Sensors / tags | 5 | High | Sprint 8 done |
 | 13 | Material animation | 2→5 | Critical | Sprint 3 done (wheat/flour/dust + motors) |
 | 14 | Forklift animation | 4 | Medium | Sprint 6 done (looped demo) |
 | 15 | Warehouse | 4 | Medium | Sprint 6 done |
 | 16 | Building envelope | 4 | High (later) | Sprint 7 done |
-| 17 | SCADA / twin UX | 5 | Critical | Not started |
+| 17 | SCADA / twin UX | 5 | Critical | Sprint 8 done |
 
 ---
 

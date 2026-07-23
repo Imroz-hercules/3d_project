@@ -5,6 +5,7 @@ import { Suspense, useState, type CSSProperties } from "react";
 import MaterialHandlingLine from "./components/MaterialHandlingLine";
 import { BuildingEnvelope } from "./components/factory/BuildingEnvelope";
 import { plantCenter, plantGroundRadius } from "./components/layoutConstants";
+import { TwinHud } from "./twin/TwinHud";
 
 function App() {
   const [cx, , cz] = plantCenter();
@@ -43,6 +44,8 @@ function App() {
           </button>
         )}
       </div>
+
+      <TwinHud />
 
       <Canvas
         shadows
