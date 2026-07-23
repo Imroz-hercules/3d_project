@@ -146,6 +146,15 @@ export const REF = {
     /** Gap from plansifter centre to purifier centre X (metres). */
     gapFromPlansifter: 3.5,
   },
+  branFinisher: {
+    length: 2.5,
+    radius: 0.65,
+    legHeight: 1.2,
+  },
+  branFinisherLayout: {
+    /** Gap from purifier centre to bran finisher centre X (metres). */
+    gapFromPurifier: 4.0,
+  },
 } as const;
 
 export function hopperCenterX() {
@@ -551,4 +560,48 @@ export function purifierSemolinaOutletWorldPos(): [number, number, number] {
   const { width, height } = REF.purifier;
   const spacing = width * 0.3;
   return [ux - spacing, uy - height / 2 - 0.82, uz];
+}
+
+/** Purifier bran outlet flange — feeds the bran finisher. */
+export function purifierBranOutletWorldPos(): [number, number, number] {
+  const [ux, uy, uz] = purifierPosition();
+  const { width, height } = REF.purifier;
+  const spacing = width * 0.3;
+  return [ux + spacing, uy - height / 2 - 0.82, uz];
+}
+
+/* ==========================================================================
+   BRAN FINISHER LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Bran finisher group origin — housing centre on X-axis cylinder.
+ * Legs extend to y = −legHeight; place so feet sit on the ground.
+ */
+export function branFinisherPosition(): [number, number, number] {
+  const [px, , pz] = purifierPosition();
+  const { legHeight } = REF.branFinisher;
+  const gap = REF.branFinisherLayout.gapFromPurifier;
+  return [px + gap, legHeight, pz];
+}
+
+/** Bran finisher top feed inlet flange — world position. */
+export function branFinisherInletWorldPos(): [number, number, number] {
+  const [bx, by, bz] = branFinisherPosition();
+  const { radius } = REF.branFinisher;
+  return [bx, by + radius + 0.82, bz];
+}
+
+/** Recovered flour outlet flange (bottom collection) — world position. */
+export function branFinisherFlourOutletWorldPos(): [number, number, number] {
+  const [bx, by, bz] = branFinisherPosition();
+  const { radius } = REF.branFinisher;
+  return [bx, by - radius - 0.82, bz];
+}
+
+/** Final bran outlet flange (end discharge) — world position. */
+export function branFinisherBranOutletWorldPos(): [number, number, number] {
+  const [bx, by, bz] = branFinisherPosition();
+  const { length } = REF.branFinisher;
+  return [bx + length / 2 + 0.85, by - 0.1, bz];
 }

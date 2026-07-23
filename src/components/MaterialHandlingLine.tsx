@@ -4,7 +4,7 @@
  * MaterialHandlingLine — full flour mill line:
  * Silo → Hopper → Rotary Valve → Screw Conveyor → Bucket Elevator
  * → Vibro Separator → Destoner → Magnetic Separator → Scourer → Dampener
- * → Conditioning Bin → Roller Mill → Plansifter → Purifier
+ * → Conditioning Bin → Roller Mill → Plansifter → Purifier → Bran Finisher
  */
 
 import { useMemo, useState } from 'react';
@@ -23,6 +23,7 @@ import { ConditioningBinComponent } from './conditoningbin';
 import { RollerMillComponent } from './rollermill';
 import { PlansifterComponent } from './plansifter';
 import { PurifierComponent } from './purifier';
+import { BranFinisherComponent } from './branFinsiher';
 import { MaterialFlow } from './MaterialFlow';
 import {
   REF,
@@ -61,7 +62,10 @@ import {
   plansifterSemolinaOutletWorldPos,
   purifierPosition,
   purifierInletWorldPos,
-  purifierSemolinaOutletWorldPos,
+  purifierBranOutletWorldPos,
+  branFinisherPosition,
+  branFinisherInletWorldPos,
+  branFinisherBranOutletWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -93,6 +97,7 @@ const CONDITIONING_BIN_POS = conditioningBinPosition();
 const ROLLER_MILL_POS = rollerMillPosition();
 const PLANSIFTER_POS = plansifterPosition();
 const PURIFIER_POS = purifierPosition();
+const BRAN_FINISHER_POS = branFinisherPosition();
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -323,6 +328,21 @@ function PlansifterToPurifierDuct() {
   );
 }
 
+/** Purifier bran outlet → bran finisher feed (horizontal then rise). */
+function PurifierToBranFinisherDuct() {
+  const start = purifierBranOutletWorldPos();
+  const end = branFinisherInletWorldPos();
+  const mid: V3 = [end[0], start[1], end[2]];
+  return (
+    <>
+      <RoundDuct start={start} end={mid} radius={0.16} />
+      <RoundDuct start={mid} end={end} radius={0.16} />
+      <SquareFlange size={0.4} thickness={0.04} position={start} />
+      <SquareFlange size={0.4} thickness={0.04} position={end} />
+    </>
+  );
+}
+
 /** Steel platform under elevated destoner. */
 function DestonerPlatform() {
   const [dx, dy, dz] = DESTONER_POS;
@@ -375,7 +395,9 @@ export function MaterialHandlingLine() {
   const sifterInlet = plansifterInletWorldPos();
   const semolinaOutlet = plansifterSemolinaOutletWorldPos();
   const purifierInlet = purifierInletWorldPos();
-  const purifierSemolinaOut = purifierSemolinaOutletWorldPos();
+  const purifierBranOut = purifierBranOutletWorldPos();
+  const branFinisherInlet = branFinisherInletWorldPos();
+  const branFinisherBranOut = branFinisherBranOutletWorldPos();
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
   const [dx, dy, dz] = DESTONER_POS;
@@ -386,6 +408,7 @@ export function MaterialHandlingLine() {
   const [rmx, rmy, rmz] = ROLLER_MILL_POS;
   const [psx, psy, psz] = PLANSIFTER_POS;
   const [pux, puy, puz] = PURIFIER_POS;
+  const [bfx, bfy, bfz] = BRAN_FINISHER_POS;
   const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
@@ -442,7 +465,7 @@ export function MaterialHandlingLine() {
       millInlet,
       [rmx, rmy, rmz],
       millOutlet,
-      // → Plansifter → Purifier (semolina stream)
+      // → Plansifter → Purifier → Bran Finisher (bran stream)
       [sifterInlet[0], millOutlet[1], sifterInlet[2]],
       sifterInlet,
       [psx, psy, psz],
@@ -450,7 +473,11 @@ export function MaterialHandlingLine() {
       [purifierInlet[0], semolinaOutlet[1], purifierInlet[2]],
       purifierInlet,
       [pux, puy, puz],
-      purifierSemolinaOut,
+      purifierBranOut,
+      [branFinisherInlet[0], purifierBranOut[1], branFinisherInlet[2]],
+      branFinisherInlet,
+      [bfx, bfy, bfz],
+      branFinisherBranOut,
     ];
   }, [
     bridgeY,
@@ -498,10 +525,15 @@ export function MaterialHandlingLine() {
     psy,
     psz,
     purifierInlet,
-    purifierSemolinaOut,
+    purifierBranOut,
     pux,
     puy,
     puz,
+    branFinisherInlet,
+    branFinisherBranOut,
+    bfx,
+    bfy,
+    bfz,
   ]);
 
   return (
@@ -689,6 +721,18 @@ export function MaterialHandlingLine() {
         width={REF.purifier.width}
         height={REF.purifier.height}
         depth={REF.purifier.depth}
+        active={lineActive}
+        showDataPanel={false}
+        showClickText={false}
+      />
+
+      {/* Purifier bran → Bran Finisher */}
+      <PurifierToBranFinisherDuct />
+
+      <BranFinisherComponent
+        position={BRAN_FINISHER_POS}
+        length={REF.branFinisher.length}
+        radius={REF.branFinisher.radius}
         active={lineActive}
         showDataPanel={false}
         showClickText={false}
