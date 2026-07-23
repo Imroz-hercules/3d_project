@@ -6,6 +6,8 @@
  * Branch takeoffs from vibro, destoner, scourer, purifier, packing hood.
  */
 
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import {
   REF,
   bagFilterFanWorldPos,
@@ -76,19 +78,35 @@ function BagFilterHouse() {
 }
 
 /** Centrifugal fan (O) at filter clean-air outlet. */
-function CentrifugalFan() {
+function CentrifugalFan({ active = true }: { active?: boolean }) {
   const [fx, fy, fz] = bagFilterFanWorldPos();
   const r = REF.dustSystem.fanRadius;
+  const impellerRef = useRef<THREE.Group>(null!);
+
+  useFrame((_, delta) => {
+    if (impellerRef.current && active) {
+      impellerRef.current.rotation.x += delta * 8;
+    }
+  });
+
   return (
     <group position={[fx, fy, fz]}>
       <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
         <cylinderGeometry args={[r, r, 0.35, 20]} />
         <meshStandardMaterial color="#3a4048" metalness={0.7} roughness={0.35} />
       </mesh>
-      <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-        <cylinderGeometry args={[r * 0.35, r * 0.35, 0.5, 12]} />
-        <meshStandardMaterial color="#5a6268" metalness={0.65} roughness={0.4} />
-      </mesh>
+      <group ref={impellerRef} rotation={[0, 0, Math.PI / 2]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[r * 0.35, r * 0.35, 0.5, 12]} />
+          <meshStandardMaterial color="#5a6268" metalness={0.65} roughness={0.4} />
+        </mesh>
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <mesh key={i} rotation={[0, (i / 6) * Math.PI * 2, 0]} position={[0, 0, 0]} castShadow>
+            <boxGeometry args={[r * 1.5, 0.04, 0.12]} />
+            <meshStandardMaterial color="#6a7278" metalness={0.6} roughness={0.4} />
+          </mesh>
+        ))}
+      </group>
       {/* Motor */}
       <mesh position={[0.45, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.22, 0.22, 0.4, 12]} />
@@ -212,7 +230,7 @@ function DustHeader() {
   );
 }
 
-export function DustCollection() {
+export function DustCollection({ active = true }: { active?: boolean }) {
   return (
     <group name="dust-collection">
       <DustHeader />
@@ -222,7 +240,7 @@ export function DustCollection() {
       <DustTakeoff machine="purifier" />
       <DustTakeoff machine="packing" />
       <BagFilterHouse />
-      <CentrifugalFan />
+      <CentrifugalFan active={active} />
       <ExhaustStack />
       {/* Short dirty-air nipple into filter — visual continuity */}
       <RoundDuct

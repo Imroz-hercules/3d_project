@@ -32,7 +32,7 @@ import { BagSewingMachineComponent } from './BagSewingMachine';
 import { CheckWeigherComponent } from './CheckWeigher';
 import { MetalDetectorComponent } from './MetalDetector';
 import { PalletizerComponent } from './Palletizer';
-import { MaterialFlow } from './MaterialFlow';
+import { MaterialFlow, DustMotes } from './MaterialFlow';
 import { MezzanineBay, Walkway, AccessLadder } from './factory/PlantStructure';
 import {
   BeltBridge,
@@ -113,6 +113,7 @@ import {
   palletizerPosition,
   palletizerInletWorldPos,
   palletizerOutletWorldPos,
+  dustTakeoffWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -539,9 +540,8 @@ export function MaterialHandlingLine() {
   const [plx, ply, plz] = PALLETIZER_POS;
   const deckY = destonerDeckY();
 
-  const flowPath: V3[] = useMemo(() => {
+  const wheatPath: V3[] = useMemo(() => {
     const h = REF.elevator.height;
-    const headerX = flourBinAInlet[0] - REF.flourBin.radius - 1.4;
     return [
       [0, SILO_OUTLET_Y + 1.5, 0],
       [0, SILO_OUTLET_Y, 0],
@@ -561,70 +561,31 @@ export function MaterialHandlingLine() {
       [elevX, h * 0.45, 0],
       [elevX, h * 0.85, 0],
       headOutlet,
-      // → Vibro separator
       separatorInlet,
       [sepX, REF.separator.frameHeight / 2, sepZ],
       separatorCleanOut,
-      // → Destoner
       destonerInlet,
       [dx, dy + deckY, dz],
       destonerCleanOut,
-      // → Magnetic separator
       [magneticInlet[0], destonerCleanOut[1], magneticInlet[2]],
       magneticInlet,
       [mx, my, mz],
       magneticOutlet,
-      // → Scourer
       [scourerInlet[0], magneticOutlet[1], scourerInlet[2]],
       scourerInlet,
       [scx, scy, scz],
       scourerOutlet,
-      // → Dampener
       [dampenerInlet[0], scourerOutlet[1], dampenerInlet[2]],
       dampenerInlet,
       [dampX, dampY, dampZ],
       dampenerOutlet,
-      // → Conditioning bin
       [binInlet[0], dampenerOutlet[1], binInlet[2]],
       binInlet,
       [binX, binInlet[1] * 0.55, binZ],
       binOutlet,
-      // → Roller mill (cross-aisle)
       [millInlet[0], binOutlet[1], binOutlet[2]],
       [millInlet[0], binOutlet[1], millInlet[2]],
       millInlet,
-      [rmx, rmy, rmz],
-      millOutlet,
-      // → Plansifter → flour stream → Bin A → Packing
-      [sifterInlet[0], millOutlet[1], sifterInlet[2]],
-      sifterInlet,
-      [psx, psy, psz],
-      flourOut,
-      [flourOut[0], flourBinAInlet[1], flourOut[2]],
-      [headerX, flourBinAInlet[1], flourOut[2]],
-      [headerX, flourBinAInlet[1], flourBinAInlet[2]],
-      flourBinAInlet,
-      [fax, fay + REF.flourBin.legHeight + REF.flourBin.height * 0.5, faz],
-      flourBinAOutlet,
-      [packingInlet[0], flourBinAOutlet[1], packingInlet[2]],
-      packingInlet,
-      [pkx, pky + 1.5, pkz],
-      packingConveyorEnd,
-      bagConvInlet,
-      [bcx, bcy + REF.bagConveyor.height, bcz],
-      bagConvOutlet,
-      sewingInlet,
-      [swx, swy + 1.0, swz],
-      sewingOutlet,
-      checkInlet,
-      [cwx, cwy + REF.checkWeigher.height, cwz],
-      checkOutlet,
-      metalInlet,
-      [mdx, mdy + REF.metalDetector.height, mdz],
-      metalOutlet,
-      palletInlet,
-      [plx, ply + 1.2, plz],
-      palletOutlet,
     ];
   }, [
     bridgeY,
@@ -661,6 +622,46 @@ export function MaterialHandlingLine() {
     binOutlet,
     binX,
     binZ,
+    millInlet,
+  ]);
+
+  const flourPath: V3[] = useMemo(() => {
+    const headerX = flourBinAInlet[0] - REF.flourBin.radius - 1.4;
+    return [
+      millInlet,
+      [rmx, rmy, rmz],
+      millOutlet,
+      [sifterInlet[0], millOutlet[1], sifterInlet[2]],
+      sifterInlet,
+      [psx, psy, psz],
+      flourOut,
+      [flourOut[0], flourBinAInlet[1], flourOut[2]],
+      [headerX, flourBinAInlet[1], flourOut[2]],
+      [headerX, flourBinAInlet[1], flourBinAInlet[2]],
+      flourBinAInlet,
+      [fax, fay + REF.flourBin.legHeight + REF.flourBin.height * 0.5, faz],
+      flourBinAOutlet,
+      [packingInlet[0], flourBinAOutlet[1], packingInlet[2]],
+      packingInlet,
+      [pkx, pky + 1.5, pkz],
+      packingConveyorEnd,
+      bagConvInlet,
+      [bcx, bcy + REF.bagConveyor.height, bcz],
+      bagConvOutlet,
+      sewingInlet,
+      [swx, swy + 1.0, swz],
+      sewingOutlet,
+      checkInlet,
+      [cwx, cwy + REF.checkWeigher.height, cwz],
+      checkOutlet,
+      metalInlet,
+      [mdx, mdy + REF.metalDetector.height, mdz],
+      metalOutlet,
+      palletInlet,
+      [plx, ply + 1.2, plz],
+      palletOutlet,
+    ];
+  }, [
     millInlet,
     millOutlet,
     rmx,
@@ -711,7 +712,7 @@ export function MaterialHandlingLine() {
   return (
     <group onClick={() => setLineActive((v) => !v)}>
       <PlantInfrastructure />
-      <DustCollection />
+      <DustCollection active={lineActive} />
 
       <SiloModel />
 
@@ -1031,7 +1032,11 @@ export function MaterialHandlingLine() {
       <PackingCellBridges />
       <ByproductChutes />
 
-      <MaterialFlow path={flowPath} active={lineActive} speed={0.07} />
+      <MaterialFlow path={wheatPath} kind="wheat" active={lineActive} speed={0.065} />
+      <MaterialFlow path={flourPath} kind="flour" active={lineActive} speed={0.075} />
+      <DustMotes position={dustTakeoffWorldPos('vibro')} active={lineActive} />
+      <DustMotes position={dustTakeoffWorldPos('destoner')} active={lineActive} />
+      <DustMotes position={dustTakeoffWorldPos('purifier')} active={lineActive} />
     </group>
   );
 }

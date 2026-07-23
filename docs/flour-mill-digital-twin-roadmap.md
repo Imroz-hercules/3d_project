@@ -243,11 +243,11 @@ Do a first pass in Stage 2; refine in Stage 5.
 
 ### Build list
 
-- [ ] Wheat flow (brown particles) on raw/cleaning path
-- [ ] Flour flow (white/cream) on milling → bins → packing
-- [ ] Dust motes near dust takeoffs (subtle)
-- [ ] Conveyor belt UV scroll / roller spin where missing
-- [ ] Gate / valve rotation synced to `lineActive`
+- [x] Wheat flow (brown particles) on raw/cleaning path
+- [x] Flour flow (white/cream) on milling → bins → packing
+- [x] Dust motes near dust takeoffs (subtle)
+- [x] Conveyor belt UV scroll / roller spin where missing
+- [x] Gate / valve rotation synced to `lineActive`
 
 ### Working steps
 
@@ -514,7 +514,7 @@ simulate.ts  →  tag store  →  React UI overlay
 | 10 | Lighting | 4 | Medium | Not started |
 | 11 | Safety props | 4 | Medium | Partial (robot cell) |
 | 12 | Sensors / tags | 5 | High | Not started |
-| 13 | Material animation | 2→5 | Critical | Basic flow only |
+| 13 | Material animation | 2→5 | Critical | Sprint 3 done (wheat/flour/dust + motors) |
 | 14 | Forklift animation | 4 | Medium | Static forklift |
 | 15 | Warehouse | 4 | Medium | Not started |
 | 16 | Building envelope | 4 | High (later) | Not started |
