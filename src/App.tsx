@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Sky, Environment, Stats } from "@react-three/drei";
-import { Suspense, useState, type CSSProperties } from "react";
+import { OrbitControls, Sky, Stats } from "@react-three/drei";
+import { useState, type CSSProperties } from "react";
 
 import MaterialHandlingLine from "./components/MaterialHandlingLine";
 import { BuildingEnvelope } from "./components/factory/BuildingEnvelope";
@@ -67,16 +67,12 @@ function App() {
         />
         <hemisphereLight args={["#cfe8ff", "#4a4a3f", 0.45]} />
         <Sky sunPosition={[100, 30, 100]} turbidity={6} rayleigh={1} mieCoefficient={0.005} />
-        <Suspense fallback={null}>
-          <Environment preset="city" />
-        </Suspense>
-
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
           <circleGeometry args={[groundR, 64]} />
           <meshStandardMaterial color="#9a9a92" roughness={0.95} metalness={0.05} />
         </mesh>
         <gridHelper
-          args={[gridSize, Math.max(40, Math.round(gridSize / 2)), "#5c5c54", "#79796e"]}
+          args={[gridSize, Math.min(40, Math.max(20, Math.round(gridSize / 4))), "#5c5c54", "#79796e"]}
           position={[0, 0, 0]}
         />
 
@@ -88,7 +84,10 @@ function App() {
         <OrbitControls
           makeDefault
           enableDamping
-          dampingFactor={0.08}
+          dampingFactor={0.05}
+          rotateSpeed={0.8}
+          zoomSpeed={1}
+          panSpeed={1}
           maxPolarAngle={Math.PI / 2.05}
           target={[0, 2, 0]}
           minDistance={12}
