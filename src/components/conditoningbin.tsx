@@ -366,12 +366,11 @@ export function ConditioningBinComponent({
 
   // Auto-demo animation for fill level
   useFrame(({ clock }) => {
-    if (autoDemo && controlledFill === undefined) {
-      // Slowly oscillate fill level between 40% and 85%
-      const t = clock.elapsedTime * 0.1;
-      const newFill = 62.5 + Math.sin(t) * 22.5;
-      setInternalFill(newFill);
-    }
+    if (!autoDemo || controlledFill !== undefined) return;
+    // Slowly oscillate fill level between 40% and 85%
+    const t = clock.elapsedTime * 0.1;
+    const newFill = 62.5 + Math.sin(t) * 22.5;
+    setInternalFill(newFill);
   });
 
   return (

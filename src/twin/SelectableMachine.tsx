@@ -29,16 +29,18 @@ export function SelectableMachine({
 
   useFrame(({ clock }) => {
     if (!ringRef.current) return;
+    if (!selected && alarm === 'OFF') {
+      ringRef.current.visible = false;
+      return;
+    }
     const pulse = 0.55 + Math.sin(clock.elapsedTime * 4) * 0.35;
     const mat = ringRef.current.material as THREE.MeshStandardMaterial;
     if (selected) {
       mat.emissiveIntensity = pulse;
       ringRef.current.visible = true;
-    } else if (alarm !== 'OFF') {
+    } else {
       mat.emissiveIntensity = 0.35 + Math.sin(clock.elapsedTime * 6) * 0.25;
       ringRef.current.visible = true;
-    } else {
-      ringRef.current.visible = false;
     }
   });
 

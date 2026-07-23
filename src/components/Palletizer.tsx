@@ -69,12 +69,14 @@ function RobotArm({
   phase, 
   phaseProgress, 
   gripperOpen, 
-  bagPosition 
+  bagPosition,
+  active = true,
 }: { 
   phase: string; 
   phaseProgress: number; 
   gripperOpen: boolean; 
   bagPosition: V3 | null;
+  active?: boolean;
 }) {
   const baseRef = useRef<THREE.Group>(null!);
   const shoulderRef = useRef<THREE.Group>(null!);
@@ -114,6 +116,7 @@ function RobotArm({
   };
 
   useFrame((_, delta) => {
+    if (!active) return;
     const target = getTargetAngles();
     const speed = 2.5;
     
@@ -656,14 +659,14 @@ function TowerLight({ position, status }: { position: V3; status: 'idle' | 'runn
   const redRef = useRef<THREE.Mesh>(null!);
 
   useFrame(({ clock }) => {
+    if (status === 'idle') return;
     const pulse = Math.sin(clock.elapsedTime * 8) > 0;
     if (greenRef.current) {
       (greenRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 
         (status === 'running' && pulse) ? 1.5 : 0.1;
     }
     if (yellowRef.current) {
-      (yellowRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 
-        (status === 'idle' && pulse) ? 1.5 : 0.1;
+      (yellowRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.1;
     }
     if (redRef.current) {
       (redRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 
@@ -846,11 +849,12 @@ export function PalletizerComponent({
 
       <PickConveyor position={[-1.5, 0, 0]} height={height} />
 
-      <RobotArm 
+      <RobotArm
         phase={phase} 
         phaseProgress={phaseProgress} 
         gripperOpen={gripperOpen}
         bagPosition={bagOnGripper}
+        active={active}
       />
 
       {/* Empty pallet magazine (waiting) */}

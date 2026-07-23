@@ -41,3 +41,22 @@ Manual feel: PENDING — orbit/pan/zoom ~20s and note if snappier vs prior `0.08
 | Pose | FPS | Draw calls | Triangles | Notes |
 |------|-----|------------|-----------|-------|
 | Overview | PENDING | PENDING | PENDING | After Task 4 scene cuts |
+
+## After Sprint 3–7 code opts (Tasks 5–11, 13)
+
+Applied (fill numbers after `npm run dev`):
+- useFrame early-returns (SelectableMachine, Palletizer robot/tower, conditioning bin)
+- Shared materials + lower pipe segments (`src/perf/sharedMaterials.ts`, ProcessPiping, PlantStructure)
+- Instanced railing posts + ladder rungs
+- Particle counts reduced; extra DustMotes removed
+- Warehouse distance cull (`useCameraNear`)
+- Stats gated to `import.meta.env.DEV`
+- Silo glass: MeshPhysical → MeshStandard
+- Shadows remain OFF until selective Task 9 (optional follow-up)
+
+| Pose | FPS | Draw calls | Triangles | Notes |
+|------|-----|------------|-----------|-------|
+| Overview | PENDING | PENDING | PENDING | Post multi-sprint |
+| Milling close | PENDING | PENDING | PENDING | |
+| Packing close | PENDING | PENDING | PENDING | Warehouse may cull |
+| Orbit drag (min) | PENDING | PENDING | PENDING | |

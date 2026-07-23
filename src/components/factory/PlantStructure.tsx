@@ -7,6 +7,13 @@
  */
 
 import type { ReactNode } from 'react';
+import * as THREE from 'three';
+import { Instances, Instance } from '@react-three/drei';
+import {
+  matDeck,
+  matRailYellow,
+  matStructureSteel,
+} from '../../perf/sharedMaterials';
 
 type V3 = [number, number, number];
 
@@ -17,6 +24,17 @@ const COLORS = {
   rail: '#e0a92c',
   kick: '#4a5058',
 } as const;
+
+const matSteelLight = new THREE.MeshStandardMaterial({
+  color: COLORS.steelLight,
+  metalness: 0.8,
+  roughness: 0.3,
+});
+const matKick = new THREE.MeshStandardMaterial({
+  color: COLORS.kick,
+  metalness: 0.7,
+  roughness: 0.4,
+});
 
 /* ==========================================================================
    STEEL PLATFORM
@@ -37,27 +55,22 @@ export function SteelPlatform({
 }) {
   return (
     <group position={position}>
-      <mesh position={[0, thickness / 2, 0]} receiveShadow castShadow>
+      <mesh position={[0, thickness / 2, 0]} receiveShadow castShadow={false} material={matDeck}>
         <boxGeometry args={[width, thickness, depth]} />
-        <meshStandardMaterial color={COLORS.deck} metalness={0.7} roughness={0.4} />
       </mesh>
       {showBeams && (
         <>
-          <mesh position={[0, -0.06, depth / 2 - 0.06]} castShadow>
+          <mesh position={[0, -0.06, depth / 2 - 0.06]} castShadow={false} material={matStructureSteel}>
             <boxGeometry args={[width, 0.12, 0.12]} />
-            <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
           </mesh>
-          <mesh position={[0, -0.06, -(depth / 2 - 0.06)]} castShadow>
+          <mesh position={[0, -0.06, -(depth / 2 - 0.06)]} castShadow={false} material={matStructureSteel}>
             <boxGeometry args={[width, 0.12, 0.12]} />
-            <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
           </mesh>
-          <mesh position={[width / 2 - 0.06, -0.06, 0]} castShadow>
+          <mesh position={[width / 2 - 0.06, -0.06, 0]} castShadow={false} material={matStructureSteel}>
             <boxGeometry args={[0.12, 0.12, depth]} />
-            <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
           </mesh>
-          <mesh position={[-(width / 2 - 0.06), -0.06, 0]} castShadow>
+          <mesh position={[-(width / 2 - 0.06), -0.06, 0]} castShadow={false} material={matStructureSteel}>
             <boxGeometry args={[0.12, 0.12, depth]} />
-            <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
           </mesh>
         </>
       )}
@@ -90,26 +103,24 @@ export function SafetyRailing({
 
   return (
     <group position={position} rotation={rotation}>
-      {posts.map((x, i) => (
-        <mesh key={i} position={[x, height / 2, 0]} castShadow>
-          <boxGeometry args={[0.05, height, 0.05]} />
-          <meshStandardMaterial color={COLORS.steelLight} metalness={0.8} roughness={0.3} />
-        </mesh>
-      ))}
+      <Instances limit={postCount} range={postCount} castShadow={false}>
+        <boxGeometry args={[0.05, height, 0.05]} />
+        <primitive object={matSteelLight} attach="material" />
+        {posts.map((x, i) => (
+          <Instance key={i} position={[x, height / 2, 0]} />
+        ))}
+      </Instances>
       {/* Top rail */}
-      <mesh position={[0, height, 0]} castShadow>
+      <mesh position={[0, height, 0]} castShadow={false} material={matRailYellow}>
         <boxGeometry args={[length, 0.04, 0.04]} />
-        <meshStandardMaterial color={COLORS.rail} metalness={0.65} roughness={0.35} />
       </mesh>
       {/* Mid rail */}
-      <mesh position={[0, height * 0.55, 0]} castShadow>
+      <mesh position={[0, height * 0.55, 0]} castShadow={false} material={matRailYellow}>
         <boxGeometry args={[length, 0.03, 0.03]} />
-        <meshStandardMaterial color={COLORS.rail} metalness={0.65} roughness={0.35} />
       </mesh>
       {/* Kick plate */}
-      <mesh position={[0, 0.08, 0]} castShadow>
+      <mesh position={[0, 0.08, 0]} castShadow={false} material={matKick}>
         <boxGeometry args={[length, 0.12, 0.03]} />
-        <meshStandardMaterial color={COLORS.kick} metalness={0.7} roughness={0.4} />
       </mesh>
     </group>
   );
@@ -137,29 +148,30 @@ export function AccessLadder({
 
   return (
     <group position={position} rotation={rotation}>
-      <mesh position={[-half, height / 2, 0]} castShadow>
+      <mesh position={[-half, height / 2, 0]} castShadow={false} material={matStructureSteel}>
         <boxGeometry args={[0.05, height, 0.05]} />
-        <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
       </mesh>
-      <mesh position={[half, height / 2, 0]} castShadow>
+      <mesh position={[half, height / 2, 0]} castShadow={false} material={matStructureSteel}>
         <boxGeometry args={[0.05, height, 0.05]} />
-        <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
       </mesh>
-      {Array.from({ length: rungCount }, (_, i) => {
-        const y = 0.15 + (i / (rungCount - 1)) * (height - 0.3);
-        return (
-          <mesh key={i} position={[0, y, 0.02]} castShadow>
-            <boxGeometry args={[width - 0.05, 0.035, 0.04]} />
-            <meshStandardMaterial color={COLORS.steelLight} metalness={0.8} roughness={0.3} />
-          </mesh>
-        );
-      })}
+      <Instances limit={rungCount} range={rungCount} castShadow={false}>
+        <boxGeometry args={[width - 0.05, 0.035, 0.04]} />
+        <primitive object={matSteelLight} attach="material" />
+        {Array.from({ length: rungCount }, (_, i) => {
+          const y = 0.15 + (i / (rungCount - 1)) * (height - 0.3);
+          return <Instance key={i} position={[0, y, 0.02]} />;
+        })}
+      </Instances>
       {caged && height > 2.5 && (
         <>
           {[0.25, 0.5, 0.75].map((t, i) => (
-            <mesh key={i} position={[0, height * t, 0.28]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[0.38, 0.025, 6, 16]} />
-              <meshStandardMaterial color={COLORS.steelLight} metalness={0.75} roughness={0.35} />
+            <mesh
+              key={i}
+              position={[0, height * t, 0.28]}
+              rotation={[Math.PI / 2, 0, 0]}
+              material={matSteelLight}
+            >
+              <torusGeometry args={[0.38, 0.025, 6, 12]} />
             </mesh>
           ))}
         </>
@@ -193,9 +205,8 @@ function SupportColumns({
   return (
     <>
       {corners.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow receiveShadow>
+        <mesh key={i} position={pos} castShadow={false} receiveShadow={false} material={matStructureSteel}>
           <boxGeometry args={[0.18, height, 0.18]} />
-          <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
         </mesh>
       ))}
     </>
@@ -216,9 +227,13 @@ export function BasePlate({
   position?: V3;
 }) {
   return (
-    <mesh position={[position[0], position[1] + thickness / 2, position[2]]} receiveShadow castShadow>
+    <mesh
+      position={[position[0], position[1] + thickness / 2, position[2]]}
+      receiveShadow
+      castShadow={false}
+      material={matSteelLight}
+    >
       <boxGeometry args={[size, thickness, size]} />
-      <meshStandardMaterial color={COLORS.steelLight} metalness={0.7} roughness={0.4} />
     </mesh>
   );
 }
@@ -237,9 +252,8 @@ export function SteelColumn({
   return (
     <group position={position}>
       {basePlate && <BasePlate size={size * 2.2} />}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+      <mesh position={[0, height / 2, 0]} castShadow={false} receiveShadow={false} material={matStructureSteel}>
         <boxGeometry args={[size, height, size]} />
-        <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -259,9 +273,8 @@ export function SteelBeam({
 }) {
   return (
     <group position={position} rotation={rotation}>
-      <mesh castShadow receiveShadow>
+      <mesh castShadow={false} receiveShadow={false} material={matSteelLight}>
         <boxGeometry args={[length, size, size * 0.7]} />
-        <meshStandardMaterial color={COLORS.steelLight} metalness={0.75} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -285,13 +298,11 @@ export function BraceX({
   const angle = Math.atan2(height, width);
   return (
     <group position={position} rotation={rotation}>
-      <mesh rotation={[0, 0, angle]} castShadow>
+      <mesh rotation={[0, 0, angle]} castShadow={false} material={matStructureSteel}>
         <boxGeometry args={[len, thickness, thickness]} />
-        <meshStandardMaterial color={COLORS.steel} metalness={0.7} roughness={0.4} />
       </mesh>
-      <mesh rotation={[0, 0, -angle]} castShadow>
+      <mesh rotation={[0, 0, -angle]} castShadow={false} material={matStructureSteel}>
         <boxGeometry args={[len, thickness, thickness]} />
-        <meshStandardMaterial color={COLORS.steel} metalness={0.7} roughness={0.4} />
       </mesh>
     </group>
   );

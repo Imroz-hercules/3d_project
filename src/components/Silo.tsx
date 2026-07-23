@@ -428,13 +428,12 @@ function FillGauge({ fillLevel }: { fillLevel: number }) {
     <group position={[x, 0, 0]}>
       <mesh position={[0, baseY + tubeHeight / 2, 0]}>
         <cylinderGeometry args={[tubeRadius, tubeRadius, tubeHeight, 20, 1, true]} />
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           color={COLORS.glass}
           transparent
-          opacity={0.28}
-          roughness={0.1}
+          opacity={0.35}
+          roughness={0.15}
           metalness={0}
-          transmission={0.6}
           side={THREE.DoubleSide}
         />
       </mesh>

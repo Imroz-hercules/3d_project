@@ -126,7 +126,10 @@ import {
   screwInletX,
   valveCenterY,
   valveOutletY,
+  warehouseStagingPosition,
+  plantCenter,
 } from './layoutConstants';
+import { useCameraNear } from '../perf/useCameraNear';
 
 const COLORS = {
   steel: '#8a9199',
@@ -583,6 +586,10 @@ function DestonerPlatform() {
 export function MaterialHandlingLine() {
   const twin = useTwinState();
   const lineActive = twin.lineActive;
+  const [wx, wy, wz] = warehouseStagingPosition();
+  const [cx, , cz] = plantCenter();
+  // App mounts this line under position={[-cx,0,-cz]} — convert to world for distance checks.
+  const warehouseNear = useCameraNear([wx - cx, wy, wz - cz], 55);
 
   const bridgeY = ductBridgeY();
   const inletY = hopperTopY() + 0.02;
@@ -1136,7 +1143,7 @@ export function MaterialHandlingLine() {
         showClickText={false}
       />
 
-      <WarehouseStaging active={lineActive} />
+      {warehouseNear && <WarehouseStaging active={lineActive} />}
 
       {/* Packing cell belt bridges + byproduct gravity chutes */}
       <PackingCellBridges />
@@ -1145,8 +1152,6 @@ export function MaterialHandlingLine() {
       <MaterialFlow path={wheatPath} kind="wheat" active={lineActive} speed={0.065} />
       <MaterialFlow path={flourPath} kind="flour" active={lineActive} speed={0.075} />
       <DustMotes position={dustTakeoffWorldPos('vibro')} active={lineActive} />
-      <DustMotes position={dustTakeoffWorldPos('destoner')} active={lineActive} />
-      <DustMotes position={dustTakeoffWorldPos('purifier')} active={lineActive} />
     </group>
   );
 }

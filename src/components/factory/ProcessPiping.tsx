@@ -7,6 +7,14 @@
 
 import type { ReactNode } from 'react';
 import * as THREE from 'three';
+import {
+  matDustDuct,
+  matFlange,
+  matPaintYellow,
+  matPneumatic,
+  matSteel,
+  matSteelDark,
+} from '../../perf/sharedMaterials';
 
 export type V3 = [number, number, number];
 
@@ -29,6 +37,29 @@ export const PIPE_COLORS = {
   dust: COLORS.dust,
 } as const;
 
+const matBelt = new THREE.MeshStandardMaterial({
+  color: COLORS.belt,
+  metalness: 0.25,
+  roughness: 0.75,
+});
+const matBeltFrame = new THREE.MeshStandardMaterial({
+  color: COLORS.beltFrame,
+  metalness: 0.65,
+  roughness: 0.4,
+});
+const matReject = new THREE.MeshStandardMaterial({
+  color: COLORS.reject,
+  metalness: 0.45,
+  roughness: 0.55,
+});
+
+function ductMat(color: string = COLORS.steel): THREE.MeshStandardMaterial {
+  if (color === COLORS.pneumatic) return matPneumatic;
+  if (color === COLORS.dust) return matDustDuct;
+  if (color === COLORS.steelDark) return matSteelDark;
+  return matSteel;
+}
+
 /* ==========================================================================
    FLANGE / STRAIGHT DUCT
    ========================================================================== */
@@ -44,9 +75,8 @@ export function SquareFlange({
 }) {
   return (
     <group position={position}>
-      <mesh castShadow receiveShadow>
+      <mesh castShadow={false} receiveShadow={false} material={matFlange}>
         <boxGeometry args={[size, thickness, size]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.75} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -74,9 +104,8 @@ export function RoundDuct({
     dir.clone().normalize()
   );
   return (
-    <mesh position={mid.toArray() as V3} quaternion={quat} castShadow receiveShadow>
-      <cylinderGeometry args={[radius, radius, len, 16]} />
-      <meshStandardMaterial color={color} metalness={0.65} roughness={0.4} />
+    <mesh position={mid.toArray() as V3} quaternion={quat} castShadow={false} receiveShadow={false} material={ductMat(color)}>
+      <cylinderGeometry args={[radius, radius, len, 8]} />
     </mesh>
   );
 }
@@ -84,9 +113,8 @@ export function RoundDuct({
 /** Soft elbow sphere at a pipe corner so segments read as engineered bends. */
 export function PipeElbow({ position, radius }: { position: V3; radius: number }) {
   return (
-    <mesh position={position} castShadow receiveShadow>
-      <sphereGeometry args={[radius * 1.08, 12, 10]} />
-      <meshStandardMaterial color={COLORS.steelDark} metalness={0.7} roughness={0.35} />
+    <mesh position={position} castShadow={false} receiveShadow={false} material={matSteelDark}>
+      <sphereGeometry args={[radius * 1.08, 8, 6]} />
     </mesh>
   );
 }
@@ -104,17 +132,14 @@ export function PipeSupport({
   const clampW = radius * 2.4;
   return (
     <group position={position}>
-      <mesh position={[0, -radius - 0.03, 0]} castShadow>
+      <mesh position={[0, -radius - 0.03, 0]} castShadow={false} material={matFlange}>
         <boxGeometry args={[clampW, 0.05, clampW * 0.55]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.75} roughness={0.4} />
       </mesh>
-      <mesh position={[0, -radius - drop / 2, 0]} castShadow>
-        <cylinderGeometry args={[0.03, 0.03, drop, 8]} />
-        <meshStandardMaterial color={COLORS.steelDark} metalness={0.7} roughness={0.4} />
+      <mesh position={[0, -radius - drop / 2, 0]} castShadow={false} material={matSteelDark}>
+        <cylinderGeometry args={[0.03, 0.03, drop, 6]} />
       </mesh>
-      <mesh position={[0, -radius - drop, 0]} castShadow>
+      <mesh position={[0, -radius - drop, 0]} castShadow={false} material={matFlange}>
         <boxGeometry args={[0.18, 0.06, 0.18]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.75} roughness={0.4} />
       </mesh>
     </group>
   );
@@ -209,9 +234,8 @@ export function GravityChute({
   return (
     <group>
       <group position={mid.toArray() as V3} quaternion={quat}>
-        <mesh castShadow receiveShadow>
+        <mesh castShadow={false} receiveShadow={false} material={matSteel}>
           <cylinderGeometry args={[bottomSize / 2, topSize / 2, len, 4]} />
-          <meshStandardMaterial color={COLORS.steel} metalness={0.6} roughness={0.45} />
         </mesh>
       </group>
       <SquareFlange size={topSize + 0.08} thickness={0.04} position={start} />
@@ -224,18 +248,15 @@ export function GravityChute({
 export function RejectBin({ position, label }: { position: V3; label?: string }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.35, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0.35, 0]} castShadow={false} receiveShadow={false} material={matReject}>
         <boxGeometry args={[0.7, 0.7, 0.55]} />
-        <meshStandardMaterial color={COLORS.reject} metalness={0.45} roughness={0.55} />
       </mesh>
-      <mesh position={[0, 0.72, 0]} castShadow>
+      <mesh position={[0, 0.72, 0]} castShadow={false} material={matFlange}>
         <boxGeometry args={[0.78, 0.05, 0.62]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.7} roughness={0.4} />
       </mesh>
       {label && (
-        <mesh position={[0, 0.4, 0.28]}>
+        <mesh position={[0, 0.4, 0.28]} material={matPaintYellow}>
           <boxGeometry args={[0.5, 0.12, 0.02]} />
-          <meshStandardMaterial color="#c9a227" metalness={0.3} roughness={0.6} />
         </mesh>
       )}
     </group>
@@ -272,26 +293,21 @@ export function BeltBridge({
   const alongX = Math.abs(dir.x) >= Math.abs(dir.z);
   return (
     <group position={mid.toArray() as V3} rotation={alongX ? [0, 0, 0] : [0, yaw, 0]}>
-      <mesh castShadow receiveShadow>
+      <mesh castShadow={false} receiveShadow={false} material={matBelt}>
         <boxGeometry args={alongX ? [len, thickness, width] : [width, thickness, len]} />
-        <meshStandardMaterial color={COLORS.belt} metalness={0.25} roughness={0.75} />
       </mesh>
-      <mesh position={alongX ? [0, -0.06, width / 2 + 0.02] : [width / 2 + 0.02, -0.06, 0]} castShadow>
+      <mesh position={alongX ? [0, -0.06, width / 2 + 0.02] : [width / 2 + 0.02, -0.06, 0]} castShadow={false} material={matBeltFrame}>
         <boxGeometry args={alongX ? [len, 0.1, 0.04] : [0.04, 0.1, len]} />
-        <meshStandardMaterial color={COLORS.beltFrame} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={alongX ? [0, -0.06, -(width / 2 + 0.02)] : [-(width / 2 + 0.02), -0.06, 0]} castShadow>
+      <mesh position={alongX ? [0, -0.06, -(width / 2 + 0.02)] : [-(width / 2 + 0.02), -0.06, 0]} castShadow={false} material={matBeltFrame}>
         <boxGeometry args={alongX ? [len, 0.1, 0.04] : [0.04, 0.1, len]} />
-        <meshStandardMaterial color={COLORS.beltFrame} metalness={0.65} roughness={0.4} />
       </mesh>
       {/* End flanges / skirt plates */}
-      <mesh position={alongX ? [-len / 2, 0, 0] : [0, 0, -len / 2]} castShadow>
+      <mesh position={alongX ? [-len / 2, 0, 0] : [0, 0, -len / 2]} castShadow={false} material={matFlange}>
         <boxGeometry args={alongX ? [0.04, thickness + 0.04, width + 0.06] : [width + 0.06, thickness + 0.04, 0.04]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.7} roughness={0.35} />
       </mesh>
-      <mesh position={alongX ? [len / 2, 0, 0] : [0, 0, len / 2]} castShadow>
+      <mesh position={alongX ? [len / 2, 0, 0] : [0, 0, len / 2]} castShadow={false} material={matFlange}>
         <boxGeometry args={alongX ? [0.04, thickness + 0.04, width + 0.06] : [width + 0.06, thickness + 0.04, 0.04]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.7} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -312,9 +328,8 @@ export function PneumaticElbow({
   color?: string;
 }) {
   return (
-    <mesh position={position} castShadow receiveShadow>
-      <sphereGeometry args={[radius * 1.15, 14, 12]} />
-      <meshStandardMaterial color={color} metalness={0.55} roughness={0.35} />
+    <mesh position={position} castShadow={false} receiveShadow={false} material={ductMat(color)}>
+      <sphereGeometry args={[radius * 1.15, 10, 8]} />
     </mesh>
   );
 }
@@ -332,13 +347,11 @@ export function PneumaticTee({
   const r = radius;
   return (
     <group position={position}>
-      <mesh castShadow receiveShadow rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[r * 1.05, r * 1.05, r * 3.2, 12]} />
-        <meshStandardMaterial color={color} metalness={0.55} roughness={0.35} />
+      <mesh castShadow={false} receiveShadow={false} rotation={[0, 0, Math.PI / 2]} material={ductMat(color)}>
+        <cylinderGeometry args={[r * 1.05, r * 1.05, r * 3.2, 8]} />
       </mesh>
-      <mesh castShadow receiveShadow>
-        <cylinderGeometry args={[r * 1.05, r * 1.05, r * 2.2, 12]} />
-        <meshStandardMaterial color={color} metalness={0.55} roughness={0.35} />
+      <mesh castShadow={false} receiveShadow={false} material={ductMat(color)}>
+        <cylinderGeometry args={[r * 1.05, r * 1.05, r * 2.2, 8]} />
       </mesh>
     </group>
   );
@@ -370,9 +383,8 @@ export function PipeReducer({
   );
   return (
     <group>
-      <mesh position={mid.toArray() as V3} quaternion={quat} castShadow receiveShadow>
-        <cylinderGeometry args={[endRadius, startRadius, len, 14]} />
-        <meshStandardMaterial color={color} metalness={0.55} roughness={0.35} />
+      <mesh position={mid.toArray() as V3} quaternion={quat} castShadow={false} receiveShadow={false} material={ductMat(color)}>
+        <cylinderGeometry args={[endRadius, startRadius, len, 10]} />
       </mesh>
       <SquareFlange size={startRadius * 2.4} thickness={0.035} position={start} />
       <SquareFlange size={endRadius * 2.4} thickness={0.035} position={end} />
@@ -392,17 +404,14 @@ export function PneumaticValve({
 }) {
   return (
     <group position={position}>
-      <mesh castShadow>
+      <mesh castShadow={false} material={matSteelDark}>
         <boxGeometry args={[radius * 2.6, radius * 2.6, radius * 1.4]} />
-        <meshStandardMaterial color={COLORS.steelDark} metalness={0.7} roughness={0.4} />
       </mesh>
-      <mesh position={[0, radius * 1.6, 0]} castShadow>
-        <cylinderGeometry args={[0.04, 0.04, radius * 0.9, 8]} />
-        <meshStandardMaterial color={color} metalness={0.6} roughness={0.35} />
+      <mesh position={[0, radius * 1.6, 0]} castShadow={false} material={ductMat(color)}>
+        <cylinderGeometry args={[0.04, 0.04, radius * 0.9, 6]} />
       </mesh>
-      <mesh position={[0, radius * 2.15, 0]} castShadow>
+      <mesh position={[0, radius * 2.15, 0]} castShadow={false} material={matPaintYellow}>
         <boxGeometry args={[0.16, 0.08, 0.1]} />
-        <meshStandardMaterial color="#c9a227" metalness={0.4} roughness={0.5} />
       </mesh>
     </group>
   );

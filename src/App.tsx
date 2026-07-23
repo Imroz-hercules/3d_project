@@ -57,7 +57,7 @@ function App() {
           far: 500,
         }}
       >
-        <Stats />
+        {import.meta.env.DEV && <Stats />}
         <ambientLight intensity={0.45} />
         <directionalLight
           position={[40, 55, 30]}
