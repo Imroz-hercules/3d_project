@@ -45,8 +45,12 @@ const COLORS = {
   woodDark: '#6b5235',
   bagWhite: '#f5f5f0',
   bagSeam: '#d4d8dc',
+  wrapClear: '#c8d0d8',
   beltBlack: '#1a1a1a',
   rollerSteel: '#6b7278',
+  floorMark: '#e0a92c',
+  forkliftYellow: '#d4a017',
+  forkliftGray: '#3a4048',
   hmiScreen: '#00d4ff',
   hmiBody: '#2a2a2a',
   eStopRed: '#ff2222',
@@ -251,8 +255,9 @@ function SafetyFence({ size }: { size: number }) {
       {[-1, 1].map((sideX) =>
         Array.from({ length: panelsPerSide }, (_, i) => {
           const z = -size / 2 + panelWidth / 2 + i * panelWidth;
-          // Opening on −X face for pick-conveyor infeed from metal detector
+          // Opening on −X for pick conveyor; opening on +X for pallet outfeed
           if (sideX === -1 && Math.abs(z) < 0.55) return null;
+          if (sideX === 1 && z > 0.4 && z < 1.6) return null;
           return (
             <group key={`x-${sideX}-${i}`} position={[sideX * size / 2, fenceHeight / 2, z]}>
               {/* Mesh panel (wireframe effect) */}
@@ -325,82 +330,231 @@ function SafetyFence({ size }: { size: number }) {
    WOODEN PALLET
    ========================================================================== */
 
-function WoodenPallet({ position, hasBags, bagCount }: { position: V3; hasBags: boolean; bagCount: number }) {
+function WoodenPallet({
+  position,
+  hasBags,
+  bagCount,
+  wrapped = false,
+}: {
+  position: V3;
+  hasBags: boolean;
+  bagCount: number;
+  wrapped?: boolean;
+}) {
   const palletWidth = 1.2;
   const palletDepth = 1.0;
   const palletHeight = 0.15;
   const layers = Math.floor(bagCount / 8);
   const bagsInLayer = bagCount % 8;
+  const stackH = hasBags ? palletHeight + 0.04 + Math.max(layers, bagsInLayer > 0 ? layers + 1 : layers) * 0.7 : palletHeight;
 
   return (
     <group position={position}>
-      {/* Pallet Base */}
       <mesh position={[0, palletHeight / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[palletWidth, palletHeight, palletDepth]} />
         <meshStandardMaterial color={COLORS.woodBrown} roughness={0.9} metalness={0} />
       </mesh>
-      {/* Pallet Slats (top) */}
       {[-0.4, -0.13, 0.13, 0.4].map((x, i) => (
         <mesh key={i} position={[x, palletHeight + 0.02, 0]} castShadow>
           <boxGeometry args={[0.12, 0.04, palletDepth - 0.1]} />
           <meshStandardMaterial color={COLORS.woodDark} roughness={0.9} metalness={0} />
         </mesh>
       ))}
-      {/* Pallet Blocks (bottom support) */}
       {[
         [-0.45, 0, -0.35], [0, 0, -0.35], [0.45, 0, -0.35],
         [-0.45, 0, 0], [0, 0, 0], [0.45, 0, 0],
         [-0.45, 0, 0.35], [0, 0, 0.35], [0.45, 0, 0.35],
       ].map((pos, i) => (
-        <mesh key={i} position={pos}>
+        <mesh key={i} position={pos as V3}>
           <boxGeometry args={[0.15, 0.1, 0.15]} />
           <meshStandardMaterial color={COLORS.woodDark} roughness={0.9} metalness={0} />
         </mesh>
       ))}
 
-      {/* Stacked Bags */}
-      {Array.from({ length: layers }, (_, layerIdx) => {
-        const isAlternating = layerIdx % 2 === 1;
-        return Array.from({ length: 8 }, (_, bagIdx) => {
-          const row = Math.floor(bagIdx / 4);
-          const col = bagIdx % 4;
-          const x = isAlternating 
-            ? (col - 1.5) * 0.32 
-            : (col - 1.5) * 0.25;
-          const z = isAlternating 
-            ? (row - 0.5) * 0.25 
-            : (row - 0.5) * 0.32;
-          const y = palletHeight + 0.04 + layerIdx * 0.7 + 0.35;
+      {hasBags &&
+        Array.from({ length: layers }, (_, layerIdx) => {
+          const isAlternating = layerIdx % 2 === 1;
+          return Array.from({ length: 8 }, (_, bagIdx) => {
+            const row = Math.floor(bagIdx / 4);
+            const col = bagIdx % 4;
+            const x = isAlternating ? (col - 1.5) * 0.32 : (col - 1.5) * 0.25;
+            const z = isAlternating ? (row - 0.5) * 0.25 : (row - 0.5) * 0.32;
+            const y = palletHeight + 0.04 + layerIdx * 0.7 + 0.35;
+            const rotY = isAlternating ? Math.PI / 2 : 0;
+            return (
+              <mesh key={`${layerIdx}-${bagIdx}`} position={[x, y, z]} rotation={[0, rotY, 0]} castShadow>
+                <boxGeometry args={[0.4, 0.7, 0.3]} />
+                <meshStandardMaterial color={COLORS.bagWhite} roughness={0.9} />
+              </mesh>
+            );
+          });
+        })}
+
+      {hasBags &&
+        Array.from({ length: bagsInLayer }, (_, idx) => {
+          const row = Math.floor(idx / 4);
+          const col = idx % 4;
+          const isAlternating = layers % 2 === 1;
+          const x = isAlternating ? (col - 1.5) * 0.32 : (col - 1.5) * 0.25;
+          const z = isAlternating ? (row - 0.5) * 0.25 : (row - 0.5) * 0.32;
+          const y = palletHeight + 0.04 + layers * 0.7 + 0.35;
           const rotY = isAlternating ? Math.PI / 2 : 0;
           return (
-            <mesh key={`${layerIdx}-${bagIdx}`} position={[x, y, z]} rotation={[0, rotY, 0]} castShadow>
+            <mesh key={`partial-${idx}`} position={[x, y, z]} rotation={[0, rotY, 0]} castShadow>
               <boxGeometry args={[0.4, 0.7, 0.3]} />
               <meshStandardMaterial color={COLORS.bagWhite} roughness={0.9} />
             </mesh>
           );
-        });
-      })}
+        })}
 
-      {/* Partial layer bags */}
-      {Array.from({ length: bagsInLayer }, (_, idx) => {
-        const row = Math.floor(idx / 4);
-        const col = idx % 4;
-        const isAlternating = layers % 2 === 1;
-        const x = isAlternating 
-          ? (col - 1.5) * 0.32 
-          : (col - 1.5) * 0.25;
-        const z = isAlternating 
-          ? (row - 0.5) * 0.25 
-          : (row - 0.5) * 0.32;
-        const y = palletHeight + 0.04 + layers * 0.7 + 0.35;
-        const rotY = isAlternating ? Math.PI / 2 : 0;
+      {wrapped && hasBags && (
+        <mesh position={[0, stackH / 2 + 0.1, 0]}>
+          <boxGeometry args={[palletWidth + 0.08, Math.max(stackH - 0.05, 0.8), palletDepth + 0.08]} />
+          <meshStandardMaterial
+            color={COLORS.wrapClear}
+            transparent
+            opacity={0.28}
+            metalness={0.15}
+            roughness={0.35}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+/* ==========================================================================
+   EMPTY PALLET MAGAZINE
+   ========================================================================== */
+
+function EmptyPalletMagazine({ position }: { position: V3 }) {
+  return (
+    <group position={position}>
+      {/* Magazine frame */}
+      {[
+        [-0.7, 0.6, -0.55],
+        [0.7, 0.6, -0.55],
+        [-0.7, 0.6, 0.55],
+        [0.7, 0.6, 0.55],
+      ].map((pos, i) => (
+        <mesh key={i} position={pos as V3} castShadow>
+          <boxGeometry args={[0.08, 1.2, 0.08]} />
+          <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.35} />
+        </mesh>
+      ))}
+      <mesh position={[0, 1.15, 0]}>
+        <boxGeometry args={[1.5, 0.08, 1.2]} />
+        <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.35} />
+      </mesh>
+      {/* Stacked empty pallets waiting */}
+      {[0, 0.18, 0.36, 0.54].map((y, i) => (
+        <WoodenPallet key={i} position={[0, y, 0]} hasBags={false} bagCount={0} />
+      ))}
+      <Text position={[0, 1.45, 0]} fontSize={0.08} color={COLORS.safetyYellow} anchorX="center" anchorY="middle">
+        EMPTY MAGAZINE
+      </Text>
+    </group>
+  );
+}
+
+/* ==========================================================================
+   PALLET OUTFEED CONVEYOR
+   ========================================================================== */
+
+function PalletOutfeedConveyor({ position }: { position: V3 }) {
+  const length = 2.8;
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
+        <boxGeometry args={[length, 0.12, 1.35]} />
+        <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.4} />
+      </mesh>
+      {Array.from({ length: 7 }, (_, i) => {
+        const x = -length / 2 + 0.25 + i * 0.4;
         return (
-          <mesh key={`partial-${idx}`} position={[x, y, z]} rotation={[0, rotY, 0]} castShadow>
-            <boxGeometry args={[0.4, 0.7, 0.3]} />
-            <meshStandardMaterial color={COLORS.bagWhite} roughness={0.9} />
+          <mesh key={i} position={[x, 0.22, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.06, 0.06, 1.2, 12]} />
+            <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
           </mesh>
         );
       })}
+      {[
+        [-length / 2 + 0.15, 0.2, 0.6],
+        [length / 2 - 0.15, 0.2, 0.6],
+        [-length / 2 + 0.15, 0.2, -0.6],
+        [length / 2 - 0.15, 0.2, -0.6],
+      ].map((pos, i) => (
+        <mesh key={i} position={pos as V3}>
+          <boxGeometry args={[0.1, 0.4, 0.1]} />
+          <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.4} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/* ==========================================================================
+   FORKLIFT LOADING BAY
+   ========================================================================== */
+
+function ForkliftLoadingBay({ position }: { position: V3 }) {
+  return (
+    <group position={position}>
+      {/* Floor marking rectangle */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+        <planeGeometry args={[3.2, 2.4]} />
+        <meshStandardMaterial color="#6a6a62" roughness={0.95} />
+      </mesh>
+      {/* Yellow perimeter stripes */}
+      {[
+        [0, 0.015, 1.15],
+        [0, 0.015, -1.15],
+        [1.55, 0.015, 0],
+        [-1.55, 0.015, 0],
+      ].map((pos, i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, i < 2 ? 0 : Math.PI / 2]} position={pos as V3}>
+          <planeGeometry args={[i < 2 ? 3.2 : 2.4, 0.12]} />
+          <meshStandardMaterial color={COLORS.floorMark} roughness={0.8} />
+        </mesh>
+      ))}
+
+      {/* Simple forklift silhouette waiting */}
+      <group position={[-0.9, 0, 0]}>
+        <mesh position={[0, 0.55, 0]} castShadow>
+          <boxGeometry args={[1.4, 1.0, 0.9]} />
+          <meshStandardMaterial color={COLORS.forkliftYellow} metalness={0.4} roughness={0.5} />
+        </mesh>
+        <mesh position={[0.55, 0.85, 0]} castShadow>
+          <boxGeometry args={[0.5, 0.55, 0.85]} />
+          <meshStandardMaterial color="#2a3038" metalness={0.3} roughness={0.6} />
+        </mesh>
+        {/* Mast */}
+        <mesh position={[-0.55, 1.2, 0]} castShadow>
+          <boxGeometry args={[0.12, 2.0, 0.55]} />
+          <meshStandardMaterial color={COLORS.forkliftGray} metalness={0.7} roughness={0.35} />
+        </mesh>
+        {/* Forks */}
+        <mesh position={[-1.15, 0.35, 0.22]} castShadow>
+          <boxGeometry args={[1.0, 0.06, 0.12]} />
+          <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
+        </mesh>
+        <mesh position={[-1.15, 0.35, -0.22]} castShadow>
+          <boxGeometry args={[1.0, 0.06, 0.12]} />
+          <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
+        </mesh>
+        {/* Wheels */}
+        {[[0.4, 0.22, 0.5], [0.4, 0.22, -0.5], [-0.35, 0.22, 0.5], [-0.35, 0.22, -0.5]].map((pos, i) => (
+          <mesh key={i} position={pos as V3} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.22, 0.22, 0.16, 16]} />
+            <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
+          </mesh>
+        ))}
+      </group>
+
+      <Text position={[0.7, 0.05, 1.35]} fontSize={0.1} color={COLORS.floorMark} anchorX="center" anchorY="middle">
+        FORKLIFT ZONE
+      </Text>
     </group>
   );
 }
@@ -518,27 +672,48 @@ function TowerLight({ position, status }: { position: V3; status: 'idle' | 'runn
    PLC DATA PANEL
    ========================================================================== */
 
-function DataPanel({ position, active, layerCount, bagCount, palletComplete }: { 
-  position: V3; active: boolean; layerCount: number; bagCount: number; palletComplete: boolean; 
+function DataPanel({
+  position,
+  active,
+  layerCount,
+  bagCount,
+  palletComplete,
+  completedBags,
+  palletNumber,
+}: {
+  position: V3;
+  active: boolean;
+  layerCount: number;
+  bagCount: number;
+  palletComplete: boolean;
+  completedBags: number;
+  palletNumber: number;
 }) {
   const lines = [
-    { text: `ROBOTIC PALLETIZER`, size: 0.16, color: '#1c1c1c', bold: true },
-    { text: `Status: ${active ? 'AUTO' : 'STOPPED'}`, size: 0.13, color: active ? COLORS.lightGreen : COLORS.lightRed },
-    { text: `Robot Speed: ${active ? '85' : '0'}%`, size: 0.13, color: '#3a3a3a' },
-    { text: `Current Layer: ${layerCount}`, size: 0.13, color: '#3a3a3a' },
-    { text: `Current Bag: ${bagCount}`, size: 0.13, color: '#3a3a3a' },
-    { text: `Pallet Complete: ${palletComplete ? 'YES' : 'NO'}`, size: 0.13, color: palletComplete ? COLORS.lightGreen : '#3a3a3a' },
-    { text: `Bags on Pallet: ${layerCount * 8 + bagCount}`, size: 0.13, color: '#3a3a3a' },
-    { text: `Alarm: OFF`, size: 0.13, color: COLORS.lightGreen },
+    { text: `ROBOTIC PALLETIZER`, size: 0.15, color: '#1c1c1c', bold: true },
+    { text: `Status: ${active ? 'AUTO' : 'STOPPED'}`, size: 0.12, color: active ? COLORS.lightGreen : COLORS.lightRed },
+    { text: `Robot Speed: ${active ? '90' : '0'}%`, size: 0.12, color: '#3a3a3a' },
+    { text: `Current Layer: ${layerCount}`, size: 0.12, color: '#3a3a3a' },
+    { text: `Current Bag: ${bagCount}`, size: 0.12, color: '#3a3a3a' },
+    { text: `Completed Bags: ${completedBags}`, size: 0.12, color: '#3a3a3a' },
+    { text: `Pallet Number: ${palletNumber}`, size: 0.12, color: '#3a3a3a' },
+    { text: `Pallet Complete: ${palletComplete ? 'YES' : 'NO'}`, size: 0.12, color: palletComplete ? COLORS.lightGreen : '#3a3a3a' },
+    { text: `Alarm: OFF`, size: 0.12, color: COLORS.lightGreen },
   ];
 
   return (
     <Float speed={1.5} rotationIntensity={0.05} floatIntensity={0.15}>
       <group position={position}>
-        <mesh position={[0, -0.45, -0.02]}><planeGeometry args={[2.2, 2.0]} /><meshStandardMaterial color="#ffffff" transparent opacity={0.92} side={THREE.DoubleSide} /></mesh>
-        <mesh position={[0, -0.45, -0.015]}><planeGeometry args={[2.24, 2.04]} /><meshStandardMaterial color={COLORS.safetyYellow} transparent opacity={0.4} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, -0.55, -0.02]}>
+          <planeGeometry args={[2.3, 2.3]} />
+          <meshStandardMaterial color="#ffffff" transparent opacity={0.92} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, -0.55, -0.015]}>
+          <planeGeometry args={[2.34, 2.34]} />
+          <meshStandardMaterial color={COLORS.safetyYellow} transparent opacity={0.4} side={THREE.DoubleSide} />
+        </mesh>
         {lines.map((line, i) => (
-          <Text key={i} position={[-1, -i * 0.22, 0]} fontSize={line.size} color={line.color} anchorX="left" anchorY="top" fontWeight={line.bold ? 'bold' : 'normal'}>
+          <Text key={i} position={[-1.05, 0.35 - i * 0.2, 0]} fontSize={line.size} color={line.color} anchorX="left" anchorY="top" fontWeight={line.bold ? 'bold' : 'normal'}>
             {line.text}
           </Text>
         ))}
@@ -576,6 +751,8 @@ export function PalletizerComponent({
   const [layerCount, setLayerCount] = useState(2);
   const [bagCount, setBagCount] = useState(3);
   const [palletComplete, setPalletComplete] = useState(false);
+  const [completedBags, setCompletedBags] = useState(4800);
+  const [palletNumber, setPalletNumber] = useState(154);
   
   const active = controlledActive !== undefined ? controlledActive : internalActive;
   const pickY = height + 0.35;
@@ -618,6 +795,7 @@ export function PalletizerComponent({
         if (phaseProgress > 1.0) {
           setGripperOpen(true);
           setBagOnGripper(null);
+          setCompletedBags((n) => n + 1);
           setBagCount(prev => {
             const newCount = prev + 1;
             if (newCount >= 8) {
@@ -640,6 +818,7 @@ export function PalletizerComponent({
             setLayerCount(0);
             setBagCount(0);
             setPalletComplete(false);
+            setPalletNumber((n) => n + 1);
           }
           setPhase('IDLE');
           setPhaseProgress(0);
@@ -661,8 +840,24 @@ export function PalletizerComponent({
         bagPosition={bagOnGripper}
       />
 
-      <WoodenPallet position={[1.2, 0, 0.5]} hasBags={layerCount > 0 || bagCount > 0} bagCount={layerCount * 8 + bagCount} />
-      <WoodenPallet position={[1.2, 0, -1.5]} hasBags={true} bagCount={40} />
+      {/* Empty pallet magazine (waiting) */}
+      <EmptyPalletMagazine position={[1.2, 0, -1.8]} />
+
+      {/* Active pallet being stacked */}
+      <WoodenPallet
+        position={[1.2, 0, 0.35]}
+        hasBags={layerCount > 0 || bagCount > 0}
+        bagCount={layerCount * 8 + bagCount}
+      />
+
+      {/* Pallet outfeed → forklift bay */}
+      <PalletOutfeedConveyor position={[cellSize / 2 + 0.9, 0, 0.9]} />
+
+      {/* Completed stretch-wrapped pallet ready for pickup */}
+      <WoodenPallet position={[cellSize / 2 + 1.6, 0.24, 0.9]} hasBags bagCount={64} wrapped />
+
+      {/* Forklift loading area outside the cell */}
+      <ForkliftLoadingBay position={[cellSize / 2 + 3.6, 0, 0.9]} />
 
       <HMIPanel 
         position={[-cellSize / 2 + 0.3, 1.2, 0]} 
@@ -675,11 +870,13 @@ export function PalletizerComponent({
 
       {showDataPanel && (
         <DataPanel 
-          position={[cellSize / 2 + 1.5, 2, 0]} 
+          position={[cellSize / 2 + 1.8, 2.4, -1.8]} 
           active={active} 
           layerCount={layerCount}
           bagCount={bagCount}
           palletComplete={palletComplete}
+          completedBags={completedBags}
+          palletNumber={palletNumber}
         />
       )}
 
@@ -691,7 +888,7 @@ export function PalletizerComponent({
         }}
         visible={false}
       >
-        <boxGeometry args={[cellSize, 3, cellSize]} />
+        <boxGeometry args={[cellSize + 4, 3, cellSize + 2]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
       {showClickText && (

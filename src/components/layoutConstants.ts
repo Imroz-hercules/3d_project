@@ -938,11 +938,12 @@ export function palletizerInletWorldPos(): [number, number, number] {
   return [px - pickOffsetX - pickLength / 2, py + height, pz];
 }
 
-/** Cell far edge — finished pallets toward warehouse. */
+/** Cell far edge — finished pallets / forklift bay toward warehouse. */
 export function palletizerOutletWorldPos(): [number, number, number] {
   const [px, py, pz] = palletizerPosition();
   const { cellSize, height } = REF.palletizer;
-  return [px + cellSize / 2, py + height, pz];
+  // Includes outfeed conveyor + forklift loading bay beyond the fence
+  return [px + cellSize / 2 + 5.2, py + height, pz];
 }
 
 /* ==========================================================================
