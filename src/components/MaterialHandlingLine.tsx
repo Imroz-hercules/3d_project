@@ -3,7 +3,7 @@
 /**
  * MaterialHandlingLine — full flour mill line:
  * Silo → Hopper → Rotary Valve → Screw Conveyor → Bucket Elevator
- * → Vibro Separator → Destoner → Magnetic Separator → Scourer
+ * → Vibro Separator → Destoner → Magnetic Separator → Scourer → Dampener
  */
 
 import { useMemo, useState } from 'react';
@@ -17,6 +17,7 @@ import { VibroSeparatorComponent } from './VibroSeparator';
 import { DestonerComponent } from './Destoner';
 import { MagneticSeparatorComponent } from './MagneticSeparator';
 import { ScourerComponent } from './scourer';
+import { DampenerComponent } from './damping';
 import { MaterialFlow } from './MaterialFlow';
 import {
   REF,
@@ -41,6 +42,9 @@ import {
   scourerPosition,
   scourerInletWorldPos,
   scourerOutletWorldPos,
+  dampenerPosition,
+  dampenerInletWorldPos,
+  dampenerOutletWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -67,6 +71,7 @@ const SEPARATOR_POS = separatorPosition();
 const DESTONER_POS = destonerPosition();
 const MAGNETIC_POS = magneticPosition();
 const SCOURER_POS = scourerPosition();
+const DAMPENER_POS = dampenerPosition();
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -222,6 +227,21 @@ function MagneticToScourerDuct() {
   );
 }
 
+/** Scourer bottom outlet → dampener top inlet (horizontal then rise). */
+function ScourerToDampenerDuct() {
+  const start = scourerOutletWorldPos();
+  const end = dampenerInletWorldPos();
+  const mid: V3 = [end[0], start[1], end[2]];
+  return (
+    <>
+      <RoundDuct start={start} end={mid} radius={0.16} />
+      <RoundDuct start={mid} end={end} radius={0.16} />
+      <SquareFlange size={0.38} thickness={0.04} position={start} />
+      <SquareFlange size={0.38} thickness={0.04} position={end} />
+    </>
+  );
+}
+
 /** Steel platform under elevated destoner. */
 function DestonerPlatform() {
   const [dx, dy, dz] = DESTONER_POS;
@@ -265,11 +285,14 @@ export function MaterialHandlingLine() {
   const magneticOutlet = magneticOutletWorldPos();
   const scourerInlet = scourerInletWorldPos();
   const scourerOutlet = scourerOutletWorldPos();
+  const dampenerInlet = dampenerInletWorldPos();
+  const dampenerOutlet = dampenerOutletWorldPos();
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
   const [dx, dy, dz] = DESTONER_POS;
   const [mx, my, mz] = MAGNETIC_POS;
   const [scx, scy, scz] = SCOURER_POS;
+  const [dampX, dampY, dampZ] = DAMPENER_POS;
   const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
@@ -311,6 +334,11 @@ export function MaterialHandlingLine() {
       scourerInlet,
       [scx, scy, scz],
       scourerOutlet,
+      // → Dampener
+      [dampenerInlet[0], scourerOutlet[1], dampenerInlet[2]],
+      dampenerInlet,
+      [dampX, dampY, dampZ],
+      dampenerOutlet,
     ];
   }, [
     bridgeY,
@@ -338,6 +366,11 @@ export function MaterialHandlingLine() {
     scx,
     scy,
     scz,
+    dampenerInlet,
+    dampenerOutlet,
+    dampX,
+    dampY,
+    dampZ,
   ]);
 
   return (
@@ -456,6 +489,18 @@ export function MaterialHandlingLine() {
         position={SCOURER_POS}
         length={REF.scourer.length}
         radius={REF.scourer.radius}
+        active={lineActive}
+        showDataPanel={false}
+        showClickText={false}
+      />
+
+      {/* Scourer → Dampener */}
+      <ScourerToDampenerDuct />
+
+      <DampenerComponent
+        position={DAMPENER_POS}
+        length={REF.dampener.length}
+        radius={REF.dampener.radius}
         active={lineActive}
         showDataPanel={false}
         showClickText={false}

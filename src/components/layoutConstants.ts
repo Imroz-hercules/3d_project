@@ -93,6 +93,15 @@ export const REF = {
     /** Gap from magnetic outlet to scourer feed flange (metres). */
     gapFromMagnetic: 1.5,
   },
+  dampener: {
+    length: 2.2,
+    radius: 0.65,
+    legHeight: 1.3,
+  },
+  dampenerLayout: {
+    /** Gap from scourer outlet to dampener feed flange (metres). */
+    gapFromScourer: 1.5,
+  },
 } as const;
 
 export function hopperCenterX() {
@@ -318,4 +327,35 @@ export function scourerOutletWorldPos(): [number, number, number] {
   const [sx, sy, sz] = scourerPosition();
   const { length, radius } = REF.scourer;
   return [sx + length / 3, sy - radius - 0.62, sz];
+}
+
+/* ==========================================================================
+   DAMPENER LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Dampener group origin — housing centre on X axis cylinder.
+ * Legs extend to y = −legHeight; place so feet sit on the ground.
+ */
+export function dampenerPosition(): [number, number, number] {
+  const [ox, , oz] = scourerOutletWorldPos();
+  const { length, legHeight } = REF.dampener;
+  const gap = REF.dampenerLayout.gapFromScourer;
+  // Feed inlet local X = −length/3
+  const x = ox + gap + length / 3;
+  return [x, legHeight, oz];
+}
+
+/** Dampener top feed inlet flange — world position. */
+export function dampenerInletWorldPos(): [number, number, number] {
+  const [dx, dy, dz] = dampenerPosition();
+  const { length, radius } = REF.dampener;
+  return [dx - length / 3, dy + radius + 0.72, dz];
+}
+
+/** Dampener conditioned grain outlet flange — world position. */
+export function dampenerOutletWorldPos(): [number, number, number] {
+  const [dx, dy, dz] = dampenerPosition();
+  const { length, radius } = REF.dampener;
+  return [dx + length / 3, dy - radius - 0.72, dz];
 }
