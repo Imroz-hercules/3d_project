@@ -10,7 +10,6 @@
  */
 
 import { useMemo, useState } from 'react';
-import * as THREE from 'three';
 import SiloModel, { SILO_OUTLET_Y, SILO_OUTLET_RADIUS } from './Silo';
 import { FeedHopperComponent } from './FeedHopper';
 import { RotaryValveComponent } from './RotaryValve';
@@ -35,6 +34,14 @@ import { MetalDetectorComponent } from './MetalDetector';
 import { PalletizerComponent } from './Palletizer';
 import { MaterialFlow } from './MaterialFlow';
 import { MezzanineBay, Walkway, AccessLadder } from './factory/PlantStructure';
+import {
+  BeltBridge,
+  ElbowedPipe,
+  GravityChute,
+  RejectBin,
+  SquareFlange,
+  type V3,
+} from './factory/ProcessPiping';
 import {
   REF,
   ductBridgeY,
@@ -71,12 +78,15 @@ import {
   plansifterInletWorldPos,
   plansifterSemolinaOutletWorldPos,
   plansifterFlourOutletWorldPos,
+  plansifterOversizeOutletWorldPos,
   purifierPosition,
   purifierInletWorldPos,
   purifierBranOutletWorldPos,
+  purifierSemolinaOutletWorldPos,
   branFinisherPosition,
   branFinisherInletWorldPos,
   branFinisherFlourOutletWorldPos,
+  branFinisherBranOutletWorldPos,
   flourBinPosition,
   flourBinInletWorldPos,
   flourBinOutletWorldPos,
@@ -106,8 +116,6 @@ import {
   valveCenterY,
   valveOutletY,
 } from './layoutConstants';
-
-type V3 = [number, number, number];
 
 const COLORS = {
   steel: '#8a9199',
@@ -140,17 +148,6 @@ const CHECK_WEIGHER_POS = checkWeigherPosition();
 const METAL_DETECTOR_POS = metalDetectorPosition();
 const PALLETIZER_POS = palletizerPosition();
 
-function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
-  return (
-    <group position={position}>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[size, thickness, size]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.75} roughness={0.35} />
-      </mesh>
-    </group>
-  );
-}
-
 function SlideGate({ position }: { position: V3 }) {
   const s = SILO_OUTLET_RADIUS * 2.4;
   return (
@@ -164,25 +161,6 @@ function SlideGate({ position }: { position: V3 }) {
   );
 }
 
-function RoundDuct({ start, end, radius }: { start: V3; end: V3; radius: number }) {
-  const startV = new THREE.Vector3(...start);
-  const endV = new THREE.Vector3(...end);
-  const dir = new THREE.Vector3().subVectors(endV, startV);
-  const len = dir.length();
-  if (len < 0.001) return null;
-  const mid = new THREE.Vector3().addVectors(startV, endV).multiplyScalar(0.5);
-  const quat = new THREE.Quaternion().setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0),
-    dir.clone().normalize()
-  );
-  return (
-    <mesh position={mid.toArray() as V3} quaternion={quat} castShadow receiveShadow>
-      <cylinderGeometry args={[radius, radius, len, 16]} />
-      <meshStandardMaterial color={COLORS.steel} metalness={0.65} roughness={0.4} />
-    </mesh>
-  );
-}
-
 function ValveToScrewPipe() {
   const valveOut = valveOutletY();
   const screwIn = screwInletTopY();
@@ -191,10 +169,14 @@ function ValveToScrewPipe() {
   if (len < 0.02) return null;
   const r = REF.hopper.outletSize * 0.38;
   return (
-    <mesh position={[SCREW_X, midY, 0]} castShadow>
-      <cylinderGeometry args={[r, r, len, 16]} />
-      <meshStandardMaterial color={COLORS.steel} metalness={0.7} roughness={0.35} />
-    </mesh>
+    <group>
+      <mesh position={[SCREW_X, midY, 0]} castShadow>
+        <cylinderGeometry args={[r, r, len, 16]} />
+        <meshStandardMaterial color={COLORS.steel} metalness={0.7} roughness={0.35} />
+      </mesh>
+      <SquareFlange size={r * 2.4} thickness={0.04} position={[SCREW_X, valveOut, 0]} />
+      <SquareFlange size={r * 2.4} thickness={0.04} position={[SCREW_X, screwIn, 0]} />
+    </group>
   );
 }
 
@@ -202,65 +184,28 @@ function ValveToScrewPipe() {
 function ScrewToElevatorSpout() {
   const start: V3 = [screwDischargeX(), screwDischargeY(), 0];
   const end = elevatorBootInlet();
-  const startV = new THREE.Vector3(...start);
-  const endV = new THREE.Vector3(...end);
-  const dir = new THREE.Vector3().subVectors(endV, startV);
-  const len = dir.length();
-  const mid = new THREE.Vector3().addVectors(startV, endV).multiplyScalar(0.5);
-  const quat = new THREE.Quaternion().setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0),
-    dir.clone().normalize()
-  );
-  const r = REF.screw.width * 1.1;
-  return (
-    <group position={mid.toArray() as V3} quaternion={quat}>
-      <mesh castShadow receiveShadow>
-        <cylinderGeometry args={[r, r * 1.05, len, 16]} />
-        <meshStandardMaterial color={COLORS.steel} metalness={0.65} roughness={0.4} />
-      </mesh>
-      <SquareFlange size={r * 2.2} thickness={0.04} position={[0, len / 2 + 0.02, 0]} />
-      <SquareFlange size={r * 2.3} thickness={0.04} position={[0, -(len / 2 + 0.02), 0]} />
-    </group>
-  );
+  return <ElbowedPipe path={[start, end]} radius={REF.screw.width * 1.1} supportEvery={99} />;
 }
 
 /** Angled chute: elevator head discharge → vibro separator feed inlet. */
 function ElevatorToSeparatorDuct() {
-  const start = elevatorHeadOutlet();
-  const end = separatorInletWorldPos();
-  const startV = new THREE.Vector3(...start);
-  const endV = new THREE.Vector3(...end);
-  const dir = new THREE.Vector3().subVectors(endV, startV);
-  const len = dir.length();
-  if (len < 0.01) return null;
-  const mid = new THREE.Vector3().addVectors(startV, endV).multiplyScalar(0.5);
-  const quat = new THREE.Quaternion().setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0),
-    dir.clone().normalize()
-  );
-  const r = 0.28;
   return (
-    <group position={mid.toArray() as V3} quaternion={quat}>
-      <mesh castShadow receiveShadow>
-        <cylinderGeometry args={[r, r * 1.1, len, 16]} />
-        <meshStandardMaterial color={COLORS.steel} metalness={0.65} roughness={0.4} />
-      </mesh>
-      <SquareFlange size={r * 2.2} thickness={0.04} position={[0, len / 2 + 0.02, 0]} />
-      <SquareFlange size={r * 2.4} thickness={0.04} position={[0, -(len / 2 + 0.02), 0]} />
-    </group>
+    <ElbowedPipe
+      path={[elevatorHeadOutlet(), separatorInletWorldPos()]}
+      radius={0.28}
+      supportEvery={99}
+    />
   );
 }
 
 /** Vibro clean outlet → destoner feed inlet. */
 function SeparatorToDestonerDuct() {
-  const start = separatorCleanOutletPos();
-  const end = destonerInletWorldPos();
   return (
-    <>
-      <RoundDuct start={start} end={end} radius={0.22} />
-      <SquareFlange size={0.5} thickness={0.04} position={start} />
-      <SquareFlange size={0.5} thickness={0.04} position={end} />
-    </>
+    <ElbowedPipe
+      path={[separatorCleanOutletPos(), destonerInletWorldPos()]}
+      radius={0.22}
+      supportEvery={99}
+    />
   );
 }
 
@@ -269,14 +214,7 @@ function DestonerToMagneticDuct() {
   const start = destonerCleanOutletPos();
   const end = magneticInletWorldPos();
   const mid: V3 = [end[0], start[1], end[2]];
-  return (
-    <>
-      <RoundDuct start={start} end={mid} radius={0.18} />
-      <RoundDuct start={mid} end={end} radius={0.18} />
-      <SquareFlange size={0.42} thickness={0.04} position={start} />
-      <SquareFlange size={0.42} thickness={0.04} position={end} />
-    </>
-  );
+  return <ElbowedPipe path={[start, mid, end]} radius={0.18} />;
 }
 
 /** Magnetic bottom outlet → scourer top inlet (horizontal then rise). */
@@ -284,14 +222,7 @@ function MagneticToScourerDuct() {
   const start = magneticOutletWorldPos();
   const end = scourerInletWorldPos();
   const mid: V3 = [end[0], start[1], end[2]];
-  return (
-    <>
-      <RoundDuct start={start} end={mid} radius={0.16} />
-      <RoundDuct start={mid} end={end} radius={0.16} />
-      <SquareFlange size={0.38} thickness={0.04} position={start} />
-      <SquareFlange size={0.38} thickness={0.04} position={end} />
-    </>
-  );
+  return <ElbowedPipe path={[start, mid, end]} radius={0.16} />;
 }
 
 /** Scourer bottom outlet → dampener top inlet (horizontal then rise). */
@@ -299,14 +230,7 @@ function ScourerToDampenerDuct() {
   const start = scourerOutletWorldPos();
   const end = dampenerInletWorldPos();
   const mid: V3 = [end[0], start[1], end[2]];
-  return (
-    <>
-      <RoundDuct start={start} end={mid} radius={0.16} />
-      <RoundDuct start={mid} end={end} radius={0.16} />
-      <SquareFlange size={0.38} thickness={0.04} position={start} />
-      <SquareFlange size={0.38} thickness={0.04} position={end} />
-    </>
-  );
+  return <ElbowedPipe path={[start, mid, end]} radius={0.16} />;
 }
 
 /** Dampener outlet → conditioning bin side inlet (horizontal then rise). */
@@ -314,14 +238,7 @@ function DampenerToConditioningBinDuct() {
   const start = dampenerOutletWorldPos();
   const end = conditioningBinInletWorldPos();
   const mid: V3 = [end[0], start[1], end[2]];
-  return (
-    <>
-      <RoundDuct start={start} end={mid} radius={0.2} />
-      <RoundDuct start={mid} end={end} radius={0.2} />
-      <SquareFlange size={0.48} thickness={0.04} position={start} />
-      <SquareFlange size={0.48} thickness={0.04} position={end} />
-    </>
-  );
+  return <ElbowedPipe path={[start, mid, end]} radius={0.2} />;
 }
 
 /** Conditioning bin outlet → roller mill (cross-aisle X then Z, then rise). */
@@ -330,15 +247,7 @@ function ConditioningBinToRollerMillDuct() {
   const end = rollerMillInletWorldPos();
   const midX: V3 = [end[0], start[1], start[2]];
   const midZ: V3 = [end[0], start[1], end[2]];
-  return (
-    <>
-      <RoundDuct start={start} end={midX} radius={0.22} />
-      <RoundDuct start={midX} end={midZ} radius={0.22} />
-      <RoundDuct start={midZ} end={end} radius={0.22} />
-      <SquareFlange size={0.5} thickness={0.04} position={start} />
-      <SquareFlange size={0.5} thickness={0.04} position={end} />
-    </>
-  );
+  return <ElbowedPipe path={[start, midX, midZ, end]} radius={0.22} supportEvery={2.5} />;
 }
 
 /** Roller mill outlet → plansifter top feed (horizontal then rise). */
@@ -346,14 +255,7 @@ function RollerMillToPlansifterDuct() {
   const start = rollerMillOutletWorldPos();
   const end = plansifterInletWorldPos();
   const mid: V3 = [end[0], start[1], end[2]];
-  return (
-    <>
-      <RoundDuct start={start} end={mid} radius={0.22} />
-      <RoundDuct start={mid} end={end} radius={0.22} />
-      <SquareFlange size={0.5} thickness={0.04} position={start} />
-      <SquareFlange size={0.5} thickness={0.04} position={end} />
-    </>
-  );
+  return <ElbowedPipe path={[start, mid, end]} radius={0.22} />;
 }
 
 /** Plansifter semolina outlet → purifier feed (horizontal then rise). */
@@ -361,14 +263,7 @@ function PlansifterToPurifierDuct() {
   const start = plansifterSemolinaOutletWorldPos();
   const end = purifierInletWorldPos();
   const mid: V3 = [end[0], start[1], end[2]];
-  return (
-    <>
-      <RoundDuct start={start} end={mid} radius={0.18} />
-      <RoundDuct start={mid} end={end} radius={0.18} />
-      <SquareFlange size={0.42} thickness={0.04} position={start} />
-      <SquareFlange size={0.42} thickness={0.04} position={end} />
-    </>
-  );
+  return <ElbowedPipe path={[start, mid, end]} radius={0.18} />;
 }
 
 /** Purifier bran outlet → bran finisher (drop from upper deck to mill deck). */
@@ -376,14 +271,7 @@ function PurifierToBranFinisherDuct() {
   const start = purifierBranOutletWorldPos();
   const end = branFinisherInletWorldPos();
   const mid: V3 = [end[0], start[1], end[2]];
-  return (
-    <>
-      <RoundDuct start={start} end={mid} radius={0.16} />
-      <RoundDuct start={mid} end={end} radius={0.16} />
-      <SquareFlange size={0.4} thickness={0.04} position={start} />
-      <SquareFlange size={0.4} thickness={0.04} position={end} />
-    </>
-  );
+  return <ElbowedPipe path={[start, mid, end]} radius={0.16} />;
 }
 
 /** Plansifter flour + bran-finisher recovered flour → flour bin fill header. */
@@ -394,45 +282,33 @@ function FlourToStorageDucts() {
   const binB = flourBinInletWorldPos('B');
   const binC = flourBinInletWorldPos('C');
 
-  // Shared header above storage aisle at bin fill height
   const headerY = binB[1];
   const headerX = binB[0] - REF.flourBin.radius - 1.4;
   const header: V3 = [headerX, headerY, binB[2]];
   const headerA: V3 = [headerX, headerY, binA[2]];
   const headerC: V3 = [headerX, headerY, binC[2]];
 
-  // Plansifter flour drop then run to header
   const flourDrop: V3 = [flourOut[0], headerY, flourOut[2]];
   const flourToHeader: V3 = [headerX, headerY, flourOut[2]];
 
-  // Recovered flour rises/runs to header
   const recoveredRise: V3 = [recovered[0], headerY, recovered[2]];
   const recoveredToHeader: V3 = [headerX, headerY, recovered[2]];
 
   return (
     <>
-      {/* Primary flour from plansifter */}
-      <RoundDuct start={flourOut} end={flourDrop} radius={0.14} />
-      <RoundDuct start={flourDrop} end={flourToHeader} radius={0.14} />
-      <RoundDuct start={flourToHeader} end={header} radius={0.14} />
-
-      {/* Recovered flour from bran finisher */}
-      <RoundDuct start={recovered} end={recoveredRise} radius={0.12} />
-      <RoundDuct start={recoveredRise} end={recoveredToHeader} radius={0.12} />
-      <RoundDuct start={recoveredToHeader} end={header} radius={0.12} />
-
-      {/* Header manifold → bins A / B / C */}
-      <RoundDuct start={header} end={headerA} radius={0.13} />
-      <RoundDuct start={header} end={headerC} radius={0.13} />
-      <RoundDuct start={headerA} end={binA} radius={0.13} />
-      <RoundDuct start={header} end={binB} radius={0.13} />
-      <RoundDuct start={headerC} end={binC} radius={0.13} />
-
-      <SquareFlange size={0.36} thickness={0.04} position={flourOut} />
-      <SquareFlange size={0.32} thickness={0.04} position={recovered} />
-      <SquareFlange size={0.34} thickness={0.04} position={binA} />
-      <SquareFlange size={0.34} thickness={0.04} position={binB} />
-      <SquareFlange size={0.34} thickness={0.04} position={binC} />
+      <ElbowedPipe
+        path={[flourOut, flourDrop, flourToHeader, header]}
+        radius={0.14}
+        supportEvery={2.5}
+      />
+      <ElbowedPipe
+        path={[recovered, recoveredRise, recoveredToHeader, header]}
+        radius={0.12}
+        supportEvery={2.5}
+      />
+      <ElbowedPipe path={[header, headerA, binA]} radius={0.13} supportEvery={99} />
+      <ElbowedPipe path={[header, binB]} radius={0.13} supportEvery={99} />
+      <ElbowedPipe path={[header, headerC, binC]} radius={0.13} supportEvery={99} />
     </>
   );
 }
@@ -442,12 +318,49 @@ function FlourBinAToPackingDuct() {
   const start = flourBinOutletWorldPos('A');
   const end = packingMachineInletWorldPos();
   const mid: V3 = [end[0], start[1], end[2]];
+  return <ElbowedPipe path={[start, mid, end]} radius={0.18} />;
+}
+
+/** Close packing-cell belt gaps so bags have a continuous mechanical path. */
+function PackingCellBridges() {
   return (
     <>
-      <RoundDuct start={start} end={mid} radius={0.18} />
-      <RoundDuct start={mid} end={end} radius={0.18} />
-      <SquareFlange size={0.42} thickness={0.04} position={start} />
-      <SquareFlange size={0.42} thickness={0.04} position={end} />
+      <BeltBridge start={packingMachineConveyorEndWorldPos()} end={bagConveyorInletWorldPos()} />
+      <BeltBridge start={bagSewingOutletWorldPos()} end={checkWeigherInletWorldPos()} />
+      <BeltBridge start={checkWeigherOutletWorldPos()} end={metalDetectorInletWorldPos()} />
+      <BeltBridge start={metalDetectorOutletWorldPos()} end={palletizerInletWorldPos()} />
+    </>
+  );
+}
+
+/** Byproduct gravity drops to floor reject bins (oversize / clean semolina / bran). */
+function ByproductChutes() {
+  const oversize = plansifterOversizeOutletWorldPos();
+  const semolina = purifierSemolinaOutletWorldPos();
+  const bran = branFinisherBranOutletWorldPos();
+
+  const oversizeBin: V3 = [oversize[0] + 0.6, 0, oversize[2] + 1.1];
+  const semolinaBin: V3 = [semolina[0] - 0.4, 0, semolina[2] + 1.1];
+  const branBin: V3 = [bran[0] + 0.8, 0, bran[2] + 1.0];
+
+  const oversizeDrop: V3 = [oversizeBin[0], 0.72, oversizeBin[2]];
+  const semolinaDrop: V3 = [semolinaBin[0], 0.72, semolinaBin[2]];
+  const branDrop: V3 = [branBin[0], 0.72, branBin[2]];
+
+  return (
+    <>
+      <ElbowedPipe
+        path={[oversize, [oversize[0], oversize[1], oversizeDrop[2]], oversizeDrop]}
+        radius={0.14}
+        supportEvery={99}
+      />
+      <RejectBin position={oversizeBin} label="OVERSIZE" />
+
+      <GravityChute start={semolina} end={semolinaDrop} topSize={0.32} bottomSize={0.2} />
+      <RejectBin position={semolinaBin} label="SEMOLINA" />
+
+      <GravityChute start={bran} end={branDrop} topSize={0.3} bottomSize={0.2} />
+      <RejectBin position={branBin} label="BRAN" />
     </>
   );
 }
@@ -783,17 +696,16 @@ export function MaterialHandlingLine() {
 
       <SlideGate position={[0, SILO_OUTLET_Y, 0]} />
 
-      <RoundDuct start={[0, SILO_OUTLET_Y, 0]} end={[0, bridgeY, 0]} radius={spoutR} />
-      <RoundDuct start={[0, bridgeY, 0]} end={[ductStartX(), bridgeY, 0]} radius={spoutR} />
-      <RoundDuct
-        start={[ductStartX(), bridgeY, 0]}
-        end={[HOPPER_X, bridgeY, 0]}
-        radius={spoutR * 1.05}
-      />
-      <RoundDuct
-        start={[HOPPER_X, bridgeY, 0]}
-        end={[HOPPER_X, inletY, 0]}
-        radius={REF.hopper.width * 0.22}
+      <ElbowedPipe
+        path={[
+          [0, SILO_OUTLET_Y, 0],
+          [0, bridgeY, 0],
+          [HOPPER_X, bridgeY, 0],
+          [HOPPER_X, inletY, 0],
+        ]}
+        radius={spoutR}
+        supportEvery={2.5}
+        flangeSize={spoutR * 2.4}
       />
 
       <FeedHopperComponent position={[HOPPER_X, 0, 0]} showFlourFill flourFillLevel={0.45} />
@@ -1093,6 +1005,10 @@ export function MaterialHandlingLine() {
         showDataPanel={false}
         showClickText={false}
       />
+
+      {/* Packing cell belt bridges + byproduct gravity chutes */}
+      <PackingCellBridges />
+      <ByproductChutes />
 
       <MaterialFlow path={flowPath} active={lineActive} speed={0.07} />
     </group>
