@@ -131,6 +131,8 @@ import {
   valveOutletY,
   warehouseStagingPosition,
   plantCenter,
+  rawAisleZ,
+  siloPosition,
 } from './layoutConstants';
 import { useCameraNear } from '../perf/useCameraNear';
 
@@ -141,6 +143,8 @@ const COLORS = {
   gatePlate: '#4a5058',
 } as const;
 
+const RAW_Z = rawAisleZ();
+const SILO_POS = siloPosition();
 const HOPPER_X = hopperCenterX();
 const VALVE_Y = valveCenterY();
 const SCREW_X = screwInletX();
@@ -199,7 +203,7 @@ function ValveToScrewPipe() {
 
 /** Angled spout: screw discharge → bucket elevator boot inlet. */
 function ScrewToElevatorSpout() {
-  const start: V3 = [screwDischargeX(), screwDischargeY(), 0];
+  const start: V3 = [screwDischargeX(), screwDischargeY(), RAW_Z];
   const end = elevatorBootInlet();
   return <ElbowedPipe path={[start, end]} radius={REF.screw.width * 1.1} supportEvery={99} />;
 }
@@ -242,12 +246,13 @@ function MagneticToScourerDuct() {
   return <ElbowedPipe path={[start, mid, end]} radius={0.16} />;
 }
 
-/** Scourer bottom outlet → dampener top inlet (horizontal then rise). */
+/** Scourer bottom outlet → dampener (Z-drop into conditioning aisle, then rise). */
 function ScourerToDampenerDuct() {
   const start = scourerOutletWorldPos();
   const end = dampenerInletWorldPos();
-  const mid: V3 = [end[0], start[1], end[2]];
-  return <ElbowedPipe path={[start, mid, end]} radius={0.16} />;
+  const midZ: V3 = [start[0], start[1], end[2]];
+  const midX: V3 = [end[0], start[1], end[2]];
+  return <ElbowedPipe path={[start, midZ, midX, end]} radius={0.16} />;
 }
 
 /** Dampener outlet → conditioning bin side inlet (horizontal then rise). */
@@ -299,39 +304,39 @@ function FlourToStorageDucts() {
   const binB = flourBinInletWorldPos('B');
   const binC = flourBinInletWorldPos('C');
 
+  // Bins are spaced along −X on storage aisle; header runs parallel on +Z side.
   const headerY = binB[1];
-  const headerX = binB[0] - REF.flourBin.radius - 1.4;
-  const header: V3 = [headerX, headerY, binB[2]];
-  const headerA: V3 = [headerX, headerY, binA[2]];
-  const headerC: V3 = [headerX, headerY, binC[2]];
+  const headerZ = REF.zones.storage.z + 2.2;
+  const headerA: V3 = [binA[0], headerY, headerZ];
+  const headerB: V3 = [binB[0], headerY, headerZ];
+  const headerC: V3 = [binC[0], headerY, headerZ];
 
   const flourDrop: V3 = [flourOut[0], headerY, flourOut[2]];
-  const flourToHeader: V3 = [headerX, headerY, flourOut[2]];
+  const flourToHeader: V3 = [flourOut[0], headerY, headerZ];
 
   const recoveredRise: V3 = [recovered[0], headerY, recovered[2]];
-  const recoveredToHeader: V3 = [headerX, headerY, recovered[2]];
+  const recoveredToHeader: V3 = [recovered[0], headerY, headerZ];
 
-  // Reducers: header 0.13 → bin fill 0.09
-  const redA: V3 = [binA[0] - 0.35, binA[1], binA[2]];
-  const redB: V3 = [binB[0] - 0.35, binB[1], binB[2]];
-  const redC: V3 = [binC[0] - 0.35, binC[1], binC[2]];
+  const redA: V3 = [binA[0], binA[1], (binA[2] + headerZ) / 2];
+  const redB: V3 = [binB[0], binB[1], (binB[2] + headerZ) / 2];
+  const redC: V3 = [binC[0], binC[1], (binC[2] + headerZ) / 2];
 
   return (
     <>
-      <PneumaticPipe path={[flourOut, flourDrop, flourToHeader, header]} radius={0.14} />
+      <PneumaticPipe path={[flourOut, flourDrop, flourToHeader, headerB]} radius={0.14} />
       <PneumaticValve position={flourToHeader} radius={0.14} />
-      <PneumaticPipe path={[recovered, recoveredRise, recoveredToHeader, header]} radius={0.12} />
-      <PneumaticTee position={header} radius={0.14} />
+      <PneumaticPipe path={[recovered, recoveredRise, recoveredToHeader, headerB]} radius={0.12} />
+      <PneumaticTee position={headerB} radius={0.14} />
 
-      <PneumaticPipe path={[header, headerA]} radius={0.13} supportEvery={99} />
+      <PneumaticPipe path={[headerB, headerA]} radius={0.13} supportEvery={99} />
       <PneumaticTee position={headerA} radius={0.12} />
       <PneumaticPipe path={[headerA, redA]} radius={0.13} supportEvery={99} />
       <PipeReducer start={redA} end={binA} startRadius={0.13} endRadius={0.09} />
 
-      <PneumaticPipe path={[header, redB]} radius={0.13} supportEvery={99} />
+      <PneumaticPipe path={[headerB, redB]} radius={0.13} supportEvery={99} />
       <PipeReducer start={redB} end={binB} startRadius={0.13} endRadius={0.09} />
 
-      <PneumaticPipe path={[header, headerC]} radius={0.13} supportEvery={99} />
+      <PneumaticPipe path={[headerB, headerC]} radius={0.13} supportEvery={99} />
       <PneumaticTee position={headerC} radius={0.12} />
       <PneumaticPipe path={[headerC, redC]} radius={0.13} supportEvery={99} />
       <PipeReducer start={redC} end={binC} startRadius={0.13} endRadius={0.09} />
@@ -343,11 +348,13 @@ function FlourToStorageDucts() {
 function FlourBinAToPackingDuct() {
   const start = flourBinOutletWorldPos('A');
   const end = packingMachineInletWorldPos();
-  const mid: V3 = [end[0], start[1], end[2]];
-  const valvePos: V3 = [(start[0] + mid[0]) / 2, start[1], start[2]];
+  // Drop −Z to packing aisle, then to packing X.
+  const midZ: V3 = [start[0], start[1], end[2]];
+  const midX: V3 = [end[0], start[1], end[2]];
+  const valvePos: V3 = [(start[0] + midZ[0]) / 2, start[1], (start[2] + midZ[2]) / 2];
   return (
     <>
-      <PneumaticPipe path={[start, mid, end]} radius={0.16} />
+      <PneumaticPipe path={[start, midZ, midX, end]} radius={0.16} />
       <PneumaticValve position={valvePos} radius={0.16} />
     </>
   );
@@ -554,7 +561,7 @@ function PlantInfrastructure() {
         caged
         position={[filterX + REF.dustSystem.bagFilterWidth / 2 + 0.4, 0, filterZ]}
       />
-      <AccessLadder height={siloLadderH} caged position={[REF.silo.radius + 0.55, 0, 0]} />
+      <AccessLadder height={siloLadderH} caged position={[REF.silo.radius + 0.55, 0, RAW_Z]} />
 
       {/* Bran finisher service pad with toe/rails */}
       <SteelPlatform width={3.2} depth={2.4} position={[bfx, 0.05, psz]} />
@@ -649,23 +656,23 @@ export function MaterialHandlingLine() {
   const wheatPath: V3[] = useMemo(() => {
     const h = REF.elevator.height;
     return [
-      [0, SILO_OUTLET_Y + 1.5, 0],
-      [0, SILO_OUTLET_Y, 0],
-      [0, bridgeY, 0],
-      [ductStartX(), bridgeY, 0],
-      [HOPPER_X, bridgeY, 0],
-      [HOPPER_X, inletY, 0],
-      [HOPPER_X, hopperTopY() * 0.7, 0],
-      [HOPPER_X, hopperOutletY(), 0],
-      [HOPPER_X, VALVE_Y, 0],
-      [SCREW_X, valveOutletY(), 0],
-      [SCREW_X, screwInletTopY(), 0],
-      [SCREW_X + REF.screw.length * 0.5, screwDischargeY(), 0],
-      [screwDischargeX(), screwDischargeY(), 0],
+      [0, SILO_OUTLET_Y + 1.5, RAW_Z],
+      [0, SILO_OUTLET_Y, RAW_Z],
+      [0, bridgeY, RAW_Z],
+      [ductStartX(), bridgeY, RAW_Z],
+      [HOPPER_X, bridgeY, RAW_Z],
+      [HOPPER_X, inletY, RAW_Z],
+      [HOPPER_X, hopperTopY() * 0.7, RAW_Z],
+      [HOPPER_X, hopperOutletY(), RAW_Z],
+      [HOPPER_X, VALVE_Y, RAW_Z],
+      [SCREW_X, valveOutletY(), RAW_Z],
+      [SCREW_X, screwInletTopY(), RAW_Z],
+      [SCREW_X + REF.screw.length * 0.5, screwDischargeY(), RAW_Z],
+      [screwDischargeX(), screwDischargeY(), RAW_Z],
       bootInlet,
-      [elevX, REF.elevator.bootHeight + 1, 0],
-      [elevX, h * 0.45, 0],
-      [elevX, h * 0.85, 0],
+      [elevX, REF.elevator.bootHeight + 1, RAW_Z],
+      [elevX, h * 0.45, RAW_Z],
+      [elevX, h * 0.85, RAW_Z],
       headOutlet,
       separatorInlet,
       [sepX, REF.separator.frameHeight / 2, sepZ],
@@ -732,7 +739,8 @@ export function MaterialHandlingLine() {
   ]);
 
   const flourPath: V3[] = useMemo(() => {
-    const headerX = flourBinAInlet[0] - REF.flourBin.radius - 1.4;
+    const headerZ = faz + 2.2;
+    const headerY = flourBinAInlet[1];
     return [
       millInlet,
       [rmx, rmy, rmz],
@@ -741,12 +749,13 @@ export function MaterialHandlingLine() {
       sifterInlet,
       [psx, psy, psz],
       flourOut,
-      [flourOut[0], flourBinAInlet[1], flourOut[2]],
-      [headerX, flourBinAInlet[1], flourOut[2]],
-      [headerX, flourBinAInlet[1], flourBinAInlet[2]],
+      [flourOut[0], headerY, flourOut[2]],
+      [flourOut[0], headerY, headerZ],
+      [fax, headerY, headerZ],
       flourBinAInlet,
       [fax, fay + REF.flourBin.legHeight + REF.flourBin.height * 0.5, faz],
       flourBinAOutlet,
+      [flourBinAOutlet[0], flourBinAOutlet[1], packingInlet[2]],
       [packingInlet[0], flourBinAOutlet[1], packingInlet[2]],
       packingInlet,
       [pkx, pky + 1.5, pkz],
@@ -826,49 +835,48 @@ export function MaterialHandlingLine() {
       ))}
 
       <FocusableGroup machineId="silo">
-        <SiloModel />
+        <group position={SILO_POS}>
+          <SiloModel />
+        </group>
       </FocusableGroup>
 
-      <SlideGate position={[0, SILO_OUTLET_Y, 0]} />
-
-      <ElbowedPipe
-        path={[
-          [0, SILO_OUTLET_Y, 0],
-          [0, bridgeY, 0],
-          [HOPPER_X, bridgeY, 0],
-          [HOPPER_X, inletY, 0],
-        ]}
-        radius={spoutR}
-        supportEvery={2.5}
-        flangeSize={spoutR * 2.4}
-      />
-
-      <FeedHopperComponent position={[HOPPER_X, 0, 0]} showFlourFill flourFillLevel={0.45} />
-
-      <RotaryValveComponent
-        position={[HOPPER_X, VALVE_Y, 0]}
-        scale={REF.valve.scale}
-        width={REF.valve.width}
-        height={REF.valve.height}
-        depth={REF.valve.depth}
-        active={lineActive}
-        showDataPanel={false}
-        showLegs={false}
-        showGuard={false}
-      />
-
-      <ValveToScrewPipe />
-
-      <ScrewConveyorComponent
-        position={[SCREW_X, screwFloorY(), 0]}
-        length={REF.screw.length}
-        width={REF.screw.width * 2}
-        troughHeight={REF.screw.troughHeight}
-        inletDropHeight={REF.screw.inletDropHeight}
-        active={lineActive}
-        showLabel={false}
-        axis="x"
-      />
+      <group position={[0, 0, RAW_Z]}>
+        <SlideGate position={[0, SILO_OUTLET_Y, 0]} />
+        <ElbowedPipe
+          path={[
+            [0, SILO_OUTLET_Y, 0],
+            [0, bridgeY, 0],
+            [HOPPER_X, bridgeY, 0],
+            [HOPPER_X, inletY, 0],
+          ]}
+          radius={spoutR}
+          supportEvery={2.5}
+          flangeSize={spoutR * 2.4}
+        />
+        <FeedHopperComponent position={[HOPPER_X, 0, 0]} showFlourFill flourFillLevel={0.45} />
+        <RotaryValveComponent
+          position={[HOPPER_X, VALVE_Y, 0]}
+          scale={REF.valve.scale}
+          width={REF.valve.width}
+          height={REF.valve.height}
+          depth={REF.valve.depth}
+          active={lineActive}
+          showDataPanel={false}
+          showLegs={false}
+          showGuard={false}
+        />
+        <ValveToScrewPipe />
+        <ScrewConveyorComponent
+          position={[SCREW_X, screwFloorY(), 0]}
+          length={REF.screw.length}
+          width={REF.screw.width * 2}
+          troughHeight={REF.screw.troughHeight}
+          inletDropHeight={REF.screw.inletDropHeight}
+          active={lineActive}
+          showLabel={false}
+          axis="x"
+        />
+      </group>
 
       <ScrewToElevatorSpout />
 
@@ -964,18 +972,20 @@ export function MaterialHandlingLine() {
       <DampenerToConditioningBinDuct />
 
       {/* Rotated so side inlet faces −X toward the dampener */}
-      <group position={CONDITIONING_BIN_POS} rotation={[0, Math.PI, 0]}>
-        <ConditioningBinComponent
-          radius={REF.conditioningBin.radius}
-          height={REF.conditioningBin.height}
-          coneHeight={REF.conditioningBin.coneHeight}
-          legHeight={REF.conditioningBin.legHeight}
-          capacity={REF.conditioningBin.capacity}
-          fillPercent={62}
-          autoDemo={false}
-          showDataPanel={false}
-        />
-      </group>
+      <FocusableGroup machineId="conditioning_bin">
+        <group position={CONDITIONING_BIN_POS} rotation={[0, Math.PI, 0]}>
+          <ConditioningBinComponent
+            radius={REF.conditioningBin.radius}
+            height={REF.conditioningBin.height}
+            coneHeight={REF.conditioningBin.coneHeight}
+            legHeight={REF.conditioningBin.legHeight}
+            capacity={REF.conditioningBin.capacity}
+            fillPercent={62}
+            autoDemo={false}
+            showDataPanel={false}
+          />
+        </group>
+      </FocusableGroup>
 
       {/* Conditioning Bin → Roller Mill */}
       <ConditioningBinToRollerMillDuct />

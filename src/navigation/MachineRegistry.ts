@@ -15,6 +15,9 @@ import {
   checkWeigherPosition,
   metalDetectorPosition,
   palletizerPosition,
+  siloPosition,
+  conditioningBinPosition,
+  warehouseStagingPosition,
 } from '../components/layoutConstants';
 
 /** Central list — rebuild whenever layout helpers change (cheap pure function). */
@@ -23,7 +26,7 @@ export function buildMachineRegistry(): MachineRecord[] {
     {
       id: 'silo',
       name: MACHINE_LABELS.silo,
-      position: [0, 2, 0],
+      position: [siloPosition()[0], 2, siloPosition()[2]],
       zone: 'raw',
       size: [3.2, 6, 3.2],
     },
@@ -40,6 +43,13 @@ export function buildMachineRegistry(): MachineRecord[] {
       position: separatorPosition(),
       zone: 'cleaning',
       size: [3.5, 3, 2.2],
+    },
+    {
+      id: 'conditioning_bin',
+      name: MACHINE_LABELS.conditioning_bin,
+      position: conditioningBinPosition(),
+      zone: 'conditioning',
+      size: [4, 8, 4],
     },
     {
       id: 'roller_mill',
@@ -82,6 +92,13 @@ export function buildMachineRegistry(): MachineRecord[] {
       position: palletizerPosition(),
       zone: 'packing',
       size: [6, 4, 6],
+    },
+    {
+      id: 'warehouse',
+      name: MACHINE_LABELS.warehouse,
+      position: warehouseStagingPosition(),
+      zone: 'warehouse',
+      size: [8, 4, 6],
     },
   ];
 }

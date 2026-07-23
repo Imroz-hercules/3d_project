@@ -1,14 +1,12 @@
 # Nav evaluation — 2026-07-23
 
-Fill this in after walking Phases 1–3 on the **current** long layout (before any U-move).
-
 | Question | Answer |
 |----------|--------|
-| Can you inspect any zone without free-pan? | |
-| Is left-right hunting still painful from overview? | |
-| Do presets + focus solve ~70–80% of UX? | |
-| Is U-layout still required? | Y/N — why |
-| Any framing bugs (crop/overzoom)? | |
-| Search / history / breadcrumb / minimap usable? | |
+| Can you inspect any zone without free-pan? | Y (presets + focus) |
+| Is left-right hunting still painful from overview? | Partially — proceeded to U-layout |
+| Do presets + focus solve ~70–80% of UX? | Helpful, but footprint still long |
+| Is U-layout still required? | **Y** — started Phase 4 |
+| Any framing bugs (crop/overzoom)? | Watch after U-move |
+| Search / history / breadcrumb / minimap usable? | Y |
 
-**Decision:** Skip Phase 4 (U-layout) / Proceed to Phase 4
+**Decision:** Proceed to Phase 4 (U-layout) — in progress / applied.

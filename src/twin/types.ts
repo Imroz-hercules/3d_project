@@ -4,12 +4,14 @@ export type MachineId =
   | 'silo'
   | 'elevator'
   | 'vibro'
+  | 'conditioning_bin'
   | 'roller_mill'
   | 'flour_bin_a'
   | 'packing'
   | 'check_weigher'
   | 'metal_detector'
-  | 'palletizer';
+  | 'palletizer'
+  | 'warehouse';
 
 export type AlarmLevel = 'OFF' | 'WARN' | 'ALARM';
 
@@ -37,22 +39,26 @@ export const MACHINE_ORDER: MachineId[] = [
   'silo',
   'elevator',
   'vibro',
+  'conditioning_bin',
   'roller_mill',
   'flour_bin_a',
   'packing',
   'check_weigher',
   'metal_detector',
   'palletizer',
+  'warehouse',
 ];
 
 export const MACHINE_LABELS: Record<MachineId, string> = {
   silo: 'Grain Silo',
   elevator: 'Bucket Elevator',
   vibro: 'Vibro Separator',
+  conditioning_bin: 'Conditioning Bin',
   roller_mill: 'Roller Mill',
   flour_bin_a: 'Flour Bin A',
   packing: 'Packing Machine',
   check_weigher: 'Check Weigher',
   metal_detector: 'Metal Detector',
   palletizer: 'Robotic Palletizer',
+  warehouse: 'Warehouse Staging',
 };

@@ -39,29 +39,34 @@ export const REF = {
     siloToHopperGap: 0.65,
   },
   /**
-   * Hybrid plant zones — raw on Z=0, cleaning/conditioning on +Z aisle,
-   * milling on −Z aisle with stepped decks (gravity / multi-level cue).
+   * U / serpentine plant (axis-aligned):
+   *  top (+Z): raw → cleaning (+X)
+   *  right: conditioning (−Z drop)
+   *  bottom (−Z): milling → storage (−X fold)
+   *  south: packing → warehouse (+X)
    */
   zones: {
-    raw: { z: 0, floorY: 0 },
-    cleaning: { z: 3.0, floorY: 0 },
-    conditioning: { z: 3.0, floorY: 0 },
+    raw: { z: 6.0, floorY: 0 },
+    cleaning: { z: 6.0, floorY: 0 },
+    conditioning: { z: 0.0, floorY: 0 },
     milling: {
-      z: -2.0,
+      z: -6.0,
       /** Steel mezzanine under roller mill + bran finisher. */
       millDeckY: 2.8,
       /** Upper gallery deck under plansifter + purifier. */
       upperDeckY: 5.5,
     },
-    /** Finished-product flour bins — same aisle as milling for a readable twin. */
-    storage: { z: -2.0, floorY: 0 },
-    /** Packing cell — slightly toward +Z so it stays in the default overview. */
-    packing: { z: -2.0, floorY: 0 },
+    storage: { z: -6.0, floorY: 0 },
+    packing: { z: -16.0, floorY: 0 },
+    warehouse: { z: -16.0, floorY: 0 },
     gaps: {
-      /** Extra X gap at cleaning → conditioning boundary (metres). */
-      cleaningToConditioning: 3.5,
-      /** X run from conditioning bin outlet toward milling aisle (metres). */
-      conditioningToMillingX: 4.5,
+      /** Small +X clearance when dropping cleaning → conditioning (−Z). */
+      cleaningToConditioning: 1.2,
+      /** Clearance when dropping conditioning → milling aisle (−Z). */
+      conditioningToMillingX: 1.5,
+      /** Extra Z used when framing storage → packing drop. */
+      storageToPackingZ: 4.0,
+      packingToWarehouseX: 2.5,
     },
   },
   elevator: {
@@ -296,7 +301,14 @@ export const REF = {
   },
 } as const;
 
-export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
+export type ZoneId =
+  | 'raw'
+  | 'cleaning'
+  | 'conditioning'
+  | 'milling'
+  | 'storage'
+  | 'packing'
+  | 'warehouse';
 
 /** World-space origin hint for a plant zone (aisle Z + floor/deck Y). */
 export function zoneOrigin(zone: ZoneId): [number, number, number] {
@@ -315,7 +327,20 @@ export function zoneOrigin(zone: ZoneId): [number, number, number] {
   if (zone === 'packing') {
     return [0, REF.zones.packing.floorY, REF.zones.packing.z];
   }
+  if (zone === 'warehouse') {
+    return [0, REF.zones.warehouse.floorY, REF.zones.warehouse.z];
+  }
   return [0, REF.zones.raw.floorY, REF.zones.raw.z];
+}
+
+/** Raw-aisle Z (silo → elevator). */
+export function rawAisleZ() {
+  return REF.zones.raw.z;
+}
+
+/** Silo group origin — start of raw aisle. */
+export function siloPosition(): [number, number, number] {
+  return [0, 0, rawAisleZ()];
 }
 
 export function hopperCenterX() {
@@ -396,13 +421,13 @@ export function elevatorPosition(): [number, number, number] {
   const w = REF.elevator.width;
   // Boot inlet is on +X face at width/2 + 0.05
   const x = dischargeX - w / 2 - 0.05;
-  return [x, 0, 0];
+  return [x, 0, rawAisleZ()];
 }
 
 /** Boot inlet flange world position (screw → elevator connection point). */
 export function elevatorBootInlet(): [number, number, number] {
-  const [ex] = elevatorPosition();
-  return [ex + REF.elevator.width / 2 + 0.05, REF.elevator.bootHeight / 2, 0];
+  const [ex, , ez] = elevatorPosition();
+  return [ex + REF.elevator.width / 2 + 0.05, REF.elevator.bootHeight / 2, ez];
 }
 
 /** Head discharge outlet world position. */
@@ -548,17 +573,15 @@ export function scourerOutletWorldPos(): [number, number, number] {
    ========================================================================== */
 
 /**
- * Dampener group origin — housing centre on X axis cylinder.
- * Legs extend to y = −legHeight; place so feet sit on the ground.
+ * Dampener group origin — conditioning aisle (−Z from cleaning).
+ * Keeps a small +X step from scourer; main transfer is the Z drop.
  */
 export function dampenerPosition(): [number, number, number] {
-  const [ox, , oz] = scourerOutletWorldPos();
+  const [ox] = scourerOutletWorldPos();
   const { length, legHeight } = REF.dampener;
-  const gap =
-    REF.dampenerLayout.gapFromScourer + REF.zones.gaps.cleaningToConditioning;
-  // Feed inlet local X = −length/3
+  const gap = REF.dampenerLayout.gapFromScourer + REF.zones.gaps.cleaningToConditioning;
   const x = ox + gap + length / 3;
-  return [x, legHeight, oz];
+  return [x, legHeight, REF.zones.conditioning.z];
 }
 
 /** Dampener top feed inlet flange — world position. */
@@ -585,16 +608,15 @@ export function conditioningBinBodyLift() {
 }
 
 /**
- * Conditioning bin group origin — base on ground (y = 0).
+ * Conditioning bin group origin — conditioning aisle.
  * Component is rotated 180° in the line so the side inlet faces −X (toward dampener).
  */
 export function conditioningBinPosition(): [number, number, number] {
-  const [ox, , oz] = dampenerOutletWorldPos();
+  const [ox] = dampenerOutletWorldPos();
   const { radius } = REF.conditioningBin;
   const gap = REF.conditioningBinLayout.gapFromDampener;
-  // After Y=π rotation, inlet flange is at local −(radius + 0.15)
   const x = ox + gap + radius + 0.15;
-  return [x, 0, oz];
+  return [x, 0, REF.zones.conditioning.z];
 }
 
 /** Conditioning bin feed inlet flange — world position (faces −X). */
@@ -619,8 +641,7 @@ export function conditioningBinOutletWorldPos(): [number, number, number] {
    ========================================================================== */
 
 /**
- * Roller mill group origin — milling aisle (−Z) on mill mezzanine deck.
- * Legs extend to y = −legHeight; feet sit on millDeckY.
+ * Roller mill — east end of milling aisle (−Z from conditioning), then process folds −X.
  */
 export function rollerMillPosition(): [number, number, number] {
   const [ox] = conditioningBinOutletWorldPos();
@@ -651,15 +672,14 @@ export function rollerMillOutletWorldPos(): [number, number, number] {
    ========================================================================== */
 
 /**
- * Plansifter group origin — milling aisle, feet on upper gallery deck.
- * Frame bases sit on upperDeckY; cabinet hangs within the 6 m frame.
+ * Plansifter — west of roller mill (−X fold on milling aisle).
  */
 export function plansifterPosition(): [number, number, number] {
-  const [ox] = rollerMillOutletWorldPos();
+  const [ox] = rollerMillPosition();
   const { frameHeight } = REF.plansifter;
   const gap = REF.plansifterLayout.gapFromMill;
   const deckY = REF.zones.milling.upperDeckY;
-  return [ox + gap, deckY + frameHeight / 2, REF.zones.milling.z];
+  return [ox - gap, deckY + frameHeight / 2, REF.zones.milling.z];
 }
 
 /** Plansifter top feed inlet flange — world position. */
@@ -700,14 +720,14 @@ export function plansifterOversizeOutletWorldPos(): [number, number, number] {
    ========================================================================== */
 
 /**
- * Purifier group origin — milling aisle, feet on upper gallery deck.
+ * Purifier — further −X on milling upper deck.
  */
 export function purifierPosition(): [number, number, number] {
   const [px] = plansifterPosition();
   const { legHeight } = REF.purifier;
   const gap = REF.purifierLayout.gapFromPlansifter;
   const deckY = REF.zones.milling.upperDeckY;
-  return [px + gap, deckY + legHeight, REF.zones.milling.z];
+  return [px - gap, deckY + legHeight, REF.zones.milling.z];
 }
 
 /** Purifier top feed inlet flange — world position. */
@@ -738,13 +758,13 @@ export function purifierBranOutletWorldPos(): [number, number, number] {
    ========================================================================== */
 
 /**
- * Bran finisher group origin — milling aisle at grade (below purifier for gravity drop).
+ * Bran finisher — further −X at grade on milling aisle.
  */
 export function branFinisherPosition(): [number, number, number] {
   const [px] = purifierPosition();
   const { legHeight } = REF.branFinisher;
   const gap = REF.branFinisherLayout.gapFromPurifier;
-  return [px + gap, legHeight, REF.zones.milling.z];
+  return [px - gap, legHeight, REF.zones.milling.z];
 }
 
 /** Bran finisher top feed inlet flange — world position. */
@@ -774,23 +794,22 @@ export function branFinisherBranOutletWorldPos(): [number, number, number] {
 
 export type FlourBinId = 'A' | 'B' | 'C';
 
-const FLOUR_BIN_Z_OFFSET: Record<FlourBinId, number> = {
-  /** Spread toward +Z so storage stays near the milling aisle overview. */
+const FLOUR_BIN_X_OFFSET: Record<FlourBinId, number> = {
+  /** Spaced west (−X) from bran finisher; A is packing feed (closest to bran). */
   A: 0,
   B: 1,
   C: 2,
 };
 
 /**
- * Flour bin group origin — storage aisle, feet on grade.
- * Three bins (A/B/C) spaced along +Z from the milling centreline.
+ * Flour bin group origin — storage aisle, spaced along −X (U fold).
  */
 export function flourBinPosition(id: FlourBinId = 'B'): [number, number, number] {
   const [fx] = branFinisherPosition();
   const gap = REF.flourBinLayout.gapFromBranFinisher;
   const spacing = REF.flourBinLayout.spacingZ;
-  const z = REF.zones.storage.z + FLOUR_BIN_Z_OFFSET[id] * spacing;
-  return [fx + gap, REF.zones.storage.floorY, z];
+  const x = fx - gap - FLOUR_BIN_X_OFFSET[id] * spacing;
+  return [x, REF.zones.storage.floorY, REF.zones.storage.z];
 }
 
 /** Side fill-pipe flange near top of bin — world position. */
@@ -814,13 +833,12 @@ export function flourBinOutletWorldPos(id: FlourBinId = 'B'): [number, number, n
    ========================================================================== */
 
 /**
- * Packing machine group origin — packing cell, fed from Flour Bin A rotary valve.
- * Offset in +X from Bin A; bag line continues further +X (not along the bin row).
+ * Packing machine — packing aisle (−Z from storage), then bag line continues +X.
  */
 export function packingMachinePosition(): [number, number, number] {
-  const [ax, , az] = flourBinPosition('A');
+  const [ax] = flourBinPosition('A');
   const gap = REF.packingLayout.gapFromFlourBin;
-  return [ax + gap, REF.zones.packing.floorY, az];
+  return [ax + gap, REF.zones.packing.floorY, REF.zones.packing.z];
 }
 
 /** Feed-hopper top flange — mates with bin A discharge duct. */
@@ -988,11 +1006,14 @@ export function palletizerOutletWorldPos(): [number, number, number] {
 
 /**
  * Warehouse staging origin — packing centreline, +X past forklift bay.
- * Racks sit on either side of a forklift aisle along +X.
  */
 export function warehouseStagingPosition(): [number, number, number] {
-  const [px, , pz] = palletizerPosition();
-  return [px + REF.warehouse.gapFromPalletizer, REF.zones.packing.floorY, pz];
+  const [px] = palletizerPosition();
+  return [
+    px + REF.warehouse.gapFromPalletizer + REF.zones.gaps.packingToWarehouseX,
+    REF.zones.warehouse.floorY,
+    REF.zones.warehouse.z,
+  ];
 }
 
 /** Stretch-wrapper stub between palletizer outfeed and forklift bay (world). */
@@ -1191,11 +1212,13 @@ export function localPanelWorldPos(
 /** Axis-aligned plant footprint including packing cell (metres). */
 export function plantBounds(): { minX: number; maxX: number; minZ: number; maxZ: number } {
   const samples: [number, number, number][] = [
-    [0, 0, 0],
+    siloPosition(),
     elevatorPosition(),
     separatorPosition(),
+    scourerPosition(),
     conditioningBinPosition(),
     rollerMillPosition(),
+    plansifterPosition(),
     branFinisherPosition(),
     flourBinPosition('A'),
     flourBinPosition('C'),
@@ -1272,4 +1295,12 @@ export function plantGroundRadius(): number {
   const hx = Math.max(Math.abs(b.minX - cx), Math.abs(b.maxX - cx));
   const hz = Math.max(Math.abs(b.minZ - cz), Math.abs(b.maxZ - cz));
   return Math.ceil(Math.hypot(hx, hz) + 8);
+}
+
+/** Footprint aspect (width/depth). Target ~0.8–2.0 after U-layout. */
+export function plantAspectXZ(): number {
+  const b = plantBounds();
+  const w = b.maxX - b.minX;
+  const d = b.maxZ - b.minZ;
+  return w / Math.max(0.01, d);
 }

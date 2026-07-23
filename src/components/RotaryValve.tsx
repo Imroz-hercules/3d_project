@@ -12,6 +12,15 @@ import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintBlue,
+  matPaintDark,
+  matPaintedSteel,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+  matRailYellow,
+} from '../materials';
 
 /* ==========================================================================
    1. TYPES / INDUSTRIAL MATERIAL PALETTE
@@ -47,13 +56,11 @@ const COLORS = {
 function Bolt({ position, size = 0.04 }: { position: V3; size?: number }) {
   return (
     <group position={position}>
-      <mesh castShadow>
+      <mesh castShadow dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[size, size, 0.025, 6]} />
-        <meshStandardMaterial color={COLORS.boltSteel} metalness={0.9} roughness={0.3} />
       </mesh>
-      <mesh position={[0, 0.013, 0]}>
+      <mesh position={[0, 0.013, 0]} dispose={null} material={matSteel}>
         <cylinderGeometry args={[size * 0.7, size * 0.7, 0.005, 6]} />
-        <meshStandardMaterial color={COLORS.flangeBright} metalness={0.95} roughness={0.2} />
       </mesh>
     </group>
   );
@@ -73,22 +80,19 @@ function SquareFlange({ size, thickness, position, label }: { size: number; thic
 
   return (
     <group position={position}>
-      <mesh castShadow receiveShadow>
+      <mesh castShadow receiveShadow dispose={null} material={matSteel}>
         <boxGeometry args={[size, thickness, size]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.75} roughness={0.35} />
       </mesh>
-      <mesh position={[0, thickness / 2 + 0.005, 0]}>
+      <mesh position={[0, thickness / 2 + 0.005, 0]} dispose={null} material={matSteel}>
         <cylinderGeometry args={[size * 0.35, size * 0.35, 0.01, 32]} />
-        <meshStandardMaterial color={COLORS.flangeBright} metalness={0.8} roughness={0.25} />
       </mesh>
       {boltPositions.map((pos, i) => <Bolt key={i} position={pos} size={0.035} />)}
       {[
         [size / 2 - 0.05, size / 2 - 0.05], [-size / 2 + 0.05, size / 2 - 0.05],
         [size / 2 - 0.05, -size / 2 + 0.05], [-size / 2 + 0.05, -size / 2 + 0.05],
       ].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0, z]}>
+        <mesh key={i} position={[x, 0, z]} dispose={null} material={matSteelDark}>
           <boxGeometry args={[0.08, thickness + 0.01, 0.08]} />
-          <meshStandardMaterial color={COLORS.housingDark} metalness={0.7} roughness={0.4} />
         </mesh>
       ))}
       {label && (
@@ -116,36 +120,30 @@ function MainHousing({ width, height, depth, hovered }: { width: number; height:
           emissiveIntensity={hovered ? 0.1 : 0}
         />
       </mesh>
-      <mesh position={[-width / 2 - depth / 2 + 0.05, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh position={[-width / 2 - depth / 2 + 0.05, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[height / 2, height / 2, depth * 0.9, 24]} />
-        <meshStandardMaterial color={hovered ? COLORS.housingLight : COLORS.housingGray} metalness={0.65} roughness={0.45} />
       </mesh>
-      <mesh position={[width / 2 + depth / 2 - 0.05, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh position={[width / 2 + depth / 2 - 0.05, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[height / 2, height / 2, depth * 0.9, 24]} />
-        <meshStandardMaterial color={hovered ? COLORS.housingLight : COLORS.housingGray} metalness={0.65} roughness={0.45} />
       </mesh>
       {[-height * 0.25, 0, height * 0.25].map((y, i) => (
-        <mesh key={i} position={[0, y, depth / 2 + 0.005]}>
+        <mesh key={i} position={[0, y, depth / 2 + 0.005]} dispose={null} material={matSteelDark}>
           <boxGeometry args={[width * 0.95, 0.02, 0.015]} />
-          <meshStandardMaterial color={COLORS.housingDark} metalness={0.7} roughness={0.4} />
         </mesh>
       ))}
-      <mesh position={[0, height * 0.15, depth / 2 + 0.01]}>
+      <mesh position={[0, height * 0.15, depth / 2 + 0.01]} dispose={null} material={matSteel}>
         <boxGeometry args={[width * 0.3, height * 0.15, 0.005]} />
-        <meshStandardMaterial color={COLORS.flangeBright} metalness={0.8} roughness={0.3} />
       </mesh>
       <Text position={[0, height * 0.15, depth / 2 + 0.02]} fontSize={0.05} color={COLORS.boltSteel} anchorX="center" anchorY="middle">RV-250</Text>
-      <mesh position={[0, 0, depth / 2 + 0.01]}>
+      <mesh position={[0, 0, depth / 2 + 0.01]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[height * 0.25, height * 0.25, 0.02, 24]} />
-        <meshStandardMaterial color={COLORS.housingDark} metalness={0.7} roughness={0.4} />
       </mesh>
       {Array.from({ length: 6 }, (_, i) => {
         const angle = (i / 6) * Math.PI * 2;
         const r = height * 0.28;
         return (
-          <mesh key={i} position={[Math.cos(angle) * r, Math.sin(angle) * r, depth / 2 + 0.02]}>
+          <mesh key={i} position={[Math.cos(angle) * r, Math.sin(angle) * r, depth / 2 + 0.02]} dispose={null} material={matSteelDark}>
             <cylinderGeometry args={[0.02, 0.02, 0.02, 6]} />
-            <meshStandardMaterial color={COLORS.boltSteel} metalness={0.9} roughness={0.3} />
           </mesh>
         );
       })}

@@ -29,6 +29,15 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintBlue,
+  matPaintedSteel,
+  matRubber,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+  matRailYellow,
+} from '../materials';
 
 type V3 = [number, number, number];
 
@@ -59,22 +68,18 @@ const COLORS = {
 function ConveyorSection({ position, length, width }: { position: V3; length: number; width: number }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.1, width / 2 - 0.05]} castShadow>
+      <mesh position={[0, 0.1, width / 2 - 0.05]} castShadow dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[length, 0.2, 0.05]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 0.1, -width / 2 + 0.05]} castShadow>
+      <mesh position={[0, 0.1, -width / 2 + 0.05]} castShadow dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[length, 0.2, 0.05]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 0.15, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0.15, 0]} castShadow receiveShadow dispose={null} material={matRubber}>
         <boxGeometry args={[length - 0.1, 0.05, width - 0.15]} />
-        <meshStandardMaterial color={COLORS.beltBlack} roughness={0.9} metalness={0.1} />
       </mesh>
       {[-length / 2 + 0.1, length / 2 - 0.1].map((x, i) => (
-        <mesh key={i} position={[x, 0.12, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh key={i} position={[x, 0.12, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteel}>
           <cylinderGeometry args={[0.08, 0.08, width - 0.2, 16]} />
-          <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.8} roughness={0.2} />
         </mesh>
       ))}
     </group>
@@ -102,24 +107,20 @@ function WeighPlatform({ width, weighing }: { width: number; weighing: boolean }
         [0.25, 0.05, -width / 2 + 0.15],
         [-0.25, 0.05, -width / 2 + 0.15],
       ].map((pos, i) => (
-        <mesh key={i} position={pos as V3}>
+        <mesh key={i} position={pos as V3} dispose={null} material={matSteelDark}>
           <cylinderGeometry args={[0.04, 0.04, 0.1, 16]} />
-          <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
         </mesh>
       ))}
 
-      <mesh ref={plateRef} position={[0, 0.15, 0]} castShadow receiveShadow>
+      <mesh ref={plateRef} position={[0, 0.15, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
         <boxGeometry args={[0.7, 0.08, width - 0.1]} />
-        <meshStandardMaterial color={COLORS.platformSteel} metalness={0.8} roughness={0.1} />
       </mesh>
 
-      <mesh position={[0.4, 0.1, 0]}>
+      <mesh position={[0.4, 0.1, 0]} dispose={null} material={matSteelDark}>
         <boxGeometry args={[0.02, 0.15, width - 0.1]} />
-        <meshStandardMaterial color={COLORS.frameSteelDark} />
       </mesh>
-      <mesh position={[-0.4, 0.1, 0]}>
+      <mesh position={[-0.4, 0.1, 0]} dispose={null} material={matSteelDark}>
         <boxGeometry args={[0.02, 0.15, width - 0.1]} />
-        <meshStandardMaterial color={COLORS.frameSteelDark} />
       </mesh>
     </group>
   );
@@ -152,9 +153,8 @@ function TowerLight({ position, status }: { position: V3; status: 'idle' | 'pass
 
   return (
     <group position={position}>
-      <mesh>
+      <mesh dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.03, 0.03, 0.6, 16]} />
-        <meshStandardMaterial color={COLORS.frameSteelDark} />
       </mesh>
       <mesh ref={greenRef} position={[0, 0.2, 0]}>
         <cylinderGeometry args={[0.06, 0.06, 0.12, 16]} />
@@ -213,17 +213,14 @@ function RejectArm({ position, isActive }: { position: V3; isActive: boolean }) 
 
   return (
     <group position={position}>
-      <mesh>
+      <mesh dispose={null} material={matSteelDark}>
         <boxGeometry args={[0.15, 0.15, 0.15]} />
-        <meshStandardMaterial color={COLORS.frameSteelDark} />
       </mesh>
-      <mesh position={[0, 0, -0.12]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0, -0.12]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.03, 0.03, 0.2, 16]} />
-        <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.9} roughness={0.1} />
       </mesh>
-      <mesh ref={armRef} position={[0, 0, -0.28]} castShadow>
+      <mesh ref={armRef} position={[0, 0, -0.28]} castShadow dispose={null} material={matRailYellow}>
         <boxGeometry args={[0.4, 0.25, 0.05]} />
-        <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.5} roughness={0.5} />
       </mesh>
     </group>
   );
@@ -236,13 +233,11 @@ function RejectArm({ position, isActive }: { position: V3; isActive: boolean }) 
 function DriveMotor({ position }: { position: V3 }) {
   return (
     <group position={position}>
-      <mesh castShadow>
+      <mesh castShadow dispose={null} material={matPaintBlue}>
         <boxGeometry args={[0.28, 0.22, 0.22]} />
-        <meshStandardMaterial color={COLORS.motorBlue} metalness={0.6} roughness={0.4} />
       </mesh>
-      <mesh position={[0.18, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0.18, 0, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.05, 0.05, 0.12, 16]} />
-        <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
       </mesh>
     </group>
   );
@@ -478,17 +473,15 @@ export function CheckWeigherComponent({
         [length / 2 - 0.1, deckY / 2, -width / 2 + 0.1],
         [-length / 2 + 0.1, deckY / 2, -width / 2 + 0.1],
       ].map((pos, i) => (
-        <mesh key={i} position={pos as V3}>
+        <mesh key={i} position={pos as V3} dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[0.1, deckY, 0.1]} />
-          <meshStandardMaterial color={COLORS.frameSteel} />
         </mesh>
       ))}
 
       {/* Deck assembly */}
       <group position={[0, deckY, 0]}>
-        <mesh position={[0, 0.05, 0]} castShadow receiveShadow>
+        <mesh position={[0, 0.05, 0]} castShadow receiveShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[length, 0.1, width]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
         </mesh>
 
         <ConveyorSection position={[-(sectionLen / 2 + 0.4), 0, 0]} length={sectionLen} width={width} />
@@ -501,9 +494,8 @@ export function CheckWeigherComponent({
         <HMIAndControls position={[0, 0.75, width / 2 + 0.12]} currentWeight={currentWeight} />
         <TowerLight position={[0.45, 0.85, width / 2 + 0.12]} status={towerStatus} />
 
-        <mesh position={[0, 0.25, -width / 2 - 0.1]}>
+        <mesh position={[0, 0.25, -width / 2 - 0.1]} dispose={null} material={matSteel}>
           <boxGeometry args={[length - 0.2, 0.05, 0.1]} />
-          <meshStandardMaterial color={COLORS.frameSteelLight} />
         </mesh>
       </group>
 

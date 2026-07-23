@@ -26,12 +26,14 @@ function initialMachines(): Record<MachineId, MachineTags> {
     silo: makeMachine('silo', { HL: false, ML: true, LL: false, weight_t: 42.5 }),
     elevator: makeMachine('elevator', { running: true, rpm: 45, amp: 18.2 }),
     vibro: makeMachine('vibro', { running: true, rpm: 960, amplitude_mm: 4.5 }),
+    conditioning_bin: makeMachine('conditioning_bin', { fill_pct: 62, moisture: 15.8, rest_h: 18 }),
     roller_mill: makeMachine('roller_mill', { rpm: 520, load_pct: 68, temp_C: 42, amp: 62 }),
     flour_bin_a: makeMachine('flour_bin_a', { fill_pct: 74, weight_t: 14.8, HL: false }),
     packing: makeMachine('packing', { bag_count: 1284, target_kg: 25, cycle_s: 4.2 }),
     check_weigher: makeMachine('check_weigher', { actual_kg: 25.02, accept: true, reject: false }),
     metal_detector: makeMachine('metal_detector', { metal_detect: false, reject_count: 3 }),
     palletizer: makeMachine('palletizer', { layer: 2, bag_on_pallet: 14, pallet_no: 47, mode: 'AUTO' }),
+    warehouse: makeMachine('warehouse', { pallets_ready: 6, dock_busy: false, aisle: 'A' }),
   };
 }
 

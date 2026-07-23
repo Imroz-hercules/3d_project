@@ -29,6 +29,16 @@ import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintBlue,
+  matPaintDark,
+  matPaintedSteel,
+  matRubber,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+  matRailYellow,
+} from '../materials';
 
 type V3 = [number, number, number];
 
@@ -67,56 +77,48 @@ function MainFrame({ width, depth }: { width: number; depth: number }) {
     <group>
       {/* Legs */}
       {legPositions.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow receiveShadow>
+        <mesh key={i} position={pos} castShadow receiveShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[0.15, legHeight, 0.15]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
         </mesh>
       ))}
       
       {/* Base Plates */}
       {legPositions.map((pos, i) => (
-        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]}>
+        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]} dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.3, 0.1, 0.3]} />
-          <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.8} roughness={0.3} />
         </mesh>
       ))}
 
       {/* Top Frame (Supports the hoppers) */}
-      <mesh position={[0, legHeight + 0.1, 0]} castShadow>
+      <mesh position={[0, legHeight + 0.1, 0]} castShadow dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[width, 0.2, depth]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
       </mesh>
 
       {/* Conveyor Structure (Extends out the +X side toward bag line) */}
       <group position={[width / 2 + 0.6, legHeight - 0.1, 0]}>
         {/* Conveyor Side Rails */}
-        <mesh position={[0, 0, 0.28]} castShadow>
+        <mesh position={[0, 0, 0.28]} castShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[1.2, 0.15, 0.08]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
         </mesh>
-        <mesh position={[0, 0, -0.28]} castShadow>
+        <mesh position={[0, 0, -0.28]} castShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[1.2, 0.15, 0.08]} />
-          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
         </mesh>
         {/* Conveyor Belt */}
-        <mesh position={[0, 0.08, 0]} castShadow>
+        <mesh position={[0, 0.08, 0]} castShadow dispose={null} material={matRubber}>
           <boxGeometry args={[1.15, 0.04, 0.5]} />
-          <meshStandardMaterial color={COLORS.beltBlack} roughness={0.9} metalness={0.1} />
         </mesh>
         {/* Rollers */}
         {Array.from({ length: 6 }, (_, i) => {
           const x = -0.5 + (i / 5) * 1.0;
           return (
-            <mesh key={i} position={[x, 0.08, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh key={i} position={[x, 0.08, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteel}>
               <cylinderGeometry args={[0.06, 0.06, 0.45, 16]} />
-              <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.8} roughness={0.2} />
             </mesh>
           );
         })}
         {/* Conveyor Motor/Drive at the end */}
-        <mesh position={[0.65, 0, 0]} castShadow>
+        <mesh position={[0.65, 0, 0]} castShadow dispose={null} material={matPaintDark}>
           <boxGeometry args={[0.2, 0.2, 0.3]} />
-          <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.7} roughness={0.4} />
         </mesh>
       </group>
     </group>
@@ -139,33 +141,28 @@ function Hoppers({ width, depth, height }: { width: number; depth: number; heigh
         [width / 2 - 0.3, 0, -depth / 2 + 0.3],
         [-width / 2 + 0.3, 0, -depth / 2 + 0.3],
       ].map((pos, i) => (
-        <mesh key={i} position={pos}>
+        <mesh key={i} position={pos} dispose={null} material={matSteelDark}>
           <cylinderGeometry args={[0.06, 0.06, 0.15, 16]} />
-          <meshStandardMaterial color={COLORS.stainlessDark} metalness={0.85} roughness={0.2} />
         </mesh>
       ))}
 
       {/* Weigh Hopper (Boxy, stainless steel) */}
-      <mesh position={[0, height / 2 + 0.15, 0]} castShadow receiveShadow>
+      <mesh position={[0, height / 2 + 0.15, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
         <boxGeometry args={[width * 0.8, height * 0.6, depth * 0.8]} />
-        <meshStandardMaterial color={COLORS.stainless} metalness={0.6} roughness={0.2} />
       </mesh>
 
       {/* Feed Hopper (Inverted pyramid on top) */}
-      <mesh position={[0, height * 0.6 + 0.15 + height * 0.3, 0]} castShadow receiveShadow>
+      <mesh position={[0, height * 0.6 + 0.15 + height * 0.3, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
         <coneGeometry args={[width * 0.45, height * 0.6, 4]} />
-        <meshStandardMaterial color={COLORS.stainless} metalness={0.6} roughness={0.2} />
       </mesh>
       {/* Rotate cone to align with box */}
-      <mesh position={[0, height * 0.6 + 0.15 + height * 0.3, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
+      <mesh position={[0, height * 0.6 + 0.15 + height * 0.3, 0]} rotation={[0, Math.PI / 4, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[width * 0.85, height * 0.6, depth * 0.85]} />
-        <meshStandardMaterial color={COLORS.stainless} metalness={0.6} roughness={0.2} />
       </mesh>
       
       {/* Feed Hopper Top Flange (Connection to Rotary Valve) */}
-      <mesh position={[0, height * 0.9 + 0.15, 0]}>
+      <mesh position={[0, height * 0.9 + 0.15, 0]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.4, 0.4, 0.1, 24]} />
-        <meshStandardMaterial color={COLORS.stainlessDark} metalness={0.7} roughness={0.3} />
       </mesh>
     </group>
   );
@@ -182,34 +179,28 @@ function BagClampAndSpout({ width, depth, clampOpen }: { width: number; depth: n
   return (
     <group position={[0, baseY - 0.2, 0]}>
       {/* Filling Spout (Center tube) */}
-      <mesh castShadow>
+      <mesh castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.12, 0.12, 0.6, 24]} />
-        <meshStandardMaterial color={COLORS.stainless} metalness={0.7} roughness={0.2} />
       </mesh>
-      <mesh position={[0, -0.35, 0]}>
+      <mesh position={[0, -0.35, 0]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.14, 0.14, 0.1, 24]} />
-        <meshStandardMaterial color={COLORS.stainlessDark} metalness={0.7} roughness={0.3} />
       </mesh>
 
       {/* Left Jaw */}
-      <mesh position={[-jawOffset - 0.15, 0.1, 0]} castShadow>
+      <mesh position={[-jawOffset - 0.15, 0.1, 0]} castShadow dispose={null} material={matSteelDark}>
         <boxGeometry args={[0.15, 0.3, depth * 0.6]} />
-        <meshStandardMaterial color={COLORS.stainlessDark} metalness={0.7} roughness={0.3} />
       </mesh>
       {/* Right Jaw */}
-      <mesh position={[jawOffset + 0.15, 0.1, 0]} castShadow>
+      <mesh position={[jawOffset + 0.15, 0.1, 0]} castShadow dispose={null} material={matSteelDark}>
         <boxGeometry args={[0.15, 0.3, depth * 0.6]} />
-        <meshStandardMaterial color={COLORS.stainlessDark} metalness={0.7} roughness={0.3} />
       </mesh>
 
       {/* Pneumatic Cylinders (Above jaws) */}
-      <mesh position={[-0.3, 0.4, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[-0.3, 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.04, 0.04, 0.3, 16]} />
-        <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.8} roughness={0.2} />
       </mesh>
-      <mesh position={[0.3, 0.4, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0.3, 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.04, 0.04, 0.3, 16]} />
-        <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.8} roughness={0.2} />
       </mesh>
     </group>
   );
@@ -327,28 +318,23 @@ function SafetyGuards({ width, depth }: { width: number; depth: number }) {
   return (
     <group>
       {/* Yellow Safety Rails around the clamp area */}
-      <mesh position={[width / 2 + 0.1, 0.8, depth / 2 + 0.2]}>
+      <mesh position={[width / 2 + 0.1, 0.8, depth / 2 + 0.2]} dispose={null} material={matRailYellow}>
         <boxGeometry args={[0.05, 0.8, 0.6]} />
-        <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.5} roughness={0.5} />
       </mesh>
-      <mesh position={[-width / 2 - 0.1, 0.8, depth / 2 + 0.2]}>
+      <mesh position={[-width / 2 - 0.1, 0.8, depth / 2 + 0.2]} dispose={null} material={matRailYellow}>
         <boxGeometry args={[0.05, 0.8, 0.6]} />
-        <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.5} roughness={0.5} />
       </mesh>
-      <mesh position={[0, 1.2, depth / 2 + 0.2]}>
+      <mesh position={[0, 1.2, depth / 2 + 0.2]} dispose={null} material={matRailYellow}>
         <boxGeometry args={[width + 0.3, 0.05, 0.05]} />
-        <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.5} roughness={0.5} />
       </mesh>
 
       {/* Service Platform (Back/Side) */}
-      <mesh position={[-width / 2 - 0.5, 1.5, 0]} castShadow>
+      <mesh position={[-width / 2 - 0.5, 1.5, 0]} castShadow dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[0.8, 0.05, depth + 0.4]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
       </mesh>
       {/* Platform Railing */}
-      <mesh position={[-width / 2 - 0.9, 1.9, 0]}>
+      <mesh position={[-width / 2 - 0.9, 1.9, 0]} dispose={null} material={matRailYellow}>
         <boxGeometry args={[0.05, 0.8, depth + 0.4]} />
-        <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.5} roughness={0.5} />
       </mesh>
     </group>
   );

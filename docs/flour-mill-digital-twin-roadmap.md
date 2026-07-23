@@ -532,8 +532,9 @@ simulate.ts  →  tag store  →  React UI overlay
 
 ### Layout
 
+- Plant uses a **U / serpentine** footprint (zones in `REF.zones`); packing cell still runs +X inside Zone F.
+- Navigation: zone presets + click-to-focus via `src/navigation/*` (CameraControls).
 - All world positions live in `layoutConstants.ts`.
-- Packing cell runs along **+X** away from flour bins.
 - Ground / camera use `plantCenter()` + `plantGroundRadius()` in `App.tsx`.
 
 ### Components

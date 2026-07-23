@@ -28,6 +28,15 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintBlue,
+  matPaintedSteel,
+  matRubber,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+  matRailYellow,
+} from '../materials';
 
 type V3 = [number, number, number];
 
@@ -71,18 +80,15 @@ function DetectionTunnel({
   return (
     <group position={position}>
       {/* Top */}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+      <mesh position={[0, height / 2, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
         <boxGeometry args={[depth, wallT, apertureWidth]} />
-        <meshStandardMaterial color={COLORS.stainless} metalness={0.7} roughness={0.2} />
       </mesh>
       {/* Side walls (±Z) */}
-      <mesh position={[0, 0, -apertureWidth / 2 + wallT / 2]} castShadow receiveShadow>
+      <mesh position={[0, 0, -apertureWidth / 2 + wallT / 2]} castShadow receiveShadow dispose={null} material={matSteel}>
         <boxGeometry args={[depth, height, wallT]} />
-        <meshStandardMaterial color={COLORS.stainless} metalness={0.7} roughness={0.2} />
       </mesh>
-      <mesh position={[0, 0, apertureWidth / 2 - wallT / 2]} castShadow receiveShadow>
+      <mesh position={[0, 0, apertureWidth / 2 - wallT / 2]} castShadow receiveShadow dispose={null} material={matSteel}>
         <boxGeometry args={[depth, height, wallT]} />
-        <meshStandardMaterial color={COLORS.stainless} metalness={0.7} roughness={0.2} />
       </mesh>
 
       {/* Dark aperture liner — hollow shell so the tunnel reads as an opening */}
@@ -114,9 +120,8 @@ function DetectionTunnel({
       ))}
 
       {/* Safety stripe on top lip */}
-      <mesh position={[0, height / 2 - 0.08, 0]}>
+      <mesh position={[0, height / 2 - 0.08, 0]} dispose={null} material={matRailYellow}>
         <boxGeometry args={[depth - 0.1, 0.02, apertureWidth - 0.2]} />
-        <meshStandardMaterial color={COLORS.safetyYellow} />
       </mesh>
     </group>
   );
@@ -129,22 +134,18 @@ function DetectionTunnel({
 function ConveyorSection({ position, length, width }: { position: V3; length: number; width: number }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.1, width / 2 - 0.05]} castShadow>
+      <mesh position={[0, 0.1, width / 2 - 0.05]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[length, 0.2, 0.05]} />
-        <meshStandardMaterial color={COLORS.stainless} metalness={0.7} roughness={0.2} />
       </mesh>
-      <mesh position={[0, 0.1, -width / 2 + 0.05]} castShadow>
+      <mesh position={[0, 0.1, -width / 2 + 0.05]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[length, 0.2, 0.05]} />
-        <meshStandardMaterial color={COLORS.stainless} metalness={0.7} roughness={0.2} />
       </mesh>
-      <mesh position={[0, 0.15, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0.15, 0]} castShadow receiveShadow dispose={null} material={matRubber}>
         <boxGeometry args={[length - 0.1, 0.05, width - 0.15]} />
-        <meshStandardMaterial color={COLORS.beltBlack} roughness={0.9} metalness={0.1} />
       </mesh>
       {[-length / 2 + 0.1, length / 2 - 0.1].map((x, i) => (
-        <mesh key={i} position={[x, 0.12, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh key={i} position={[x, 0.12, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteel}>
           <cylinderGeometry args={[0.08, 0.08, width - 0.2, 16]} />
-          <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.8} roughness={0.2} />
         </mesh>
       ))}
     </group>
@@ -228,9 +229,8 @@ function TowerLight({ position, status }: { position: V3; status: 'idle' | 'pass
 
   return (
     <group position={position}>
-      <mesh>
+      <mesh dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.03, 0.03, 0.5, 16]} />
-        <meshStandardMaterial color={COLORS.frameSteel} />
       </mesh>
       <mesh ref={greenRef} position={[0, 0.15, 0]}>
         <cylinderGeometry args={[0.06, 0.06, 0.1, 16]} />
@@ -265,37 +265,30 @@ function RejectSystem({ position, isActive }: { position: V3; isActive: boolean 
     <group position={position}>
       {/* Reject bin on +Z side */}
       <group position={[0, -0.15, 0.75]}>
-        <mesh position={[0, 0, 0.2]} castShadow>
+        <mesh position={[0, 0, 0.2]} castShadow dispose={null} material={matSteel}>
           <boxGeometry args={[0.8, 0.55, 0.05]} />
-          <meshStandardMaterial color={COLORS.stainless} metalness={0.6} roughness={0.3} />
         </mesh>
-        <mesh position={[-0.4, 0, 0]} castShadow>
+        <mesh position={[-0.4, 0, 0]} castShadow dispose={null} material={matSteel}>
           <boxGeometry args={[0.05, 0.55, 0.45]} />
-          <meshStandardMaterial color={COLORS.stainless} metalness={0.6} roughness={0.3} />
         </mesh>
-        <mesh position={[0.4, 0, 0]} castShadow>
+        <mesh position={[0.4, 0, 0]} castShadow dispose={null} material={matSteel}>
           <boxGeometry args={[0.05, 0.55, 0.45]} />
-          <meshStandardMaterial color={COLORS.stainless} metalness={0.6} roughness={0.3} />
         </mesh>
-        <mesh position={[0, -0.22, 0]} rotation={[0.35, 0, 0]} castShadow>
+        <mesh position={[0, -0.22, 0]} rotation={[0.35, 0, 0]} castShadow dispose={null} material={matSteelDark}>
           <boxGeometry args={[0.8, 0.05, 0.5]} />
-          <meshStandardMaterial color={COLORS.stainlessDark} metalness={0.6} roughness={0.3} />
         </mesh>
       </group>
 
       {/* Pneumatic pusher from −Z side, extends +Z across belt */}
       <group position={[0, 0.25, -0.55]}>
-        <mesh>
+        <mesh dispose={null} material={matSteelDark}>
           <boxGeometry args={[0.15, 0.15, 0.15]} />
-          <meshStandardMaterial color={COLORS.frameSteel} />
         </mesh>
-        <mesh position={[0, 0, 0.12]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0, 0.12]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteel}>
           <cylinderGeometry args={[0.03, 0.03, 0.2, 16]} />
-          <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.9} roughness={0.1} />
         </mesh>
-        <mesh ref={armRef} position={[0, 0, 0.28]} castShadow>
+        <mesh ref={armRef} position={[0, 0, 0.28]} castShadow dispose={null} material={matRailYellow}>
           <boxGeometry args={[0.35, 0.3, 0.05]} />
-          <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.5} roughness={0.5} />
         </mesh>
       </group>
     </group>
@@ -305,13 +298,11 @@ function RejectSystem({ position, isActive }: { position: V3; isActive: boolean 
 function DriveMotor({ position }: { position: V3 }) {
   return (
     <group position={position}>
-      <mesh castShadow>
+      <mesh castShadow dispose={null} material={matPaintBlue}>
         <boxGeometry args={[0.28, 0.22, 0.22]} />
-        <meshStandardMaterial color={COLORS.motorBlue} metalness={0.6} roughness={0.4} />
       </mesh>
-      <mesh position={[0.18, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0.18, 0, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.05, 0.05, 0.12, 16]} />
-        <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
       </mesh>
     </group>
   );
@@ -320,13 +311,11 @@ function DriveMotor({ position }: { position: V3 }) {
 function SensorBox({ position }: { position: V3 }) {
   return (
     <group position={position}>
-      <mesh castShadow>
+      <mesh castShadow dispose={null} material={matPaintedSteel}>
         <boxGeometry args={[0.18, 0.12, 0.12]} />
-        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.35} />
       </mesh>
-      <mesh position={[0, -0.08, 0]}>
+      <mesh position={[0, -0.08, 0]} dispose={null} material={matSteel}>
         <cylinderGeometry args={[0.02, 0.02, 0.06, 12]} />
-        <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
       </mesh>
     </group>
   );
@@ -542,16 +531,14 @@ export function MetalDetectorComponent({
         [length / 2 - 0.15, deckY / 2, -width / 2 + 0.1],
         [-length / 2 + 0.15, deckY / 2, -width / 2 + 0.1],
       ].map((pos, i) => (
-        <mesh key={i} position={pos as V3}>
+        <mesh key={i} position={pos as V3} dispose={null} material={matSteel}>
           <boxGeometry args={[0.12, deckY, 0.12]} />
-          <meshStandardMaterial color={COLORS.stainless} metalness={0.7} roughness={0.2} />
         </mesh>
       ))}
 
       <group position={[0, deckY, 0]}>
-        <mesh position={[0, 0.05, 0]} castShadow receiveShadow>
+        <mesh position={[0, 0.05, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
           <boxGeometry args={[length, 0.1, width]} />
-          <meshStandardMaterial color={COLORS.stainless} metalness={0.7} roughness={0.2} />
         </mesh>
 
         <ConveyorSection position={[-(sectionLen / 2 + tunnelDepth / 2 + 0.05), 0, 0]} length={sectionLen} width={width} />
@@ -572,9 +559,8 @@ export function MetalDetectorComponent({
         <SensorBox position={[-tunnelDepth / 2 - 0.15, 0.55, width / 2 - 0.05]} />
         <SensorBox position={[tunnelDepth / 2 + 0.15, 0.55, width / 2 - 0.05]} />
 
-        <mesh position={[0, 0.28, -width / 2 - 0.1]}>
+        <mesh position={[0, 0.28, -width / 2 - 0.1]} dispose={null} material={matSteelDark}>
           <boxGeometry args={[length - 0.25, 0.05, 0.1]} />
-          <meshStandardMaterial color={COLORS.stainlessDark} />
         </mesh>
       </group>
 

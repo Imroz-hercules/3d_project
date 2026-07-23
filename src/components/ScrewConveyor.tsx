@@ -9,6 +9,14 @@ import { useRef, useState } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matPaintBlue,
+  matPaintDark,
+  matPaintedSteel,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+} from '../materials';
 
 type V3 = [number, number, number];
 
@@ -40,28 +48,23 @@ function UTrough({ length, width, height }: { length: number; width: number; hei
   return (
     <group>
       {/* Bottom */}
-      <mesh position={[length / 2, bottomY, 0]} castShadow receiveShadow>
+      <mesh position={[length / 2, bottomY, 0]} castShadow receiveShadow dispose={null} material={matSteelDark}>
         <boxGeometry args={[length, wall, width]} />
-        <meshStandardMaterial color={COLORS.troughDark} metalness={0.7} roughness={0.4} />
       </mesh>
       {/* Left / right walls */}
-      <mesh position={[length / 2, bottomY + height / 2, width / 2 - wall / 2]} castShadow>
+      <mesh position={[length / 2, bottomY + height / 2, width / 2 - wall / 2]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[length, height, wall]} />
-        <meshStandardMaterial color={COLORS.troughSteel} metalness={0.65} roughness={0.42} />
       </mesh>
-      <mesh position={[length / 2, bottomY + height / 2, -(width / 2 - wall / 2)]} castShadow>
+      <mesh position={[length / 2, bottomY + height / 2, -(width / 2 - wall / 2)]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[length, height, wall]} />
-        <meshStandardMaterial color={COLORS.troughSteel} metalness={0.65} roughness={0.42} />
       </mesh>
       {/* Hinged cover panels */}
-      <mesh position={[length / 2, bottomY + height + wall / 2, 0]} castShadow>
+      <mesh position={[length / 2, bottomY + height + wall / 2, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[length * 0.96, wall, width * 0.92]} />
-        <meshStandardMaterial color={COLORS.coverSteel} metalness={0.55} roughness={0.48} />
       </mesh>
       {/* End plate — inlet */}
-      <mesh position={[0.02, bottomY + height / 2, 0]} castShadow>
+      <mesh position={[0.02, bottomY + height / 2, 0]} castShadow dispose={null} material={matSteelDark}>
         <boxGeometry args={[wall, height * 0.9, width * 0.9]} />
-        <meshStandardMaterial color={COLORS.troughDark} metalness={0.7} roughness={0.38} />
       </mesh>
     </group>
   );
@@ -76,19 +79,16 @@ function InletCollar({ width, troughHeight, dropHeight }: { width: number; troug
   return (
     <group>
       {/* Vertical drop from valve */}
-      <mesh position={[0, troughHeight + dropHeight / 2, 0]} castShadow>
+      <mesh position={[0, troughHeight + dropHeight / 2, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[w, dropHeight, w]} />
-        <meshStandardMaterial color={COLORS.troughSteel} metalness={0.65} roughness={0.4} />
       </mesh>
       {/* Inlet flange */}
-      <mesh position={[0, troughHeight + dropHeight + 0.025, 0]} castShadow>
+      <mesh position={[0, troughHeight + dropHeight + 0.025, 0]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[w * 0.55, w * 0.55, 0.05, 16]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.75} roughness={0.35} />
       </mesh>
       {/* Transition into trough */}
-      <mesh position={[0, troughHeight + 0.02, 0]} castShadow>
+      <mesh position={[0, troughHeight + 0.02, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[w * 0.9, 0.06, w * 0.9]} />
-        <meshStandardMaterial color={COLORS.troughLight} metalness={0.7} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -124,9 +124,8 @@ function AugerScrew({
 
   return (
     <group ref={ref} position={[length / 2, shaftY, 0]}>
-      <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[radius * 0.15, radius * 0.15, length * 0.94, 10]} />
-        <meshStandardMaterial color={COLORS.augerDark} metalness={0.85} roughness={0.25} />
       </mesh>
       {Array.from({ length: segments }, (_, i) => {
         const t = i / segments;
@@ -138,9 +137,10 @@ function AugerScrew({
             position={[x, Math.cos(angle) * radius * 0.5, Math.sin(angle) * radius * 0.5]}
             rotation={[angle, 0, 0]}
             castShadow
+            dispose={null}
+            material={matSteel}
           >
             <boxGeometry args={[length / segments + 0.015, 0.025, radius * 0.95]} />
-            <meshStandardMaterial color={COLORS.augerSteel} metalness={0.8} roughness={0.3} />
           </mesh>
         );
       })}
@@ -171,17 +171,14 @@ function DriveMotor({
 
   return (
     <group position={position}>
-      <mesh castShadow>
+      <mesh castShadow dispose={null} material={matPaintDark}>
         <boxGeometry args={[0.18, 0.22, 0.2]} />
-        <meshStandardMaterial color={COLORS.gearboxGray} metalness={0.7} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 0, 0.18]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+      <mesh position={[0, 0, 0.18]} rotation={[Math.PI / 2, 0, 0]} castShadow dispose={null} material={matPaintBlue}>
         <cylinderGeometry args={[0.12, 0.12, 0.32, 16]} />
-        <meshStandardMaterial color={COLORS.motorBlue} metalness={0.6} roughness={0.4} />
       </mesh>
-      <mesh ref={fanRef} position={[0, 0, 0.36]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh ref={fanRef} position={[0, 0, 0.36]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matPaintDark}>
         <cylinderGeometry args={[0.09, 0.09, 0.015, 6]} />
-        <meshStandardMaterial color={COLORS.motorBlueDark} metalness={0.7} roughness={0.35} />
       </mesh>
       <mesh position={[0, 0.13, 0.1]}>
         <sphereGeometry args={[0.015, 8, 8]} />
@@ -203,18 +200,15 @@ function DischargeSpout({ position, width }: { position: V3; width: number }) {
   const r = width * 0.38;
   return (
     <group position={position}>
-      <mesh castShadow>
+      <mesh castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[0.12, width * 0.7, width * 0.85]} />
-        <meshStandardMaterial color={COLORS.troughSteel} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={[0.08, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh position={[0.08, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[r, r, 0.06, 20]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.75} roughness={0.35} />
       </mesh>
       {/* Open discharge hole */}
-      <mesh position={[0.1, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0.1, 0, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[r * 0.75, r * 0.75, 0.08, 20]} />
-        <meshStandardMaterial color={COLORS.troughDark} metalness={0.5} roughness={0.5} />
       </mesh>
     </group>
   );
@@ -229,9 +223,8 @@ function FrameSkids({ length, width }: { length: number; width: number }) {
   return (
     <>
       {[-length * 0.35, length * 0.35].map((x, i) => (
-        <mesh key={i} position={[length / 2 + x, skidY / 2, 0]} castShadow>
+        <mesh key={i} position={[length / 2 + x, skidY / 2, 0]} castShadow dispose={null} material={matPaintedSteel}>
           <boxGeometry args={[0.08, skidY, width + 0.1]} />
-          <meshStandardMaterial color={COLORS.troughDark} metalness={0.75} roughness={0.4} />
         </mesh>
       ))}
     </>
