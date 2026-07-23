@@ -38,10 +38,15 @@ import {
   BeltBridge,
   ElbowedPipe,
   GravityChute,
+  PneumaticPipe,
+  PneumaticTee,
+  PneumaticValve,
+  PipeReducer,
   RejectBin,
   SquareFlange,
   type V3,
 } from './factory/ProcessPiping';
+import { DustCollection } from './factory/DustCollection';
 import {
   REF,
   ductBridgeY,
@@ -274,7 +279,7 @@ function PurifierToBranFinisherDuct() {
   return <ElbowedPipe path={[start, mid, end]} radius={0.16} />;
 }
 
-/** Plansifter flour + bran-finisher recovered flour → flour bin fill header. */
+/** Plansifter flour + bran-finisher recovered flour → flour bin fill header (pneumatic). */
 function FlourToStorageDucts() {
   const flourOut = plansifterFlourOutletWorldPos();
   const recovered = branFinisherFlourOutletWorldPos();
@@ -294,31 +299,46 @@ function FlourToStorageDucts() {
   const recoveredRise: V3 = [recovered[0], headerY, recovered[2]];
   const recoveredToHeader: V3 = [headerX, headerY, recovered[2]];
 
+  // Reducers: header 0.13 → bin fill 0.09
+  const redA: V3 = [binA[0] - 0.35, binA[1], binA[2]];
+  const redB: V3 = [binB[0] - 0.35, binB[1], binB[2]];
+  const redC: V3 = [binC[0] - 0.35, binC[1], binC[2]];
+
   return (
     <>
-      <ElbowedPipe
-        path={[flourOut, flourDrop, flourToHeader, header]}
-        radius={0.14}
-        supportEvery={2.5}
-      />
-      <ElbowedPipe
-        path={[recovered, recoveredRise, recoveredToHeader, header]}
-        radius={0.12}
-        supportEvery={2.5}
-      />
-      <ElbowedPipe path={[header, headerA, binA]} radius={0.13} supportEvery={99} />
-      <ElbowedPipe path={[header, binB]} radius={0.13} supportEvery={99} />
-      <ElbowedPipe path={[header, headerC, binC]} radius={0.13} supportEvery={99} />
+      <PneumaticPipe path={[flourOut, flourDrop, flourToHeader, header]} radius={0.14} />
+      <PneumaticValve position={flourToHeader} radius={0.14} />
+      <PneumaticPipe path={[recovered, recoveredRise, recoveredToHeader, header]} radius={0.12} />
+      <PneumaticTee position={header} radius={0.14} />
+
+      <PneumaticPipe path={[header, headerA]} radius={0.13} supportEvery={99} />
+      <PneumaticTee position={headerA} radius={0.12} />
+      <PneumaticPipe path={[headerA, redA]} radius={0.13} supportEvery={99} />
+      <PipeReducer start={redA} end={binA} startRadius={0.13} endRadius={0.09} />
+
+      <PneumaticPipe path={[header, redB]} radius={0.13} supportEvery={99} />
+      <PipeReducer start={redB} end={binB} startRadius={0.13} endRadius={0.09} />
+
+      <PneumaticPipe path={[header, headerC]} radius={0.13} supportEvery={99} />
+      <PneumaticTee position={headerC} radius={0.12} />
+      <PneumaticPipe path={[headerC, redC]} radius={0.13} supportEvery={99} />
+      <PipeReducer start={redC} end={binC} startRadius={0.13} endRadius={0.09} />
     </>
   );
 }
 
-/** Flour Bin A rotary valve → packing machine feed hopper. */
+/** Flour Bin A rotary valve → packing machine feed hopper (pneumatic). */
 function FlourBinAToPackingDuct() {
   const start = flourBinOutletWorldPos('A');
   const end = packingMachineInletWorldPos();
   const mid: V3 = [end[0], start[1], end[2]];
-  return <ElbowedPipe path={[start, mid, end]} radius={0.18} />;
+  const valvePos: V3 = [(start[0] + mid[0]) / 2, start[1], start[2]];
+  return (
+    <>
+      <PneumaticPipe path={[start, mid, end]} radius={0.16} />
+      <PneumaticValve position={valvePos} radius={0.16} />
+    </>
+  );
 }
 
 /** Close packing-cell belt gaps so bags have a continuous mechanical path. */
@@ -691,6 +711,7 @@ export function MaterialHandlingLine() {
   return (
     <group onClick={() => setLineActive((v) => !v)}>
       <PlantInfrastructure />
+      <DustCollection />
 
       <SiloModel />
 

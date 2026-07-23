@@ -52,7 +52,6 @@ Grain Silo
 
 ### Still open (this roadmap)
 
-- Dust collection system
 - Complete steel / platforms / walkways plant-wide
 - Electrical (MCC, cable trays)
 - Building envelope (walls, roof, docks)
@@ -194,14 +193,14 @@ Vibro / Destoner / Scourer / Purifier / Packing
 
 ### Build list
 
-- [ ] Create `src/components/DustCollection.tsx` (or `factory/DustSystem.tsx`)
-- [ ] Horizontal dust header along cleaning aisle (+Z)
-- [ ] Branch takeoffs to: vibro, destoner, scourer, purifier, packing hood
-- [ ] Vertical riser to bag filter
-- [ ] Bag filter house (tall rectangular housing)
-- [ ] Centrifugal fan `(O)` at filter outlet
-- [ ] Clean-air exhaust stack
-- [ ] Layout helpers: `dustHeaderPosition()`, `bagFilterPosition()`
+- [x] Create `src/components/DustCollection.tsx` (or `factory/DustSystem.tsx`)
+- [x] Horizontal dust header along cleaning aisle (+Z)
+- [x] Branch takeoffs to: vibro, destoner, scourer, purifier, packing hood
+- [x] Vertical riser to bag filter
+- [x] Bag filter house (tall rectangular housing)
+- [x] Centrifugal fan `(O)` at filter outlet
+- [x] Clean-air exhaust stack
+- [x] Layout helpers: `dustHeaderPosition()`, `bagFilterPosition()`
 
 ### Working steps
 
@@ -222,11 +221,11 @@ Flour travels in closed pipes with elbows, tees, reducers, supports.
 
 ### Build list
 
-- [ ] `PneumaticElbow` (90° / 45°)
-- [ ] `PneumaticTee`
-- [ ] `PipeSupport` / hangers from beams
-- [ ] Replace long straight flour ducts with segmented runs + elbows where needed
-- [ ] Flour bin fill header already exists — refine with reducers to each bin
+- [x] `PneumaticElbow` (90° / 45°)
+- [x] `PneumaticTee`
+- [x] `PipeSupport` / hangers from beams
+- [x] Replace long straight flour ducts with segmented runs + elbows where needed
+- [x] Flour bin fill header already exists — refine with reducers to each bin
 
 ### Working steps
 
@@ -509,8 +508,8 @@ simulate.ts  →  tag store  →  React UI overlay
 | 4 | Ladders | 3 | Medium | Partial |
 | 5 | Walkways | 3 | High | Partial |
 | 6 | Handrails | 3 | Medium | Partial |
-| 7 | Dust collection | 2 | Critical | Not started |
-| 8 | Pneumatic pipes | 2 | High | Partial (ducts) |
+| 7 | Dust collection | 2 | Critical | Sprint 2 done |
+| 8 | Pneumatic pipes | 2 | High | Sprint 2 done (kit + flour header) |
 | 9 | Electrical | 3 | Medium | Not started |
 | 10 | Lighting | 4 | Medium | Not started |
 | 11 | Safety props | 4 | Medium | Partial (robot cell) |

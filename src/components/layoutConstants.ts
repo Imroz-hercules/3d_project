@@ -254,6 +254,20 @@ export const REF = {
     /** Gap from metal-detector outlet to palletizer pick inlet (metres). */
     gapFromMetalDetector: 0.35,
   },
+  /** Shared dust-collection utility (darker steel than product ducts). */
+  dustSystem: {
+    headerHeight: 3.6,
+    headerRadius: 0.22,
+    branchRadius: 0.12,
+    /** Offset +Z from cleaning aisle centreline so header clears machines. */
+    headerOffsetZ: 2.2,
+    bagFilterWidth: 2.4,
+    bagFilterDepth: 2.0,
+    bagFilterHeight: 5.5,
+    fanRadius: 0.55,
+    stackHeight: 4.5,
+    stackRadius: 0.28,
+  },
 } as const;
 
 export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
@@ -947,6 +961,96 @@ export function palletizerOutletWorldPos(): [number, number, number] {
 }
 
 /* ==========================================================================
+   DUST COLLECTION LAYOUT HELPERS
+   ========================================================================== */
+
+/** Dust header centreline Z — offset from cleaning aisle to clear machines. */
+export function dustHeaderZ(): number {
+  return REF.zones.cleaning.z + REF.dustSystem.headerOffsetZ;
+}
+
+/** Dust header Y (metres above grade). */
+export function dustHeaderY(): number {
+  return REF.dustSystem.headerHeight;
+}
+
+/**
+ * Horizontal dust header start/end along cleaning aisle (+X).
+ * Runs from vibro through conditioning toward the bag filter.
+ */
+export function dustHeaderSpan(): { startX: number; endX: number; y: number; z: number } {
+  const [sx] = separatorPosition();
+  const [cx] = conditioningBinPosition();
+  const y = dustHeaderY();
+  const z = dustHeaderZ();
+  return { startX: sx - 0.5, endX: cx + 3.5, y, z };
+}
+
+/** Point on the dust header at a given world X. */
+export function dustHeaderPointAtX(x: number): [number, number, number] {
+  return [x, dustHeaderY(), dustHeaderZ()];
+}
+
+/**
+ * Bag filter house origin — end of cleaning dust header (+X), clear of milling decks.
+ */
+export function bagFilterPosition(): [number, number, number] {
+  const { endX, z } = dustHeaderSpan();
+  const { bagFilterWidth, bagFilterDepth } = REF.dustSystem;
+  return [endX + bagFilterWidth / 2 + 0.8, 0, z];
+}
+
+/** Dirty-air inlet flange on the bag filter (faces −X toward header). */
+export function bagFilterInletWorldPos(): [number, number, number] {
+  const [bx, , bz] = bagFilterPosition();
+  const { bagFilterWidth, bagFilterHeight } = REF.dustSystem;
+  return [bx - bagFilterWidth / 2, bagFilterHeight * 0.55, bz];
+}
+
+/** Clean-air fan outlet on +X face of bag filter. */
+export function bagFilterFanWorldPos(): [number, number, number] {
+  const [bx, , bz] = bagFilterPosition();
+  const { bagFilterWidth, bagFilterHeight } = REF.dustSystem;
+  return [bx + bagFilterWidth / 2 + 0.15, bagFilterHeight * 0.35, bz];
+}
+
+/** Exhaust stack base above the centrifugal fan. */
+export function dustStackBaseWorldPos(): [number, number, number] {
+  const [fx, fy, fz] = bagFilterFanWorldPos();
+  return [fx + 0.9, fy, fz];
+}
+
+/** Machine dust takeoff flanges (hood stubs above each asset). */
+export function dustTakeoffWorldPos(
+  machine: 'vibro' | 'destoner' | 'scourer' | 'purifier' | 'packing'
+): [number, number, number] {
+  if (machine === 'vibro') {
+    const [x, , z] = separatorPosition();
+    return [x, 2.4, z];
+  }
+  if (machine === 'destoner') {
+    const [x, y, z] = destonerPosition();
+    return [x, y + destonerDeckY() + 0.85, z];
+  }
+  if (machine === 'scourer') {
+    const [x, , z] = scourerPosition();
+    return [x, REF.scourer.legHeight + REF.scourer.radius + 0.9, z];
+  }
+  if (machine === 'purifier') {
+    const [x, y, z] = purifierPosition();
+    return [x, y + REF.purifier.height / 2 + 0.5, z];
+  }
+  const [px, , pz] = packingMachinePosition();
+  return [px, REF.packingMachine.height + 1.6, pz];
+}
+
+/** Alias used by roadmap naming. */
+export function dustHeaderPosition(): [number, number, number] {
+  const span = dustHeaderSpan();
+  return [(span.startX + span.endX) / 2, span.y, span.z];
+}
+
+/* ==========================================================================
    PLANT EXTENTS (for ground / camera framing)
    ========================================================================== */
 
@@ -964,6 +1068,9 @@ export function plantBounds(): { minX: number; maxX: number; minZ: number; maxZ:
     packingMachinePosition(),
     metalDetectorOutletWorldPos(),
     palletizerOutletWorldPos(),
+    bagFilterPosition(),
+    dustHeaderPointAtX(dustHeaderSpan().startX),
+    dustHeaderPointAtX(dustHeaderSpan().endX),
   ];
   let minX = Infinity;
   let maxX = -Infinity;

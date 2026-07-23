@@ -17,6 +17,16 @@ const COLORS = {
   belt: '#3a3f45',
   beltFrame: '#5a6268',
   reject: '#5a5550',
+  /** Flour pneumatic — slightly lighter stainless look. */
+  pneumatic: '#b8c0c8',
+  /** Dust utilities — darker than product ducts. */
+  dust: '#4a5058',
+} as const;
+
+export const PIPE_COLORS = {
+  product: COLORS.steel,
+  pneumatic: COLORS.pneumatic,
+  dust: COLORS.dust,
 } as const;
 
 /* ==========================================================================
@@ -284,5 +294,140 @@ export function BeltBridge({
         <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.7} roughness={0.35} />
       </mesh>
     </group>
+  );
+}
+
+/* ==========================================================================
+   PNEUMATIC FLOUR KIT
+   ========================================================================== */
+
+/** 90° pneumatic elbow (torus segment look via sphere + short stubs). */
+export function PneumaticElbow({
+  position,
+  radius,
+  color = COLORS.pneumatic,
+}: {
+  position: V3;
+  radius: number;
+  color?: string;
+}) {
+  return (
+    <mesh position={position} castShadow receiveShadow>
+      <sphereGeometry args={[radius * 1.15, 14, 12]} />
+      <meshStandardMaterial color={color} metalness={0.55} roughness={0.35} />
+    </mesh>
+  );
+}
+
+/** Tee fitting at a branch junction. */
+export function PneumaticTee({
+  position,
+  radius,
+  color = COLORS.pneumatic,
+}: {
+  position: V3;
+  radius: number;
+  color?: string;
+}) {
+  const r = radius;
+  return (
+    <group position={position}>
+      <mesh castShadow receiveShadow rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[r * 1.05, r * 1.05, r * 3.2, 12]} />
+        <meshStandardMaterial color={color} metalness={0.55} roughness={0.35} />
+      </mesh>
+      <mesh castShadow receiveShadow>
+        <cylinderGeometry args={[r * 1.05, r * 1.05, r * 2.2, 12]} />
+        <meshStandardMaterial color={color} metalness={0.55} roughness={0.35} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Concentric reducer between two radii along a short axial length. */
+export function PipeReducer({
+  start,
+  end,
+  startRadius,
+  endRadius,
+  color = COLORS.pneumatic,
+}: {
+  start: V3;
+  end: V3;
+  startRadius: number;
+  endRadius: number;
+  color?: string;
+}) {
+  const startV = new THREE.Vector3(...start);
+  const endV = new THREE.Vector3(...end);
+  const dir = new THREE.Vector3().subVectors(endV, startV);
+  const len = dir.length();
+  if (len < 0.001) return null;
+  const mid = new THREE.Vector3().addVectors(startV, endV).multiplyScalar(0.5);
+  const quat = new THREE.Quaternion().setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    dir.clone().normalize()
+  );
+  return (
+    <group>
+      <mesh position={mid.toArray() as V3} quaternion={quat} castShadow receiveShadow>
+        <cylinderGeometry args={[endRadius, startRadius, len, 14]} />
+        <meshStandardMaterial color={color} metalness={0.55} roughness={0.35} />
+      </mesh>
+      <SquareFlange size={startRadius * 2.4} thickness={0.035} position={start} />
+      <SquareFlange size={endRadius * 2.4} thickness={0.035} position={end} />
+    </group>
+  );
+}
+
+/** Inline butterfly / slide valve stub on a pneumatic line. */
+export function PneumaticValve({
+  position,
+  radius,
+  color = COLORS.pneumatic,
+}: {
+  position: V3;
+  radius: number;
+  color?: string;
+}) {
+  return (
+    <group position={position}>
+      <mesh castShadow>
+        <boxGeometry args={[radius * 2.6, radius * 2.6, radius * 1.4]} />
+        <meshStandardMaterial color={COLORS.steelDark} metalness={0.7} roughness={0.4} />
+      </mesh>
+      <mesh position={[0, radius * 1.6, 0]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, radius * 0.9, 8]} />
+        <meshStandardMaterial color={color} metalness={0.6} roughness={0.35} />
+      </mesh>
+      <mesh position={[0, radius * 2.15, 0]} castShadow>
+        <boxGeometry args={[0.16, 0.08, 0.1]} />
+        <meshStandardMaterial color="#c9a227" metalness={0.4} roughness={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * Flour pneumatic run — ElbowedPipe with stainless color + elbow spheres.
+ * Prefer this over raw product ducts for closed flour transfer.
+ */
+export function PneumaticPipe({
+  path,
+  radius,
+  supportEvery = 2.5,
+}: {
+  path: V3[];
+  radius: number;
+  supportEvery?: number;
+}) {
+  return (
+    <ElbowedPipe
+      path={path}
+      radius={radius}
+      supportEvery={supportEvery}
+      color={COLORS.pneumatic}
+      flangeSize={radius * 2.5}
+    />
   );
 }
