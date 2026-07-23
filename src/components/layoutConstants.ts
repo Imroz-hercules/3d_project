@@ -242,6 +242,18 @@ export const REF = {
     /** Gap from check-weigher outlet to metal-detector inlet (metres). */
     gapFromCheckWeigher: 0.25,
   },
+  palletizer: {
+    cellSize: 5,
+    /** Local X of pick-conveyor centre (bags enter from −X). */
+    pickOffsetX: 1.5,
+    pickLength: 1.5,
+    /** Belt height — matches packing-cell conveyors. */
+    height: 0.85,
+  },
+  palletizerLayout: {
+    /** Gap from metal-detector outlet to palletizer pick inlet (metres). */
+    gapFromMetalDetector: 0.35,
+  },
 } as const;
 
 export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
@@ -904,6 +916,36 @@ export function metalDetectorOutletWorldPos(): [number, number, number] {
 }
 
 /* ==========================================================================
+   PALLETIZER LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Robotic palletizer cell origin — packing cell after metal detector.
+ * Pick conveyor faces −X (receives bags); pallets sit on +X side of the robot.
+ */
+export function palletizerPosition(): [number, number, number] {
+  const [ox, , oz] = metalDetectorOutletWorldPos();
+  const { pickOffsetX, pickLength } = REF.palletizer;
+  const gap = REF.palletizerLayout.gapFromMetalDetector;
+  const inletToCenter = pickOffsetX + pickLength / 2;
+  return [ox + gap + inletToCenter, REF.zones.packing.floorY, oz];
+}
+
+/** Pick-conveyor inlet — mates with metal detector outfeed. */
+export function palletizerInletWorldPos(): [number, number, number] {
+  const [px, py, pz] = palletizerPosition();
+  const { pickOffsetX, pickLength, height } = REF.palletizer;
+  return [px - pickOffsetX - pickLength / 2, py + height, pz];
+}
+
+/** Cell far edge — finished pallets toward warehouse. */
+export function palletizerOutletWorldPos(): [number, number, number] {
+  const [px, py, pz] = palletizerPosition();
+  const { cellSize, height } = REF.palletizer;
+  return [px + cellSize / 2, py + height, pz];
+}
+
+/* ==========================================================================
    PLANT EXTENTS (for ground / camera framing)
    ========================================================================== */
 
@@ -920,6 +962,7 @@ export function plantBounds(): { minX: number; maxX: number; minZ: number; maxZ:
     flourBinPosition('C'),
     packingMachinePosition(),
     metalDetectorOutletWorldPos(),
+    palletizerOutletWorldPos(),
   ];
   let minX = Infinity;
   let maxX = -Infinity;
