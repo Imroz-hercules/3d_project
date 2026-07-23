@@ -211,6 +211,15 @@ export const REF = {
     /** Clearance from packing takeaway end to conveyor inlet (metres). */
     gapFromPacking: 0.25,
   },
+  bagSewing: {
+    width: 1.0,
+    depth: 0.8,
+    height: 2.2,
+  },
+  bagSewingLayout: {
+    /** Gap from bag conveyor outlet to sewing gantry centre (metres). */
+    gapFromConveyor: 0.15,
+  },
 } as const;
 
 export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
@@ -782,4 +791,33 @@ export function bagConveyorOutletWorldPos(): [number, number, number] {
   const [cx, cy, cz] = bagConveyorPosition();
   const { length, height } = REF.bagConveyor;
   return [cx, cy + height, cz + length / 2];
+}
+
+/* ==========================================================================
+   BAG SEWING MACHINE LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Bag sewing gantry origin — straddles packing-cell centreline after bag conveyor.
+ * Bags travel through along +Z (same as conveyor discharge).
+ */
+export function bagSewingMachinePosition(): [number, number, number] {
+  const [ox, , oz] = bagConveyorOutletWorldPos();
+  const { depth } = REF.bagSewing;
+  const gap = REF.bagSewingLayout.gapFromConveyor;
+  return [ox, REF.zones.packing.floorY, oz + gap + depth / 2];
+}
+
+/** Sewing zone inlet — bag enters under the head from −Z. */
+export function bagSewingInletWorldPos(): [number, number, number] {
+  const [sx, sy, sz] = bagSewingMachinePosition();
+  const { depth } = REF.bagSewing;
+  return [sx, sy + REF.bagConveyor.height, sz - depth / 2 - 0.2];
+}
+
+/** Sewing zone outlet — closed bag exits toward check weigher. */
+export function bagSewingOutletWorldPos(): [number, number, number] {
+  const [sx, sy, sz] = bagSewingMachinePosition();
+  const { depth } = REF.bagSewing;
+  return [sx, sy + REF.bagConveyor.height, sz + depth / 2 + 0.2];
 }
