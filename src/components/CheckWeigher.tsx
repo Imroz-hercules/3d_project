@@ -17,7 +17,7 @@
  * - Real-time PLC data panel with accepted/rejected counts
  *
  * Local travel axis: +X (infeed → platform → outfeed).
- * In MaterialHandlingLine the group is rotated −90° Y so flow continues on +Z.
+ * In MaterialHandlingLine the group sits on the packing +X centreline (no rotation).
  *
  * Usage:
  *   import { CheckWeigher } from './CheckWeigher';

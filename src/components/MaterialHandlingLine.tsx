@@ -1018,8 +1018,8 @@ export function MaterialHandlingLine() {
         showClickText={false}
       />
 
-      {/* Packing takeaway → Bag Conveyor (length along +Z toward sewing) */}
-      <group position={BAG_CONVEYOR_POS} rotation={[0, -Math.PI / 2, 0]}>
+      {/* Packing takeaway → Bag Conveyor (length along +X, away from flour bins) */}
+      <group position={BAG_CONVEYOR_POS}>
         <BagConveyorComponent
           position={[0, 0, 0]}
           length={REF.bagConveyor.length}
@@ -1031,44 +1031,42 @@ export function MaterialHandlingLine() {
         />
       </group>
 
-      {/* Bag Conveyor → Bag Sewing Machine */}
-      <BagSewingMachineComponent
-        position={BAG_SEWING_POS}
-        width={REF.bagSewing.width}
-        depth={REF.bagSewing.depth}
-        height={REF.bagSewing.height}
+      {/* Bag Conveyor → Bag Sewing Machine (local +Z rotated −90° → world +X) */}
+      <group position={BAG_SEWING_POS} rotation={[0, -Math.PI / 2, 0]}>
+        <BagSewingMachineComponent
+          position={[0, 0, 0]}
+          width={REF.bagSewing.width}
+          depth={REF.bagSewing.depth}
+          height={REF.bagSewing.height}
+          active={lineActive}
+          showDataPanel={false}
+          showClickText={false}
+        />
+      </group>
+
+      {/* Bag Sewing → Check Weigher (length along +X) */}
+      <CheckWeigherComponent
+        position={CHECK_WEIGHER_POS}
+        length={REF.checkWeigher.length}
+        width={REF.checkWeigher.width}
+        height={REF.checkWeigher.height}
         active={lineActive}
         showDataPanel={false}
         showClickText={false}
       />
 
-      {/* Bag Sewing → Check Weigher (length along +Z toward metal detector) */}
-      <group position={CHECK_WEIGHER_POS} rotation={[0, -Math.PI / 2, 0]}>
-        <CheckWeigherComponent
-          position={[0, 0, 0]}
-          length={REF.checkWeigher.length}
-          width={REF.checkWeigher.width}
-          height={REF.checkWeigher.height}
-          active={lineActive}
-          showDataPanel={false}
-          showClickText={false}
-        />
-      </group>
-
-      {/* Check Weigher → Metal Detector (length along +Z toward palletizer) */}
-      <group position={METAL_DETECTOR_POS} rotation={[0, -Math.PI / 2, 0]}>
-        <MetalDetectorComponent
-          position={[0, 0, 0]}
-          length={REF.metalDetector.length}
-          width={REF.metalDetector.width}
-          height={REF.metalDetector.height}
-          tunnelHeight={REF.metalDetector.tunnelHeight}
-          tunnelDepth={REF.metalDetector.tunnelDepth}
-          active={lineActive}
-          showDataPanel={false}
-          showClickText={false}
-        />
-      </group>
+      {/* Check Weigher → Metal Detector (length along +X toward palletizer) */}
+      <MetalDetectorComponent
+        position={METAL_DETECTOR_POS}
+        length={REF.metalDetector.length}
+        width={REF.metalDetector.width}
+        height={REF.metalDetector.height}
+        tunnelHeight={REF.metalDetector.tunnelHeight}
+        tunnelDepth={REF.metalDetector.tunnelDepth}
+        active={lineActive}
+        showDataPanel={false}
+        showClickText={false}
+      />
 
       <MaterialFlow path={flowPath} active={lineActive} speed={0.07} />
     </group>

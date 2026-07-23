@@ -763,7 +763,7 @@ export function flourBinOutletWorldPos(id: FlourBinId = 'B'): [number, number, n
 
 /**
  * Packing machine group origin — packing cell, fed from Flour Bin A rotary valve.
- * Kept on Bin A X/Z so the takeaway (+Z) stays in the overview frustum.
+ * Offset in +X from Bin A; bag line continues further +X (not along the bin row).
  */
 export function packingMachinePosition(): [number, number, number] {
   const [ax, , az] = flourBinPosition('A');
@@ -779,12 +779,12 @@ export function packingMachineInletWorldPos(): [number, number, number] {
   return [px, py + 1.2 + height * 0.9 + 0.15, pz];
 }
 
-/** Takeaway conveyor discharge end — start of bag conveyor cell. */
+/** Takeaway conveyor discharge end — start of bag conveyor cell (+X). */
 export function packingMachineConveyorEndWorldPos(): [number, number, number] {
   const [px, py, pz] = packingMachinePosition();
-  const { depth } = REF.packingMachine;
+  const { width } = REF.packingMachine;
   const legHeight = 0.8;
-  return [px, py + legHeight - 0.02, pz + depth / 2 + 1.2];
+  return [px + width / 2 + 1.2, py + legHeight - 0.02, pz];
 }
 
 /* ==========================================================================
@@ -792,28 +792,28 @@ export function packingMachineConveyorEndWorldPos(): [number, number, number] {
    ========================================================================== */
 
 /**
- * Bag conveyor group origin — packing cell, length runs along +Z (rotated −90° in line).
+ * Bag conveyor group origin — packing cell, length runs along +X (no rotation).
  * Inlet mates with packing machine takeaway; outlet feeds sewing station.
  */
 export function bagConveyorPosition(): [number, number, number] {
   const [ex, , ez] = packingMachineConveyorEndWorldPos();
   const { length } = REF.bagConveyor;
   const gap = REF.bagConveyorLayout.gapFromPacking;
-  return [ex, REF.zones.packing.floorY, ez + gap + length / 2];
+  return [ex + gap + length / 2, REF.zones.packing.floorY, ez];
 }
 
 /** Belt inlet flange — receives bags from packing takeaway. */
 export function bagConveyorInletWorldPos(): [number, number, number] {
   const [cx, cy, cz] = bagConveyorPosition();
   const { length, height } = REF.bagConveyor;
-  return [cx, cy + height, cz - length / 2];
+  return [cx - length / 2, cy + height, cz];
 }
 
 /** Belt outlet flange — discharges toward sewing machine. */
 export function bagConveyorOutletWorldPos(): [number, number, number] {
   const [cx, cy, cz] = bagConveyorPosition();
   const { length, height } = REF.bagConveyor;
-  return [cx, cy + height, cz + length / 2];
+  return [cx + length / 2, cy + height, cz];
 }
 
 /* ==========================================================================
@@ -821,28 +821,28 @@ export function bagConveyorOutletWorldPos(): [number, number, number] {
    ========================================================================== */
 
 /**
- * Bag sewing gantry origin — straddles packing-cell centreline after bag conveyor.
- * Bags travel through along +Z (same as conveyor discharge).
+ * Bag sewing gantry origin — after bag conveyor on packing +X centreline.
+ * Local travel is +Z; in the line the group is rotated −90° so travel is +X.
  */
 export function bagSewingMachinePosition(): [number, number, number] {
   const [ox, , oz] = bagConveyorOutletWorldPos();
   const { depth } = REF.bagSewing;
   const gap = REF.bagSewingLayout.gapFromConveyor;
-  return [ox, REF.zones.packing.floorY, oz + gap + depth / 2];
+  return [ox + gap + depth / 2, REF.zones.packing.floorY, oz];
 }
 
-/** Sewing zone inlet — bag enters under the head from −Z. */
+/** Sewing zone inlet — bag enters under the head from −X (after −90° rotation). */
 export function bagSewingInletWorldPos(): [number, number, number] {
   const [sx, sy, sz] = bagSewingMachinePosition();
   const { depth } = REF.bagSewing;
-  return [sx, sy + REF.bagConveyor.height, sz - depth / 2 - 0.2];
+  return [sx - depth / 2 - 0.2, sy + REF.bagConveyor.height, sz];
 }
 
 /** Sewing zone outlet — closed bag exits toward check weigher. */
 export function bagSewingOutletWorldPos(): [number, number, number] {
   const [sx, sy, sz] = bagSewingMachinePosition();
   const { depth } = REF.bagSewing;
-  return [sx, sy + REF.bagConveyor.height, sz + depth / 2 + 0.2];
+  return [sx + depth / 2 + 0.2, sy + REF.bagConveyor.height, sz];
 }
 
 /* ==========================================================================
@@ -851,27 +851,27 @@ export function bagSewingOutletWorldPos(): [number, number, number] {
 
 /**
  * Check weigher group origin — packing cell after bag sewing.
- * Local length runs along +X; in the line it is rotated −90° so travel is +Z.
+ * Local length runs along +X (same as world packing flow — no rotation).
  */
 export function checkWeigherPosition(): [number, number, number] {
   const [ox, , oz] = bagSewingOutletWorldPos();
   const { length } = REF.checkWeigher;
   const gap = REF.checkWeigherLayout.gapFromSewing;
-  return [ox, REF.zones.packing.floorY, oz + gap + length / 2];
+  return [ox + gap + length / 2, REF.zones.packing.floorY, oz];
 }
 
-/** Infeed flange — receives sewn bags from −Z (after −90° rotation). */
+/** Infeed flange — receives sewn bags from −X. */
 export function checkWeigherInletWorldPos(): [number, number, number] {
   const [cx, cy, cz] = checkWeigherPosition();
   const { length, height } = REF.checkWeigher;
-  return [cx, cy + height, cz - length / 2];
+  return [cx - length / 2, cy + height, cz];
 }
 
 /** Outfeed flange — accepted bags continue toward metal detector. */
 export function checkWeigherOutletWorldPos(): [number, number, number] {
   const [cx, cy, cz] = checkWeigherPosition();
   const { length, height } = REF.checkWeigher;
-  return [cx, cy + height, cz + length / 2];
+  return [cx + length / 2, cy + height, cz];
 }
 
 /* ==========================================================================
@@ -880,25 +880,25 @@ export function checkWeigherOutletWorldPos(): [number, number, number] {
 
 /**
  * Metal detector group origin — packing cell after check weigher.
- * Local length runs along +X; in the line it is rotated −90° so travel is +Z.
+ * Local length runs along +X (same as world packing flow — no rotation).
  */
 export function metalDetectorPosition(): [number, number, number] {
   const [ox, , oz] = checkWeigherOutletWorldPos();
   const { length } = REF.metalDetector;
   const gap = REF.metalDetectorLayout.gapFromCheckWeigher;
-  return [ox, REF.zones.packing.floorY, oz + gap + length / 2];
+  return [ox + gap + length / 2, REF.zones.packing.floorY, oz];
 }
 
-/** Infeed flange — receives accepted bags from −Z (after −90° rotation). */
+/** Infeed flange — receives accepted bags from −X. */
 export function metalDetectorInletWorldPos(): [number, number, number] {
   const [mx, my, mz] = metalDetectorPosition();
   const { length, height } = REF.metalDetector;
-  return [mx, my + height, mz - length / 2];
+  return [mx - length / 2, my + height, mz];
 }
 
 /** Outfeed flange — clean bags continue toward palletizer. */
 export function metalDetectorOutletWorldPos(): [number, number, number] {
   const [mx, my, mz] = metalDetectorPosition();
   const { length, height } = REF.metalDetector;
-  return [mx, my + height, mz + length / 2];
+  return [mx + length / 2, my + height, mz];
 }

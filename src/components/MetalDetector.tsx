@@ -16,7 +16,7 @@
  * - Intelligent bag animation through the tunnel
  *
  * Local travel axis: +X (infeed → tunnel → outfeed).
- * In MaterialHandlingLine the group is rotated −90° Y so flow continues on +Z.
+ * In MaterialHandlingLine the group sits on the packing +X centreline (no rotation).
  *
  * Usage:
  *   import { MetalDetector } from './MetalDetector';
@@ -85,9 +85,17 @@ function DetectionTunnel({
         <meshStandardMaterial color={COLORS.stainless} metalness={0.7} roughness={0.2} />
       </mesh>
 
-      {/* Dark aperture liner */}
-      <mesh>
-        <boxGeometry args={[depth - 0.05, height - 0.15, apertureWidth - 0.15]} />
+      {/* Dark aperture liner — hollow shell so the tunnel reads as an opening */}
+      <mesh position={[0, height / 2 - 0.08, 0]}>
+        <boxGeometry args={[depth - 0.08, 0.04, apertureWidth - 0.2]} />
+        <meshStandardMaterial color={COLORS.tunnelInterior} metalness={0.1} roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0, -apertureWidth / 2 + 0.12]}>
+        <boxGeometry args={[depth - 0.08, height - 0.2, 0.04]} />
+        <meshStandardMaterial color={COLORS.tunnelInterior} metalness={0.1} roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0, apertureWidth / 2 - 0.12]}>
+        <boxGeometry args={[depth - 0.08, height - 0.2, 0.04]} />
         <meshStandardMaterial color={COLORS.tunnelInterior} metalness={0.1} roughness={0.9} />
       </mesh>
 

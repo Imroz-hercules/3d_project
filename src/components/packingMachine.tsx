@@ -87,35 +87,35 @@ function MainFrame({ width, depth }: { width: number; depth: number }) {
         <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
       </mesh>
 
-      {/* Conveyor Structure (Extends out the front) */}
-      <group position={[0, legHeight - 0.1, depth / 2 + 0.6]}>
+      {/* Conveyor Structure (Extends out the +X side toward bag line) */}
+      <group position={[width / 2 + 0.6, legHeight - 0.1, 0]}>
         {/* Conveyor Side Rails */}
-        <mesh position={[width / 2 - 0.1, 0, 0]} castShadow>
-          <boxGeometry args={[0.08, 0.15, 1.2]} />
+        <mesh position={[0, 0, 0.28]} castShadow>
+          <boxGeometry args={[1.2, 0.15, 0.08]} />
           <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
         </mesh>
-        <mesh position={[-width / 2 + 0.1, 0, 0]} castShadow>
-          <boxGeometry args={[0.08, 0.15, 1.2]} />
+        <mesh position={[0, 0, -0.28]} castShadow>
+          <boxGeometry args={[1.2, 0.15, 0.08]} />
           <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
         </mesh>
         {/* Conveyor Belt */}
         <mesh position={[0, 0.08, 0]} castShadow>
-          <boxGeometry args={[width - 0.3, 0.04, 1.15]} />
+          <boxGeometry args={[1.15, 0.04, 0.5]} />
           <meshStandardMaterial color={COLORS.beltBlack} roughness={0.9} metalness={0.1} />
         </mesh>
-        {/* Moving Rollers (Animated via texture or just static for now, we'll animate the bag over it) */}
+        {/* Rollers */}
         {Array.from({ length: 6 }, (_, i) => {
-          const z = -0.5 + (i / 5) * 1.0;
+          const x = -0.5 + (i / 5) * 1.0;
           return (
-            <mesh key={i} position={[0, 0.08, z]} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.06, 0.06, width - 0.35, 16]} />
+            <mesh key={i} position={[x, 0.08, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.06, 0.06, 0.45, 16]} />
               <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.8} roughness={0.2} />
             </mesh>
           );
         })}
         {/* Conveyor Motor/Drive at the end */}
-        <mesh position={[0, 0, 0.65]} castShadow>
-          <boxGeometry args={[0.3, 0.2, 0.2]} />
+        <mesh position={[0.65, 0, 0]} castShadow>
+          <boxGeometry args={[0.2, 0.2, 0.3]} />
           <meshStandardMaterial color={COLORS.frameSteelDark} metalness={0.7} roughness={0.4} />
         </mesh>
       </group>
@@ -260,18 +260,18 @@ function AnimatedBag({
       const convProg = (cycleProgress - 0.6) / 0.4;
       posY = 0.1;
       scaleY = 0.81;
-      posX = convProg * 1.2;
+      posX = width / 2 + 0.1 + convProg * 1.2;
       if (cycleProgress > 0.95) visible = false;
     }
 
     meshRef.current.visible = visible;
-    meshRef.current.position.set(posX, posY, depth / 2 + 0.6);
+    meshRef.current.position.set(posX, posY, 0);
     meshRef.current.scale.set(1, Math.max(0.01, scaleY / 0.81), 1);
   });
 
   return (
-    <mesh ref={meshRef} position={[0, 0.5, depth / 2 + 0.6]} castShadow>
-      <boxGeometry args={[width * 0.4, 0.81, depth * 0.4]} />
+    <mesh ref={meshRef} position={[0, 0.5, 0]} castShadow>
+      <boxGeometry args={[depth * 0.35, 0.81, width * 0.22]} />
       <meshStandardMaterial color={COLORS.bagWhite} roughness={0.9} metalness={0} />
     </mesh>
   );

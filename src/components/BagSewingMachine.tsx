@@ -56,8 +56,34 @@ const COLORS = {
    ========================================================================== */
 
 function GantryFrame({ width, depth, height }: { width: number; depth: number; height: number }) {
+  const beltY = 0.85;
   return (
     <group>
+      {/* Integrated sewing conveyor bed — closes the visual gap under the gantry */}
+      {[
+        [width / 2 - 0.15, beltY / 2, depth / 2 - 0.1],
+        [-width / 2 + 0.15, beltY / 2, depth / 2 - 0.1],
+        [width / 2 - 0.15, beltY / 2, -depth / 2 + 0.1],
+        [-width / 2 + 0.15, beltY / 2, -depth / 2 + 0.1],
+      ].map((pos, i) => (
+        <mesh key={`leg-support-${i}`} position={pos as V3}>
+          <boxGeometry args={[0.1, beltY, 0.1]} />
+          <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
+        </mesh>
+      ))}
+      <mesh position={[0, beltY, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width * 0.55, 0.06, depth + 0.3]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.9} metalness={0.1} />
+      </mesh>
+      <mesh position={[width * 0.22, beltY + 0.08, 0]} castShadow>
+        <boxGeometry args={[0.04, 0.12, depth + 0.25]} />
+        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
+      </mesh>
+      <mesh position={[-width * 0.22, beltY + 0.08, 0]} castShadow>
+        <boxGeometry args={[0.04, 0.12, depth + 0.25]} />
+        <meshStandardMaterial color={COLORS.frameSteel} metalness={0.7} roughness={0.4} />
+      </mesh>
+
       {/* Base Plates */}
       <mesh position={[width / 2 - 0.1, 0.05, depth / 2 - 0.1]} castShadow receiveShadow>
         <boxGeometry args={[0.4, 0.1, 0.4]} />
@@ -302,7 +328,7 @@ function SewingBag({ active, onComplete }: { active: boolean; onComplete: () => 
   if (!active) return null;
 
   return (
-    <group ref={bagRef} position={[0, 0.4, -1.0]}>
+    <group ref={bagRef} position={[0, 1.2, -1.0]}>
       <mesh castShadow>
         <boxGeometry args={[0.4, 0.7, 0.3]} />
         <meshStandardMaterial color={COLORS.bagWhite} roughness={0.9} metalness={0} />
