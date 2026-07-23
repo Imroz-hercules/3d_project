@@ -202,6 +202,15 @@ export const REF = {
     /** Gap from flour bin A centre to packing machine centre X (metres). */
     gapFromFlourBin: 3.8,
   },
+  bagConveyor: {
+    length: 3.5,
+    width: 0.7,
+    height: 0.85,
+  },
+  bagConveyorLayout: {
+    /** Clearance from packing takeaway end to conveyor inlet (metres). */
+    gapFromPacking: 0.25,
+  },
 } as const;
 
 export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
@@ -741,7 +750,36 @@ export function packingMachineInletWorldPos(): [number, number, number] {
 /** Takeaway conveyor discharge end — start of bag conveyor cell. */
 export function packingMachineConveyorEndWorldPos(): [number, number, number] {
   const [px, py, pz] = packingMachinePosition();
-  const { width, depth } = REF.packingMachine;
+  const { depth } = REF.packingMachine;
   const legHeight = 0.8;
   return [px, py + legHeight - 0.02, pz + depth / 2 + 1.2];
+}
+
+/* ==========================================================================
+   BAG CONVEYOR LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Bag conveyor group origin — packing cell, length runs along +Z (rotated −90° in line).
+ * Inlet mates with packing machine takeaway; outlet feeds sewing station.
+ */
+export function bagConveyorPosition(): [number, number, number] {
+  const [ex, , ez] = packingMachineConveyorEndWorldPos();
+  const { length } = REF.bagConveyor;
+  const gap = REF.bagConveyorLayout.gapFromPacking;
+  return [ex, REF.zones.packing.floorY, ez + gap + length / 2];
+}
+
+/** Belt inlet flange — receives bags from packing takeaway. */
+export function bagConveyorInletWorldPos(): [number, number, number] {
+  const [cx, cy, cz] = bagConveyorPosition();
+  const { length, height } = REF.bagConveyor;
+  return [cx, cy + height, cz - length / 2];
+}
+
+/** Belt outlet flange — discharges toward sewing machine. */
+export function bagConveyorOutletWorldPos(): [number, number, number] {
+  const [cx, cy, cz] = bagConveyorPosition();
+  const { length, height } = REF.bagConveyor;
+  return [cx, cy + height, cz + length / 2];
 }
