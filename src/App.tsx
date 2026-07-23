@@ -49,7 +49,8 @@ function App() {
 
       <Canvas
         shadows={false}
-        dpr={[1, 1.5]}
+        dpr={[1, 1]}
+        gl={{ antialias: false, powerPreference: "high-performance" }}
         camera={{
           position: [groundR * 0.55, groundR * 0.7, groundR * 0.65],
           fov: 48,
@@ -58,18 +59,13 @@ function App() {
         }}
       >
         {import.meta.env.DEV && <Stats />}
-        <ambientLight intensity={0.45} />
-        <directionalLight
-          position={[40, 55, 30]}
-          intensity={1.45}
-          // castShadow
-          // shadow-mapSize={[2048, 2048]}
-        />
-        <hemisphereLight args={["#cfe8ff", "#4a4a3f", 0.45]} />
+        <ambientLight intensity={0.85} />
+        <directionalLight position={[40, 55, 30]} intensity={1.15} />
+        <hemisphereLight args={["#d8e8ff", "#6a6a5a", 0.65]} />
         <Sky sunPosition={[100, 30, 100]} turbidity={6} rayleigh={1} mieCoefficient={0.005} />
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
-          <circleGeometry args={[groundR, 64]} />
-          <meshStandardMaterial color="#9a9a92" roughness={0.95} metalness={0.05} />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+          <circleGeometry args={[groundR, 48]} />
+          <meshStandardMaterial color="#a8a89e" roughness={0.92} metalness={0.02} />
         </mesh>
         <gridHelper
           args={[gridSize, Math.min(40, Math.max(20, Math.round(gridSize / 4))), "#5c5c54", "#79796e"]}
@@ -78,7 +74,7 @@ function App() {
 
         <group position={[-cx, 0, -cz]}>
           <MaterialHandlingLine />
-          {showBuilding && <BuildingEnvelope cutaway={cutaway} showLights />}
+          {showBuilding && <BuildingEnvelope cutaway={cutaway} showLights={false} />}
         </group>
 
         <OrbitControls

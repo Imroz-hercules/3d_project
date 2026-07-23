@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 /**
  * Factory building envelope sized from plantBounds() + margin.
@@ -103,21 +103,21 @@ function RollingShutter({
     <group position={position} rotation={rotation}>
       <mesh position={[0, height / 2, 0]} castShadow>
         <boxGeometry args={[width + 0.3, height, 0.12]} />
-        <meshStandardMaterial color={COLORS.shutter} metalness={0.55} roughness={0.45} />
+        <meshStandardMaterial color={COLORS.shutter} metalness={0.22} roughness={0.55} />
       </mesh>
       {Array.from({ length: slats }, (_, i) => {
         const y = 0.15 + (i / (slats - 1)) * (height - 0.3);
         return (
           <mesh key={i} position={[0, y, 0.07]}>
             <boxGeometry args={[width, 0.06, 0.02]} />
-            <meshStandardMaterial color={COLORS.trim} metalness={0.5} roughness={0.5} />
+            <meshStandardMaterial color={COLORS.trim} metalness={0.2} roughness={0.55} />
           </mesh>
         );
       })}
       {/* Drum housing */}
       <mesh position={[0, height + 0.2, 0]} castShadow>
         <boxGeometry args={[width + 0.4, 0.35, 0.35]} />
-        <meshStandardMaterial color={COLORS.trim} metalness={0.6} roughness={0.4} />
+        <meshStandardMaterial color={COLORS.trim} metalness={0.25} roughness={0.55} />
       </mesh>
     </group>
   );
@@ -129,15 +129,15 @@ function RoofTruss({ length, position }: { length: number; position: V3 }) {
     <group position={position}>
       <mesh position={[0, 0, 0]} castShadow>
         <boxGeometry args={[0.12, 0.12, length]} />
-        <meshStandardMaterial color={COLORS.column} metalness={0.7} roughness={0.35} />
+        <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
       </mesh>
       <mesh position={[0, peak / 2, length / 4]} rotation={[0.35, 0, 0]} castShadow>
         <boxGeometry args={[0.1, 0.1, length / 2 + 0.3]} />
-        <meshStandardMaterial color={COLORS.column} metalness={0.7} roughness={0.35} />
+        <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
       </mesh>
       <mesh position={[0, peak / 2, -length / 4]} rotation={[-0.35, 0, 0]} castShadow>
         <boxGeometry args={[0.1, 0.1, length / 2 + 0.3]} />
-        <meshStandardMaterial color={COLORS.column} metalness={0.7} roughness={0.35} />
+        <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
       </mesh>
     </group>
   );
@@ -148,7 +148,7 @@ function HighBayLight({ position }: { position: V3 }) {
     <group position={position}>
       <mesh castShadow>
         <cylinderGeometry args={[0.35, 0.45, 0.25, 12]} />
-        <meshStandardMaterial color={COLORS.trim} metalness={0.6} roughness={0.4} />
+        <meshStandardMaterial color={COLORS.trim} metalness={0.25} roughness={0.55} />
       </mesh>
       <mesh position={[0, -0.08, 0]}>
         <cylinderGeometry args={[0.32, 0.32, 0.06, 12]} />
@@ -170,11 +170,11 @@ function DockBay({ position, width = 3.2, height = 3.6 }: { position: V3; width?
       {/* Dock leveler plate */}
       <mesh position={[0, 0.6, -1.2]} castShadow receiveShadow>
         <boxGeometry args={[width * 0.9, 0.15, 2.0]} />
-        <meshStandardMaterial color={COLORS.dock} metalness={0.5} roughness={0.5} />
+        <meshStandardMaterial color={COLORS.dock} metalness={0.2} roughness={0.55} />
       </mesh>
       <mesh position={[0, 1.15, -2.0]} castShadow>
         <boxGeometry args={[width + 0.4, 2.3, 0.4]} />
-        <meshStandardMaterial color={COLORS.trim} metalness={0.55} roughness={0.45} />
+        <meshStandardMaterial color={COLORS.trim} metalness={0.22} roughness={0.55} />
       </mesh>
     </group>
   );
@@ -206,13 +206,13 @@ export function BuildingEnvelope({
 
   return (
     <group name="building-envelope">
-      {/* —— Perimeter columns —— */}
+      {/* â€”â€” Perimeter columns â€”â€” */}
       {Array.from({ length: colsX + 1 }, (_, i) => {
         const x = minX + (i / colsX) * width;
         return [minZ + 0.4, maxZ - 0.4].map((z, j) => (
           <mesh key={`cx-${i}-${j}`} position={[x, wallH / 2, z]} castShadow>
             <boxGeometry args={[0.35, wallH, 0.35]} />
-            <meshStandardMaterial color={COLORS.column} metalness={0.7} roughness={0.35} />
+            <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
           </mesh>
         ));
       })}
@@ -221,13 +221,13 @@ export function BuildingEnvelope({
         return [minX + 0.4, maxX - 0.4].map((x, j) => (
           <mesh key={`cz-${i}-${j}`} position={[x, wallH / 2, z]} castShadow>
             <boxGeometry args={[0.35, wallH, 0.35]} />
-            <meshStandardMaterial color={COLORS.column} metalness={0.7} roughness={0.35} />
+            <meshStandardMaterial color={COLORS.column} metalness={0.28} roughness={0.55} />
           </mesh>
         ));
       })}
 
-      {/* —— Walls (omit cutaway faces) —— */}
-      {/* −Z wall */}
+      {/* â€”â€” Walls (omit cutaway faces) â€”â€” */}
+      {/* âˆ’Z wall */}
       <WallPanel
         width={width}
         height={wallH}
@@ -244,7 +244,7 @@ export function BuildingEnvelope({
         </>
       )}
 
-      {/* −X wall (silo end) — personnel door opening via shorter panel split */}
+      {/* âˆ’X wall (silo end) â€” personnel door opening via shorter panel split */}
       <WallPanel
         width={depth * 0.35}
         height={wallH}
@@ -297,7 +297,7 @@ export function BuildingEnvelope({
       {/* Loading dock opening on +X */}
       <DockBay position={[maxX, 0, dockZ]} width={3.4} height={3.8} />
 
-      {/* —— Roof —— */}
+      {/* â€”â€” Roof â€”â€” */}
       <mesh position={[centerX, roofY, centerZ]} receiveShadow>
         <boxGeometry args={[width + 0.8, 0.2, depth + 0.8]} />
         <meshStandardMaterial
@@ -335,7 +335,7 @@ export function BuildingEnvelope({
         return <RoofTruss key={i} length={depth - 1.5} position={[x, eaveY - 0.4, centerZ]} />;
       })}
 
-      {/* —— MCC / office partition stub —— */}
+      {/* â€”â€” MCC / office partition stub â€”â€” */}
       <group position={[mccX, 0, mccZ + 2.2]}>
         <WallPanel width={6.5} height={3.2} position={[0, 1.6, 0]} opacity={0.7} color={COLORS.office} />
         <WallPanel
@@ -352,7 +352,7 @@ export function BuildingEnvelope({
         </mesh>
       </group>
 
-      {/* —— High-bay lights along aisles —— */}
+      {/* â€”â€” High-bay lights along aisles â€”â€” */}
       {showLights &&
         Array.from({ length: Math.max(3, Math.floor(width / 10)) }, (_, i) => {
           const x = minX + 5 + i * 10;
@@ -369,3 +369,4 @@ export function BuildingEnvelope({
 }
 
 export default BuildingEnvelope;
+

@@ -87,8 +87,8 @@ function RobotArm({
   const jawLeftRef = useRef<THREE.Mesh>(null!);
   const jawRightRef = useRef<THREE.Mesh>(null!);
 
-  // Joint angles (radians)
-  const [angles, setAngles] = useState({
+  // Mutate in useFrame — avoid setState every frame (major FPS killer)
+  const angles = useRef({
     base: 0,
     shoulder: -0.3,
     upperArm: 0.8,
@@ -97,7 +97,6 @@ function RobotArm({
     wrist: 0,
   });
 
-  // Target angles based on phase
   const getTargetAngles = () => {
     switch (phase) {
       case 'PICK':
@@ -117,20 +116,24 @@ function RobotArm({
 
   useFrame((_, delta) => {
     if (!active) return;
+    const a = angles.current;
     const target = getTargetAngles();
     const speed = 2.5;
-    
-    const newAngles = {
-      base: THREE.MathUtils.damp(angles.base, target.base, speed, delta),
-      shoulder: THREE.MathUtils.damp(angles.shoulder, target.shoulder, speed, delta),
-      upperArm: THREE.MathUtils.damp(angles.upperArm, target.upperArm, speed, delta),
-      elbow: THREE.MathUtils.damp(angles.elbow, target.elbow, speed, delta),
-      forearm: THREE.MathUtils.damp(angles.forearm, target.forearm, speed, delta),
-      wrist: THREE.MathUtils.damp(angles.wrist, target.wrist, speed, delta),
-    };
-    setAngles(newAngles);
 
-    // Gripper animation
+    a.base = THREE.MathUtils.damp(a.base, target.base, speed, delta);
+    a.shoulder = THREE.MathUtils.damp(a.shoulder, target.shoulder, speed, delta);
+    a.upperArm = THREE.MathUtils.damp(a.upperArm, target.upperArm, speed, delta);
+    a.elbow = THREE.MathUtils.damp(a.elbow, target.elbow, speed, delta);
+    a.forearm = THREE.MathUtils.damp(a.forearm, target.forearm, speed, delta);
+    a.wrist = THREE.MathUtils.damp(a.wrist, target.wrist, speed, delta);
+
+    if (baseRef.current) baseRef.current.rotation.y = a.base;
+    if (shoulderRef.current) shoulderRef.current.rotation.x = a.shoulder;
+    if (upperArmRef.current) upperArmRef.current.rotation.x = a.upperArm;
+    if (elbowRef.current) elbowRef.current.rotation.x = a.elbow;
+    if (forearmRef.current) forearmRef.current.rotation.x = a.forearm;
+    if (wristRef.current) wristRef.current.rotation.y = a.wrist;
+
     const jawOffset = gripperOpen ? 0.18 : 0.05;
     if (jawLeftRef.current) jawLeftRef.current.position.x = -jawOffset;
     if (jawRightRef.current) jawRightRef.current.position.x = jawOffset;
@@ -139,85 +142,73 @@ function RobotArm({
   return (
     <group position={[0, 0.3, 0]}>
       {/* Robot Base Pedestal */}
-      <mesh castShadow receiveShadow>
-        <cylinderGeometry args={[0.4, 0.5, 0.3, 24]} />
-        <meshStandardMaterial color={COLORS.robotOrange} metalness={0.6} roughness={0.4} />
+      <mesh castShadow={false} receiveShadow={false}>
+        <cylinderGeometry args={[0.4, 0.5, 0.3, 16]} />
+        <meshStandardMaterial color={COLORS.robotOrange} metalness={0.25} roughness={0.55} />
       </mesh>
       <mesh position={[0, 0.15, 0]}>
-        <cylinderGeometry args={[0.35, 0.4, 0.1, 24]} />
-        <meshStandardMaterial color={COLORS.robotDark} metalness={0.7} roughness={0.3} />
+        <cylinderGeometry args={[0.35, 0.4, 0.1, 16]} />
+        <meshStandardMaterial color={COLORS.robotDark} metalness={0.28} roughness={0.5} />
       </mesh>
 
       {/* Axis 1: Base Rotation */}
-      <group ref={baseRef} rotation={[0, angles.base, 0]}>
-        {/* Base joint sphere */}
-        <mesh position={[0, 0.35, 0]} castShadow>
-          <sphereGeometry args={[0.25, 24, 24]} />
-          <meshStandardMaterial color={COLORS.jointGray} metalness={0.8} roughness={0.2} />
+      <group ref={baseRef}>
+        <mesh position={[0, 0.35, 0]} castShadow={false}>
+          <sphereGeometry args={[0.25, 16, 16]} />
+          <meshStandardMaterial color={COLORS.jointGray} metalness={0.3} roughness={0.45} />
         </mesh>
 
-        {/* Axis 2: Shoulder */}
-        <group ref={shoulderRef} position={[0, 0.35, 0]} rotation={[angles.shoulder, 0, 0]}>
-          {/* Shoulder joint */}
-          <mesh castShadow>
-            <sphereGeometry args={[0.2, 24, 24]} />
-            <meshStandardMaterial color={COLORS.jointGray} metalness={0.8} roughness={0.2} />
+        <group ref={shoulderRef} position={[0, 0.35, 0]} rotation={[-0.3, 0, 0]}>
+          <mesh castShadow={false}>
+            <sphereGeometry args={[0.2, 16, 16]} />
+            <meshStandardMaterial color={COLORS.jointGray} metalness={0.3} roughness={0.45} />
           </mesh>
           
-          {/* Upper Arm */}
-          <group ref={upperArmRef} position={[0, 0, 0]} rotation={[angles.upperArm, 0, 0]}>
-            <mesh position={[0, 0.5, 0]} castShadow>
+          <group ref={upperArmRef} position={[0, 0, 0]} rotation={[0.8, 0, 0]}>
+            <mesh position={[0, 0.5, 0]} castShadow={false}>
               <boxGeometry args={[0.25, 1.0, 0.25]} />
-              <meshStandardMaterial color={COLORS.robotOrange} metalness={0.6} roughness={0.4} />
+              <meshStandardMaterial color={COLORS.robotOrange} metalness={0.25} roughness={0.55} />
             </mesh>
-            {/* Arm detail stripe */}
             <mesh position={[0.13, 0.5, 0]}>
               <boxGeometry args={[0.02, 0.9, 0.26]} />
-              <meshStandardMaterial color={COLORS.robotDark} metalness={0.6} roughness={0.4} />
+              <meshStandardMaterial color={COLORS.robotDark} metalness={0.25} roughness={0.55} />
             </mesh>
 
-            {/* Axis 3: Elbow */}
-            <group ref={elbowRef} position={[0, 1.0, 0]} rotation={[angles.elbow, 0, 0]}>
-              <mesh castShadow>
-                <sphereGeometry args={[0.18, 24, 24]} />
-                <meshStandardMaterial color={COLORS.jointGray} metalness={0.8} roughness={0.2} />
+            <group ref={elbowRef} position={[0, 1.0, 0]} rotation={[-1.2, 0, 0]}>
+              <mesh castShadow={false}>
+                <sphereGeometry args={[0.18, 16, 16]} />
+                <meshStandardMaterial color={COLORS.jointGray} metalness={0.3} roughness={0.45} />
               </mesh>
 
-              {/* Forearm */}
-              <group ref={forearmRef} position={[0, 0, 0]} rotation={[angles.forearm, 0, 0]}>
-                <mesh position={[0, 0.4, 0]} castShadow>
+              <group ref={forearmRef} position={[0, 0, 0]} rotation={[0.4, 0, 0]}>
+                <mesh position={[0, 0.4, 0]} castShadow={false}>
                   <boxGeometry args={[0.2, 0.8, 0.2]} />
-                  <meshStandardMaterial color={COLORS.robotOrange} metalness={0.6} roughness={0.4} />
+                  <meshStandardMaterial color={COLORS.robotOrange} metalness={0.25} roughness={0.55} />
                 </mesh>
 
-                {/* Axis 4: Wrist */}
-                <group ref={wristRef} position={[0, 0.8, 0]} rotation={[0, angles.wrist, 0]}>
-                  <mesh castShadow>
-                    <sphereGeometry args={[0.12, 24, 24]} />
-                    <meshStandardMaterial color={COLORS.jointGray} metalness={0.8} roughness={0.2} />
+                <group ref={wristRef} position={[0, 0.8, 0]}>
+                  <mesh castShadow={false}>
+                    <sphereGeometry args={[0.12, 12, 12]} />
+                    <meshStandardMaterial color={COLORS.jointGray} metalness={0.3} roughness={0.45} />
                   </mesh>
 
-                  {/* Wrist to gripper adapter */}
-                  <mesh position={[0, -0.15, 0]} castShadow>
-                    <cylinderGeometry args={[0.08, 0.1, 0.2, 16]} />
-                    <meshStandardMaterial color={COLORS.robotDark} metalness={0.7} roughness={0.3} />
+                  <mesh position={[0, -0.15, 0]} castShadow={false}>
+                    <cylinderGeometry args={[0.08, 0.1, 0.2, 12]} />
+                    <meshStandardMaterial color={COLORS.robotDark} metalness={0.28} roughness={0.5} />
                   </mesh>
 
-                  {/* Gripper Base */}
-                  <mesh position={[0, -0.3, 0]} castShadow>
+                  <mesh position={[0, -0.3, 0]} castShadow={false}>
                     <boxGeometry args={[0.3, 0.15, 0.2]} />
-                    <meshStandardMaterial color={COLORS.gripperSteel} metalness={0.7} roughness={0.3} />
+                    <meshStandardMaterial color={COLORS.gripperSteel} metalness={0.3} roughness={0.5} />
                   </mesh>
 
-                  {/* Left Jaw */}
-                  <mesh ref={jawLeftRef} position={[-0.15, -0.45, 0]} castShadow>
+                  <mesh ref={jawLeftRef} position={[-0.15, -0.45, 0]} castShadow={false}>
                     <boxGeometry args={[0.08, 0.2, 0.15]} />
-                    <meshStandardMaterial color={COLORS.gripperSteel} metalness={0.7} roughness={0.3} />
+                    <meshStandardMaterial color={COLORS.gripperSteel} metalness={0.3} roughness={0.5} />
                   </mesh>
-                  {/* Right Jaw */}
-                  <mesh ref={jawRightRef} position={[0.15, -0.45, 0]} castShadow>
+                  <mesh ref={jawRightRef} position={[0.15, -0.45, 0]} castShadow={false}>
                     <boxGeometry args={[0.08, 0.2, 0.15]} />
-                    <meshStandardMaterial color={COLORS.gripperSteel} metalness={0.7} roughness={0.3} />
+                    <meshStandardMaterial color={COLORS.gripperSteel} metalness={0.3} roughness={0.5} />
                   </mesh>
                 </group>
               </group>
@@ -226,10 +217,9 @@ function RobotArm({
         </group>
       </group>
 
-      {/* Bag being carried (attached to gripper) */}
       {bagPosition && (
         <group position={bagPosition}>
-          <mesh castShadow>
+          <mesh castShadow={false}>
             <boxGeometry args={[0.4, 0.7, 0.3]} />
             <meshStandardMaterial color={COLORS.bagWhite} roughness={0.9} />
           </mesh>
@@ -761,7 +751,6 @@ export function PalletizerComponent({
 }: PalletizerProps) {
   const [internalActive, setInternalActive] = useState(false);
   const [phase, setPhase] = useState<'IDLE' | 'PICK' | 'LIFT' | 'PLACE' | 'LOWER' | 'RETURN'>('IDLE');
-  const [phaseProgress, setPhaseProgress] = useState(0);
   const [gripperOpen, setGripperOpen] = useState(true);
   const [bagOnGripper, setBagOnGripper] = useState<V3 | null>(null);
   const [layerCount, setLayerCount] = useState(2);
@@ -769,6 +758,11 @@ export function PalletizerComponent({
   const [palletComplete, setPalletComplete] = useState(false);
   const [completedBags, setCompletedBags] = useState(4800);
   const [palletNumber, setPalletNumber] = useState(154);
+  const phaseRef = useRef(phase);
+  const progressRef = useRef(0);
+  const palletCompleteRef = useRef(palletComplete);
+  phaseRef.current = phase;
+  palletCompleteRef.current = palletComplete;
   
   const active = controlledActive !== undefined ? controlledActive : internalActive;
   const pickY = height + 0.35;
@@ -776,46 +770,46 @@ export function PalletizerComponent({
   useFrame((_, delta) => {
     if (!active) return;
 
-    setPhaseProgress(prev => prev + delta);
+    progressRef.current += delta;
+    const t = progressRef.current;
+    const current = phaseRef.current;
 
-    switch (phase) {
+    const advance = (next: typeof phase) => {
+      progressRef.current = 0;
+      phaseRef.current = next;
+      setPhase(next);
+    };
+
+    switch (current) {
       case 'IDLE':
-        if (phaseProgress > 0.5) {
-          setPhase('PICK');
-          setPhaseProgress(0);
+        if (t > 0.5) {
           setGripperOpen(true);
           setBagOnGripper(null);
+          advance('PICK');
         }
         break;
       case 'PICK':
-        if (phaseProgress > 1.5) {
+        if (t > 1.5) {
           setGripperOpen(false);
           setBagOnGripper([-1.5, pickY, 0]);
-          setPhase('LIFT');
-          setPhaseProgress(0);
+          advance('LIFT');
         }
         break;
       case 'LIFT':
-        if (phaseProgress > 1.2) {
-          setPhase('PLACE');
-          setPhaseProgress(0);
-        }
+        if (t > 1.2) advance('PLACE');
         break;
       case 'PLACE':
-        if (phaseProgress > 1.5) {
-          setPhase('LOWER');
-          setPhaseProgress(0);
-        }
+        if (t > 1.5) advance('LOWER');
         break;
       case 'LOWER':
-        if (phaseProgress > 1.0) {
+        if (t > 1.0) {
           setGripperOpen(true);
           setBagOnGripper(null);
           setCompletedBags((n) => n + 1);
-          setBagCount(prev => {
+          setBagCount((prev) => {
             const newCount = prev + 1;
             if (newCount >= 8) {
-              setLayerCount(l => {
+              setLayerCount((l) => {
                 const next = l + 1;
                 if (next >= 8) setPalletComplete(true);
                 return next;
@@ -824,20 +818,18 @@ export function PalletizerComponent({
             }
             return newCount;
           });
-          setPhase('RETURN');
-          setPhaseProgress(0);
+          advance('RETURN');
         }
         break;
       case 'RETURN':
-        if (phaseProgress > 1.5) {
-          if (palletComplete) {
+        if (t > 1.5) {
+          if (palletCompleteRef.current) {
             setLayerCount(0);
             setBagCount(0);
             setPalletComplete(false);
             setPalletNumber((n) => n + 1);
           }
-          setPhase('IDLE');
-          setPhaseProgress(0);
+          advance('IDLE');
         }
         break;
     }
@@ -851,7 +843,7 @@ export function PalletizerComponent({
 
       <RobotArm
         phase={phase} 
-        phaseProgress={phaseProgress} 
+        phaseProgress={0} 
         gripperOpen={gripperOpen}
         bagPosition={bagOnGripper}
         active={active}

@@ -27,13 +27,13 @@ const COLORS = {
 
 const matSteelLight = new THREE.MeshStandardMaterial({
   color: COLORS.steelLight,
-  metalness: 0.8,
-  roughness: 0.3,
+  metalness: 0.28,
+  roughness: 0.55,
 });
 const matKick = new THREE.MeshStandardMaterial({
   color: COLORS.kick,
-  metalness: 0.7,
-  roughness: 0.4,
+  metalness: 0.25,
+  roughness: 0.6,
 });
 
 /* ==========================================================================
@@ -105,7 +105,7 @@ export function SafetyRailing({
     <group position={position} rotation={rotation}>
       <Instances limit={postCount} range={postCount} castShadow={false}>
         <boxGeometry args={[0.05, height, 0.05]} />
-        <primitive object={matSteelLight} attach="material" />
+        <meshStandardMaterial color={COLORS.steelLight} metalness={0.28} roughness={0.55} />
         {posts.map((x, i) => (
           <Instance key={i} position={[x, height / 2, 0]} />
         ))}
@@ -156,7 +156,7 @@ export function AccessLadder({
       </mesh>
       <Instances limit={rungCount} range={rungCount} castShadow={false}>
         <boxGeometry args={[width - 0.05, 0.035, 0.04]} />
-        <primitive object={matSteelLight} attach="material" />
+        <meshStandardMaterial color={COLORS.steelLight} metalness={0.28} roughness={0.55} />
         {Array.from({ length: rungCount }, (_, i) => {
           const y = 0.15 + (i / (rungCount - 1)) * (height - 0.3);
           return <Instance key={i} position={[0, y, 0.02]} />;

@@ -1,35 +1,38 @@
 import * as THREE from "three";
 
-/** Shared GPU materials — module-level so programs are reused across meshes. */
+/**
+ * Shared materials tuned for scenes WITHOUT an HDR Environment map.
+ * High metalness + no IBL reads as near-black in Three.js — keep metalness modest.
+ */
 
 export const matSteel = new THREE.MeshStandardMaterial({
-  color: "#8a9096",
-  metalness: 0.65,
-  roughness: 0.35,
+  color: "#9aa0a6",
+  metalness: 0.28,
+  roughness: 0.55,
 });
 
 export const matSteelDark = new THREE.MeshStandardMaterial({
-  color: "#4a5056",
-  metalness: 0.7,
-  roughness: 0.4,
+  color: "#5a6068",
+  metalness: 0.3,
+  roughness: 0.58,
 });
 
 export const matFlange = new THREE.MeshStandardMaterial({
-  color: "#7a8288",
-  metalness: 0.75,
-  roughness: 0.35,
+  color: "#8a9098",
+  metalness: 0.32,
+  roughness: 0.5,
 });
 
 export const matPaintBlue = new THREE.MeshStandardMaterial({
   color: "#3a5f8a",
-  metalness: 0.25,
-  roughness: 0.55,
+  metalness: 0.15,
+  roughness: 0.6,
 });
 
 export const matPaintYellow = new THREE.MeshStandardMaterial({
   color: "#c9a227",
-  metalness: 0.2,
-  roughness: 0.5,
+  metalness: 0.12,
+  roughness: 0.55,
 });
 
 export const matRubber = new THREE.MeshStandardMaterial({
@@ -45,31 +48,31 @@ export const matConcrete = new THREE.MeshStandardMaterial({
 });
 
 export const matPneumatic = new THREE.MeshStandardMaterial({
-  color: "#b8c0c8",
-  metalness: 0.65,
-  roughness: 0.4,
+  color: "#c0c8d0",
+  metalness: 0.25,
+  roughness: 0.5,
 });
 
 export const matDustDuct = new THREE.MeshStandardMaterial({
-  color: "#4a5058",
-  metalness: 0.65,
-  roughness: 0.4,
+  color: "#5a6068",
+  metalness: 0.28,
+  roughness: 0.55,
 });
 
 export const matDeck = new THREE.MeshStandardMaterial({
-  color: "#5a6268",
-  metalness: 0.7,
-  roughness: 0.4,
+  color: "#6a7278",
+  metalness: 0.28,
+  roughness: 0.55,
 });
 
 export const matStructureSteel = new THREE.MeshStandardMaterial({
-  color: "#3a454c",
-  metalness: 0.75,
-  roughness: 0.35,
+  color: "#4a545c",
+  metalness: 0.3,
+  roughness: 0.55,
 });
 
 export const matRailYellow = new THREE.MeshStandardMaterial({
   color: "#e0a92c",
-  metalness: 0.35,
-  roughness: 0.45,
+  metalness: 0.15,
+  roughness: 0.5,
 });
