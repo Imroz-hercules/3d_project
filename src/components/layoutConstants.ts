@@ -902,3 +902,51 @@ export function metalDetectorOutletWorldPos(): [number, number, number] {
   const { length, height } = REF.metalDetector;
   return [mx + length / 2, my + height, mz];
 }
+
+/* ==========================================================================
+   PLANT EXTENTS (for ground / camera framing)
+   ========================================================================== */
+
+/** Axis-aligned plant footprint including packing cell (metres). */
+export function plantBounds(): { minX: number; maxX: number; minZ: number; maxZ: number } {
+  const samples: [number, number, number][] = [
+    [0, 0, 0],
+    elevatorPosition(),
+    separatorPosition(),
+    conditioningBinPosition(),
+    rollerMillPosition(),
+    branFinisherPosition(),
+    flourBinPosition('A'),
+    flourBinPosition('C'),
+    packingMachinePosition(),
+    metalDetectorOutletWorldPos(),
+  ];
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  for (const [x, , z] of samples) {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minZ = Math.min(minZ, z);
+    maxZ = Math.max(maxZ, z);
+  }
+  // Margin for machine footprints / reject bins
+  const pad = 4;
+  return { minX: minX - pad, maxX: maxX + pad, minZ: minZ - pad, maxZ: maxZ + pad };
+}
+
+/** World-space centre of the full plant footprint (Y unused / 0). */
+export function plantCenter(): [number, number, number] {
+  const b = plantBounds();
+  return [(b.minX + b.maxX) / 2, 0, (b.minZ + b.maxZ) / 2];
+}
+
+/** Ground radius that covers the plant with comfortable apron. */
+export function plantGroundRadius(): number {
+  const b = plantBounds();
+  const [cx, , cz] = plantCenter();
+  const hx = Math.max(Math.abs(b.minX - cx), Math.abs(b.maxX - cx));
+  const hz = Math.max(Math.abs(b.minZ - cz), Math.abs(b.maxZ - cz));
+  return Math.ceil(Math.hypot(hx, hz) + 8);
+}
