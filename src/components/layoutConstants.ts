@@ -268,6 +268,22 @@ export const REF = {
     stackHeight: 4.5,
     stackRadius: 0.28,
   },
+  /** Electrical spine — MCC / trays / local panels. */
+  electrical: {
+    trayHeight: 4.2,
+    trayWidth: 0.45,
+    trayDepth: 0.12,
+    /** Offset −Z from milling/packing aisle for tray clear of machines. */
+    millingTrayOffsetZ: -1.8,
+    /** Offset +Z from cleaning aisle for tray clear of machines. */
+    cleaningTrayOffsetZ: 1.6,
+    mccWidth: 4.8,
+    mccDepth: 0.7,
+    mccHeight: 2.2,
+    plcWidth: 0.8,
+    plcDepth: 0.5,
+    plcHeight: 1.8,
+  },
 } as const;
 
 export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
@@ -1051,6 +1067,91 @@ export function dustHeaderPosition(): [number, number, number] {
 }
 
 /* ==========================================================================
+   ELECTRICAL LAYOUT HELPERS
+   ========================================================================== */
+
+/** Overhead cable tray height (metres). */
+export function cableTrayY(): number {
+  return REF.electrical.trayHeight;
+}
+
+/**
+ * Cleaning-aisle tray spine span (+X along machines, offset +Z).
+ * From elevator through conditioning.
+ */
+export function cleaningCableTraySpan(): {
+  startX: number;
+  endX: number;
+  y: number;
+  z: number;
+} {
+  const [ex] = elevatorPosition();
+  const [cx] = conditioningBinPosition();
+  return {
+    startX: ex - 1,
+    endX: cx + 2,
+    y: cableTrayY(),
+    z: REF.zones.cleaning.z + REF.electrical.cleaningTrayOffsetZ,
+  };
+}
+
+/**
+ * Milling / packing tray spine — from roller mill through palletizer.
+ */
+export function millingCableTraySpan(): {
+  startX: number;
+  endX: number;
+  y: number;
+  z: number;
+} {
+  const [rx] = rollerMillPosition();
+  const [px] = palletizerPosition();
+  return {
+    startX: rx - 2,
+    endX: px + REF.palletizer.cellSize / 2 + 1,
+    y: cableTrayY(),
+    z: REF.zones.milling.z + REF.electrical.millingTrayOffsetZ,
+  };
+}
+
+/**
+ * MCC lineup — between conditioning and milling on +Z side of packing start,
+ * clear of process machines (near flour bins / packing feed).
+ */
+export function mccPosition(): [number, number, number] {
+  const [ax, , az] = flourBinPosition('A');
+  const { mccWidth, mccDepth } = REF.electrical;
+  return [ax - 1.5, 0, az + mccDepth / 2 + 2.8];
+}
+
+/** PLC cabinet beside the MCC lineup. */
+export function plcCabinetPosition(): [number, number, number] {
+  const [mx, , mz] = mccPosition();
+  const { mccWidth, plcWidth } = REF.electrical;
+  return [mx + mccWidth / 2 + plcWidth / 2 + 0.4, 0, mz];
+}
+
+/** Local panel stub beside a major machine (operator side). */
+export function localPanelWorldPos(
+  machine: 'elevator' | 'mill' | 'packing' | 'palletizer'
+): [number, number, number] {
+  if (machine === 'elevator') {
+    const [x, , z] = elevatorPosition();
+    return [x + 1.1, 1.2, z + 0.9];
+  }
+  if (machine === 'mill') {
+    const [x, y, z] = rollerMillPosition();
+    return [x - REF.rollerMill.width / 2 - 0.55, y - 0.2, z + 1.1];
+  }
+  if (machine === 'packing') {
+    const [x, , z] = packingMachinePosition();
+    return [x - 1.4, 1.15, z + 1.15];
+  }
+  const [x, , z] = palletizerPosition();
+  return [x - REF.palletizer.cellSize / 2 - 0.4, 1.2, z + 2.2];
+}
+
+/* ==========================================================================
    PLANT EXTENTS (for ground / camera framing)
    ========================================================================== */
 
@@ -1071,6 +1172,8 @@ export function plantBounds(): { minX: number; maxX: number; minZ: number; maxZ:
     bagFilterPosition(),
     dustHeaderPointAtX(dustHeaderSpan().startX),
     dustHeaderPointAtX(dustHeaderSpan().endX),
+    mccPosition(),
+    plcCabinetPosition(),
   ];
   let minX = Infinity;
   let maxX = -Infinity;

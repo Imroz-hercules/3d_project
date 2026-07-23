@@ -53,7 +53,6 @@ Grain Silo
 ### Still open (this roadmap)
 
 - Complete steel / platforms / walkways plant-wide
-- Electrical (MCC, cable trays)
 - Building envelope (walls, roof, docks)
 - True digital-twin SCADA (click → PLC tags, alarms, trends)
 
@@ -349,11 +348,11 @@ top rail → mid rail → toe plate
 
 ### Build
 
-- [ ] MCC lineup (large multi-panel row) near packing or cleaning electrical room zone
-- [ ] PLC cabinet (smaller, near MCC or control room stub)
-- [ ] Local control panel at major machines (packing, mill, elevator, palletizer)
-- [ ] Overhead cable tray spine along both aisles
-- [ ] Drops from tray to each machine
+- [x] MCC lineup (large multi-panel row) near packing or cleaning electrical room zone
+- [x] PLC cabinet (smaller, near MCC or control room stub)
+- [x] Local control panel at major machines (packing, mill, elevator, palletizer)
+- [x] Overhead cable tray spine along both aisles
+- [x] Drops from tray to each machine
 
 ### Suggested file
 
@@ -510,7 +509,7 @@ simulate.ts  →  tag store  →  React UI overlay
 | 6 | Handrails | 3 | Medium | Partial |
 | 7 | Dust collection | 2 | Critical | Sprint 2 done |
 | 8 | Pneumatic pipes | 2 | High | Sprint 2 done (kit + flour header) |
-| 9 | Electrical | 3 | Medium | Not started |
+| 9 | Electrical | 3 | Medium | Sprint 4 done |
 | 10 | Lighting | 4 | Medium | Not started |
 | 11 | Safety props | 4 | Medium | Partial (robot cell) |
 | 12 | Sensors / tags | 5 | High | Not started |

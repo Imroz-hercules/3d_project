@@ -47,6 +47,7 @@ import {
   type V3,
 } from './factory/ProcessPiping';
 import { DustCollection } from './factory/DustCollection';
+import { Electrical } from './factory/Electrical';
 import {
   REF,
   ductBridgeY,
@@ -713,6 +714,7 @@ export function MaterialHandlingLine() {
     <group onClick={() => setLineActive((v) => !v)}>
       <PlantInfrastructure />
       <DustCollection active={lineActive} />
+      <Electrical active={lineActive} />
 
       <SiloModel />
 
