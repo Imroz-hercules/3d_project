@@ -52,8 +52,8 @@ Grain Silo
 
 ### Still open (this roadmap)
 
-- Building envelope (walls, roof, docks)
 - True digital-twin SCADA (click → PLC tags, alarms, trends)
+- Safety props polish (extinguishers, floor markings plant-wide)
 
 ---
 
@@ -373,7 +373,7 @@ Goal: machines sit *inside* a factory, not on an infinite grid.
 
 ## Phase 10 — Lighting
 
-- [ ] Row of industrial high-bay lights along aisles
+- [x] Row of industrial high-bay lights along aisles
 - [ ] Soft fill under mezzanines
 - [ ] Slight warmer light in packing cell
 - [ ] Optional: emissive fixtures that pulse with `lineActive`
@@ -419,13 +419,13 @@ Place warehouse on +X beyond palletizer forklift zone (same packing centreline).
 
 ### Build
 
-- [ ] Structural columns / roof trusses
-- [ ] Exterior walls (with cutouts for docks)
-- [ ] Roof panels + skylights
-- [ ] Windows / translucent wall strips
-- [ ] Rolling shutter doors
-- [ ] Loading docks + dock levelers
-- [ ] Interior partition for “MCC room” / “office stub” (optional)
+- [x] Structural columns / roof trusses
+- [x] Exterior walls (with cutouts for docks)
+- [x] Roof panels + skylights
+- [x] Windows / translucent wall strips
+- [x] Rolling shutter doors
+- [x] Loading docks + dock levelers
+- [x] Interior partition for “MCC room” / “office stub” (optional)
 
 ### Working steps
 
@@ -509,13 +509,13 @@ simulate.ts  →  tag store  →  React UI overlay
 | 7 | Dust collection | 2 | Critical | Sprint 2 done |
 | 8 | Pneumatic pipes | 2 | High | Sprint 2 done (kit + flour header) |
 | 9 | Electrical | 3 | Medium | Sprint 4 done |
-| 10 | Lighting | 4 | Medium | Not started |
+| 10 | Lighting | 4 | Medium | Partial (high-bay in envelope) |
 | 11 | Safety props | 4 | Medium | Partial (robot cell) |
 | 12 | Sensors / tags | 5 | High | Not started |
 | 13 | Material animation | 2→5 | Critical | Sprint 3 done (wheat/flour/dust + motors) |
 | 14 | Forklift animation | 4 | Medium | Sprint 6 done (looped demo) |
 | 15 | Warehouse | 4 | Medium | Sprint 6 done |
-| 16 | Building envelope | 4 | High (later) | Not started |
+| 16 | Building envelope | 4 | High (later) | Sprint 7 done |
 | 17 | SCADA / twin UX | 5 | Critical | Not started |
 
 ---

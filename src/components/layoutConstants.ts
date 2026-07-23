@@ -1225,6 +1225,40 @@ export function plantBounds(): { minX: number; maxX: number; minZ: number; maxZ:
   return { minX: minX - pad, maxX: maxX + pad, minZ: minZ - pad, maxZ: maxZ + pad };
 }
 
+/**
+ * Building envelope extents — plant footprint plus hall clearance.
+ * Used by BuildingEnvelope so walls are never hard-coded once.
+ */
+export function buildingEnvelopeBounds(): {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+  width: number;
+  depth: number;
+  height: number;
+  centerX: number;
+  centerZ: number;
+} {
+  const b = plantBounds();
+  const margin = 3.5;
+  const minX = b.minX - margin;
+  const maxX = b.maxX + margin;
+  const minZ = b.minZ - margin;
+  const maxZ = b.maxZ + margin;
+  return {
+    minX,
+    maxX,
+    minZ,
+    maxZ,
+    width: maxX - minX,
+    depth: maxZ - minZ,
+    height: 12,
+    centerX: (minX + maxX) / 2,
+    centerZ: (minZ + maxZ) / 2,
+  };
+}
+
 /** World-space centre of the full plant footprint (Y unused / 0). */
 export function plantCenter(): [number, number, number] {
   const b = plantBounds();
