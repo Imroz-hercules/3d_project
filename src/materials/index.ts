@@ -13,6 +13,7 @@ export {
   matPaintBlue,
   matPaintDark,
   matPaintYellow,
+  matPaintOrange,
   matGalvanized,
   matRubber,
   matConcrete,

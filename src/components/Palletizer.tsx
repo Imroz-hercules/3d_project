@@ -29,36 +29,34 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  matConcrete,
+  matPaintOrange,
+  matRailYellow,
+  matRubber,
+  matSteel,
+  matSteelDark,
+  matStructureSteel,
+} from '../materials';
 
 type V3 = [number, number, number];
 
 const COLORS = {
-  robotOrange: '#ff6600',
-  robotDark: '#cc5200',
-  robotLight: '#ff8533',
-  jointGray: '#4a5058',
-  gripperSteel: '#6b7278',
-  safetyYellow: '#e0a92c',
-  fenceGray: '#8a9199',
   fenceMesh: '#6b7278',
   woodBrown: '#8b6f47',
   woodDark: '#6b5235',
   bagWhite: '#f5f5f0',
   bagSeam: '#d4d8dc',
   wrapClear: '#c8d0d8',
-  beltBlack: '#1a1a1a',
-  rollerSteel: '#6b7278',
   floorMark: '#e0a92c',
-  forkliftYellow: '#d4a017',
-  forkliftGray: '#3a4048',
   hmiScreen: '#00d4ff',
   hmiBody: '#2a2a2a',
   eStopRed: '#ff2222',
   lightGreen: '#3fae56',
   lightYellow: '#e0a92c',
   lightRed: '#a4222c',
-  concrete: '#9a9a92',
   accentCyan: '#00d4ff',
+  safetyYellow: '#e0a92c',
 } as const;
 
 /* ==========================================================================
@@ -142,73 +140,60 @@ function RobotArm({
   return (
     <group position={[0, 0.3, 0]}>
       {/* Robot Base Pedestal */}
-      <mesh castShadow={false} receiveShadow={false}>
+      <mesh castShadow={false} receiveShadow={false} dispose={null} material={matPaintOrange}>
         <cylinderGeometry args={[0.4, 0.5, 0.3, 16]} />
-        <meshStandardMaterial color={COLORS.robotOrange} metalness={0.25} roughness={0.55} />
       </mesh>
-      <mesh position={[0, 0.15, 0]}>
+      <mesh position={[0, 0.15, 0]} dispose={null} material={matSteelDark}>
         <cylinderGeometry args={[0.35, 0.4, 0.1, 16]} />
-        <meshStandardMaterial color={COLORS.robotDark} metalness={0.28} roughness={0.5} />
       </mesh>
 
       {/* Axis 1: Base Rotation */}
       <group ref={baseRef}>
-        <mesh position={[0, 0.35, 0]} castShadow={false}>
+        <mesh position={[0, 0.35, 0]} castShadow={false} dispose={null} material={matSteelDark}>
           <sphereGeometry args={[0.25, 16, 16]} />
-          <meshStandardMaterial color={COLORS.jointGray} metalness={0.3} roughness={0.45} />
         </mesh>
 
         <group ref={shoulderRef} position={[0, 0.35, 0]} rotation={[-0.3, 0, 0]}>
-          <mesh castShadow={false}>
+          <mesh castShadow={false} dispose={null} material={matSteelDark}>
             <sphereGeometry args={[0.2, 16, 16]} />
-            <meshStandardMaterial color={COLORS.jointGray} metalness={0.3} roughness={0.45} />
           </mesh>
           
           <group ref={upperArmRef} position={[0, 0, 0]} rotation={[0.8, 0, 0]}>
-            <mesh position={[0, 0.5, 0]} castShadow={false}>
+            <mesh position={[0, 0.5, 0]} castShadow={false} dispose={null} material={matPaintOrange}>
               <boxGeometry args={[0.25, 1.0, 0.25]} />
-              <meshStandardMaterial color={COLORS.robotOrange} metalness={0.25} roughness={0.55} />
             </mesh>
-            <mesh position={[0.13, 0.5, 0]}>
+            <mesh position={[0.13, 0.5, 0]} dispose={null} material={matSteelDark}>
               <boxGeometry args={[0.02, 0.9, 0.26]} />
-              <meshStandardMaterial color={COLORS.robotDark} metalness={0.25} roughness={0.55} />
             </mesh>
 
             <group ref={elbowRef} position={[0, 1.0, 0]} rotation={[-1.2, 0, 0]}>
-              <mesh castShadow={false}>
+              <mesh castShadow={false} dispose={null} material={matSteelDark}>
                 <sphereGeometry args={[0.18, 16, 16]} />
-                <meshStandardMaterial color={COLORS.jointGray} metalness={0.3} roughness={0.45} />
               </mesh>
 
               <group ref={forearmRef} position={[0, 0, 0]} rotation={[0.4, 0, 0]}>
-                <mesh position={[0, 0.4, 0]} castShadow={false}>
+                <mesh position={[0, 0.4, 0]} castShadow={false} dispose={null} material={matPaintOrange}>
                   <boxGeometry args={[0.2, 0.8, 0.2]} />
-                  <meshStandardMaterial color={COLORS.robotOrange} metalness={0.25} roughness={0.55} />
                 </mesh>
 
                 <group ref={wristRef} position={[0, 0.8, 0]}>
-                  <mesh castShadow={false}>
+                  <mesh castShadow={false} dispose={null} material={matSteelDark}>
                     <sphereGeometry args={[0.12, 12, 12]} />
-                    <meshStandardMaterial color={COLORS.jointGray} metalness={0.3} roughness={0.45} />
                   </mesh>
 
-                  <mesh position={[0, -0.15, 0]} castShadow={false}>
+                  <mesh position={[0, -0.15, 0]} castShadow={false} dispose={null} material={matSteelDark}>
                     <cylinderGeometry args={[0.08, 0.1, 0.2, 12]} />
-                    <meshStandardMaterial color={COLORS.robotDark} metalness={0.28} roughness={0.5} />
                   </mesh>
 
-                  <mesh position={[0, -0.3, 0]} castShadow={false}>
+                  <mesh position={[0, -0.3, 0]} castShadow={false} dispose={null} material={matSteel}>
                     <boxGeometry args={[0.3, 0.15, 0.2]} />
-                    <meshStandardMaterial color={COLORS.gripperSteel} metalness={0.3} roughness={0.5} />
                   </mesh>
 
-                  <mesh ref={jawLeftRef} position={[-0.15, -0.45, 0]} castShadow={false}>
+                  <mesh ref={jawLeftRef} position={[-0.15, -0.45, 0]} castShadow={false} dispose={null} material={matSteel}>
                     <boxGeometry args={[0.08, 0.2, 0.15]} />
-                    <meshStandardMaterial color={COLORS.gripperSteel} metalness={0.3} roughness={0.5} />
                   </mesh>
-                  <mesh ref={jawRightRef} position={[0.15, -0.45, 0]} castShadow={false}>
+                  <mesh ref={jawRightRef} position={[0.15, -0.45, 0]} castShadow={false} dispose={null} material={matSteel}>
                     <boxGeometry args={[0.08, 0.2, 0.15]} />
-                    <meshStandardMaterial color={COLORS.gripperSteel} metalness={0.3} roughness={0.5} />
                   </mesh>
                 </group>
               </group>
@@ -259,13 +244,11 @@ function SafetyFence({ size }: { size: number }) {
                 <meshStandardMaterial color={COLORS.fenceMesh} metalness={0.6} roughness={0.4} wireframe />
               </mesh>
               {/* Frame */}
-              <mesh position={[0, fenceHeight / 2 - 0.05, 0]}>
+              <mesh position={[0, fenceHeight / 2 - 0.05, 0]} dispose={null} material={matRailYellow}>
                 <boxGeometry args={[0.08, 0.08, panelWidth - 0.1]} />
-                <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.6} roughness={0.4} />
               </mesh>
-              <mesh position={[0, -fenceHeight / 2 + 0.05, 0]}>
+              <mesh position={[0, -fenceHeight / 2 + 0.05, 0]} dispose={null} material={matRailYellow}>
                 <boxGeometry args={[0.08, 0.08, panelWidth - 0.1]} />
-                <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.6} roughness={0.4} />
               </mesh>
             </group>
           );
@@ -280,13 +263,11 @@ function SafetyFence({ size }: { size: number }) {
                 <boxGeometry args={[panelWidth - 0.1, fenceHeight, 0.05]} />
                 <meshStandardMaterial color={COLORS.fenceMesh} metalness={0.6} roughness={0.4} wireframe />
               </mesh>
-              <mesh position={[0, fenceHeight / 2 - 0.05, 0]}>
+              <mesh position={[0, fenceHeight / 2 - 0.05, 0]} dispose={null} material={matRailYellow}>
                 <boxGeometry args={[panelWidth - 0.1, 0.08, 0.08]} />
-                <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.6} roughness={0.4} />
               </mesh>
-              <mesh position={[0, -fenceHeight / 2 + 0.05, 0]}>
+              <mesh position={[0, -fenceHeight / 2 + 0.05, 0]} dispose={null} material={matRailYellow}>
                 <boxGeometry args={[panelWidth - 0.1, 0.08, 0.08]} />
-                <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.6} roughness={0.4} />
               </mesh>
             </group>
           );
@@ -296,13 +277,11 @@ function SafetyFence({ size }: { size: number }) {
       {/* Safety Gate (one side, with opening) */}
       <group position={[0, fenceHeight / 2, size / 2]}>
         {/* Gate frame */}
-        <mesh position={[-0.6, 0, 0]}>
+        <mesh position={[-0.6, 0, 0]} dispose={null} material={matRailYellow}>
           <boxGeometry args={[0.08, fenceHeight, 0.08]} />
-          <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.6} roughness={0.4} />
         </mesh>
-        <mesh position={[0.6, 0, 0]}>
+        <mesh position={[0.6, 0, 0]} dispose={null} material={matRailYellow}>
           <boxGeometry args={[0.08, fenceHeight, 0.08]} />
-          <meshStandardMaterial color={COLORS.safetyYellow} metalness={0.6} roughness={0.4} />
         </mesh>
         {/* Gate mesh */}
         <mesh position={[0, 0, 0]}>
@@ -310,9 +289,8 @@ function SafetyFence({ size }: { size: number }) {
           <meshStandardMaterial color={COLORS.fenceMesh} metalness={0.6} roughness={0.4} wireframe />
         </mesh>
         {/* Interlock switch */}
-        <mesh position={[0.65, 0.5, 0.05]}>
+        <mesh position={[0.65, 0.5, 0.05]} dispose={null} material={matSteelDark}>
           <boxGeometry args={[0.08, 0.12, 0.06]} />
-          <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.3} />
         </mesh>
       </group>
     </group>
@@ -431,14 +409,12 @@ function EmptyPalletMagazine({ position }: { position: V3 }) {
         [-0.7, 0.6, 0.55],
         [0.7, 0.6, 0.55],
       ].map((pos, i) => (
-        <mesh key={i} position={pos as V3} castShadow>
+        <mesh key={i} position={pos as V3} castShadow dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.08, 1.2, 0.08]} />
-          <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.35} />
         </mesh>
       ))}
-      <mesh position={[0, 1.15, 0]}>
+      <mesh position={[0, 1.15, 0]} dispose={null} material={matStructureSteel}>
         <boxGeometry args={[1.5, 0.08, 1.2]} />
-        <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.35} />
       </mesh>
       {/* Stacked empty pallets waiting */}
       {[0, 0.18, 0.36, 0.54].map((y, i) => (
@@ -466,17 +442,15 @@ function PalletOutfeedConveyor({ position, active = true }: { position: V3; acti
   });
   return (
     <group position={position}>
-      <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0.12, 0]} castShadow receiveShadow dispose={null} material={matStructureSteel}>
         <boxGeometry args={[length, 0.12, 1.35]} />
-        <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.4} />
       </mesh>
       <group ref={rollersRef}>
         {Array.from({ length: 7 }, (_, i) => {
           const x = -length / 2 + 0.25 + i * 0.4;
           return (
-            <mesh key={i} position={[x, 0.22, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh key={i} position={[x, 0.22, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteel}>
               <cylinderGeometry args={[0.06, 0.06, 1.2, 12]} />
-              <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.85} roughness={0.2} />
             </mesh>
           );
         })}
@@ -487,9 +461,8 @@ function PalletOutfeedConveyor({ position, active = true }: { position: V3; acti
         [-length / 2 + 0.15, 0.2, -0.6],
         [length / 2 - 0.15, 0.2, -0.6],
       ].map((pos, i) => (
-        <mesh key={i} position={pos as V3}>
+        <mesh key={i} position={pos as V3} dispose={null} material={matStructureSteel}>
           <boxGeometry args={[0.1, 0.4, 0.1]} />
-          <meshStandardMaterial color={COLORS.jointGray} metalness={0.7} roughness={0.4} />
         </mesh>
       ))}
     </group>
@@ -578,18 +551,15 @@ function PickConveyor({ position, height = 0.85 }: { position: V3; height?: numb
         [-0.6, height / 2, 0.28],
         [0.6, height / 2, 0.28],
       ].map((pos, i) => (
-        <mesh key={i} position={pos as V3}>
+        <mesh key={i} position={pos as V3} dispose={null} material={matSteel}>
           <boxGeometry args={[0.08, height, 0.08]} />
-          <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.7} roughness={0.3} />
         </mesh>
       ))}
-      <mesh position={[0, height, 0]} castShadow>
+      <mesh position={[0, height, 0]} castShadow dispose={null} material={matSteel}>
         <boxGeometry args={[1.5, 0.12, 0.8]} />
-        <meshStandardMaterial color={COLORS.rollerSteel} metalness={0.7} roughness={0.3} />
       </mesh>
-      <mesh position={[0, height + 0.1, 0]} castShadow receiveShadow>
+      <mesh position={[0, height + 0.1, 0]} castShadow receiveShadow dispose={null} material={matRubber}>
         <boxGeometry args={[1.4, 0.05, 0.7]} />
-        <meshStandardMaterial color={COLORS.beltBlack} roughness={0.9} />
       </mesh>
     </group>
   );
@@ -666,7 +636,7 @@ function TowerLight({ position, status }: { position: V3; status: 'idle' | 'runn
 
   return (
     <group position={position}>
-      <mesh><cylinderGeometry args={[0.03, 0.03, 0.5, 16]} /><meshStandardMaterial color={COLORS.jointGray} /></mesh>
+      <mesh><cylinderGeometry args={[0.03, 0.03, 0.5, 16]} /><meshStandardMaterial color={COLORS.hmiBody} /></mesh>
       <mesh ref={greenRef} position={[0, 0.15, 0]}><cylinderGeometry args={[0.06, 0.06, 0.1, 16]} /><meshStandardMaterial color={COLORS.lightGreen} emissive={COLORS.lightGreen} emissiveIntensity={0.1} /></mesh>
       <mesh ref={yellowRef} position={[0, 0.02, 0]}><cylinderGeometry args={[0.06, 0.06, 0.1, 16]} /><meshStandardMaterial color={COLORS.lightYellow} emissive={COLORS.lightYellow} emissiveIntensity={0.1} /></mesh>
       <mesh ref={redRef} position={[0, -0.11, 0]}><cylinderGeometry args={[0.06, 0.06, 0.1, 16]} /><meshStandardMaterial color={COLORS.lightRed} emissive={COLORS.lightRed} emissiveIntensity={0.1} /></mesh>
@@ -921,9 +891,8 @@ export function PalletizerComponent({
 function Ground() {
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]} dispose={null} material={matConcrete}>
         <circleGeometry args={[40, 64]} />
-        <meshStandardMaterial color={COLORS.concrete} roughness={0.95} metalness={0.05} />
       </mesh>
       <gridHelper args={[80, 80, '#5c5c54', '#79796e']} />
     </group>

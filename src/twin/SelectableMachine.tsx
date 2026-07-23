@@ -7,7 +7,7 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { selectMachine } from './tags';
+import { navigateTo } from '../navigation/navStore';
 import { useMachineSelectAlarm } from './useTwinState';
 import type { MachineId } from './types';
 
@@ -50,7 +50,7 @@ export function SelectableMachine({
         visible={false}
         onClick={(e) => {
           e.stopPropagation();
-          selectMachine(id);
+          navigateTo({ kind: 'machine', machineId: id });
         }}
       >
         <boxGeometry args={size} />

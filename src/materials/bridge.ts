@@ -12,6 +12,7 @@ export const matPaintedSteel = initial.paintedSteel;
 export const matPaintBlue = initial.paintBlue;
 export const matPaintDark = initial.paintDark;
 export const matPaintYellow = initial.paintYellow;
+export const matPaintOrange = initial.paintOrange;
 export const matGalvanized = initial.galvanized;
 export const matRubber = initial.rubber;
 export const matConcrete = initial.concrete;
@@ -31,6 +32,7 @@ export function hydrateBridge(m: PlantMaterials): void {
     [matPaintBlue, m.paintBlue],
     [matPaintDark, m.paintDark],
     [matPaintYellow, m.paintYellow],
+    [matPaintOrange, m.paintOrange],
     [matGalvanized, m.galvanized],
     [matRubber, m.rubber],
     [matConcrete, m.concrete],

@@ -8,6 +8,7 @@ export {
   matFlange,
   matPaintBlue,
   matPaintYellow,
+  matPaintOrange,
   matRubber,
   matConcrete,
   matPneumatic,

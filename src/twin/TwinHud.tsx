@@ -10,6 +10,7 @@ import { tickSimulation } from './simulate';
 import { useTwinState } from './useTwinState';
 import type { MachineId } from './types';
 import { MACHINE_ORDER, MACHINE_LABELS } from './types';
+import { navigateTo } from '../navigation/navStore';
 
 function Sparkline({ data, width = 180, height = 36 }: { data: number[]; width?: number; height?: number }) {
   if (data.length < 2) return null;
@@ -64,7 +65,7 @@ export function TwinHud() {
               key={a.id}
               type="button"
               style={alarmChip(a.level)}
-              onClick={() => selectMachine(a.id as MachineId)}
+              onClick={() => navigateTo({ kind: 'machine', machineId: a.id as MachineId })}
             >
               {a.level}: {a.label}
             </button>
@@ -81,7 +82,14 @@ export function TwinHud() {
         <select
           style={selectStyle}
           value={twin.selectedId ?? ''}
-          onChange={(e) => selectMachine((e.target.value || null) as MachineId | null)}
+          onChange={(e) => {
+            const id = (e.target.value || null) as MachineId | null;
+            if (id) navigateTo({ kind: 'machine', machineId: id });
+            else {
+              selectMachine(null);
+              navigateTo({ kind: 'overview' });
+            }
+          }}
         >
           <option value="">Select machine…</option>
           {MACHINE_ORDER.map((id) => (

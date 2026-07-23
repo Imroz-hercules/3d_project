@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Sky, Stats, Environment, ContactShadows } from "@react-three/drei";
+import { Sky, Stats, Environment, ContactShadows } from "@react-three/drei";
 import { Suspense, useState, type CSSProperties } from "react";
 
 import MaterialHandlingLine from "./components/MaterialHandlingLine";
@@ -9,12 +9,22 @@ import { plantCenter, plantGroundRadius } from "./components/layoutConstants";
 import { PlantMaterialsProvider } from "./materials";
 import { HDRI_FACTORY } from "./materials/paths";
 import { TwinHud } from "./twin/TwinHud";
+import { CameraRig } from "./navigation/CameraRig";
+import { NavFocusController } from "./navigation/NavFocusController";
+import { ZonePresetBar } from "./navigation/ZonePresetBar";
+import { MachineSearch } from "./navigation/MachineSearch";
+import { NavHistoryButtons } from "./navigation/NavHistoryButtons";
+import { NavBreadcrumb } from "./navigation/NavBreadcrumb";
+import { Minimap } from "./navigation/Minimap";
+import { toggleDebugOrbit } from "./navigation/navStore";
+import { useDebugOrbit } from "./navigation/useNavState";
 
 function App() {
   const [cx, , cz] = plantCenter();
   const groundR = plantGroundRadius();
   const [showBuilding, setShowBuilding] = useState(true);
   const [cutaway, setCutaway] = useState(true);
+  const debugOrbit = useDebugOrbit();
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
@@ -27,6 +37,7 @@ function App() {
           display: "flex",
           gap: 8,
           flexWrap: "wrap",
+          alignItems: "center",
         }}
       >
         <button
@@ -45,9 +56,17 @@ function App() {
             {cutaway ? "Full walls" : "Cutaway"}
           </button>
         )}
+        <button type="button" onClick={() => toggleDebugOrbit()} style={btnStyle}>
+          {debugOrbit ? "Controls: Orbit" : "Controls: Camera"}
+        </button>
+        <NavHistoryButtons />
+        <MachineSearch />
       </div>
 
+      <NavBreadcrumb />
       <TwinHud />
+      <ZonePresetBar />
+      <Minimap />
 
       <Canvas
         shadows={false}
@@ -90,18 +109,8 @@ function App() {
           </PlantMaterialsProvider>
         </Suspense>
 
-        <OrbitControls
-          makeDefault
-          enableDamping
-          dampingFactor={0.05}
-          rotateSpeed={0.8}
-          zoomSpeed={1}
-          panSpeed={1}
-          maxPolarAngle={Math.PI / 2.05}
-          target={[0, 2, 0]}
-          minDistance={12}
-          maxDistance={groundR * 2.5}
-        />
+        <NavFocusController />
+        <CameraRig maxDistance={groundR * 2.5} />
       </Canvas>
     </div>
   );

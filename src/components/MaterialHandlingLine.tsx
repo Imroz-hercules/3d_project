@@ -36,6 +36,9 @@ import { WarehouseStaging } from './WarehouseStaging';
 import { MaterialFlow, DustMotes } from './MaterialFlow';
 import { SelectableMachine } from '../twin/SelectableMachine';
 import { useLineActive } from '../twin/useTwinState';
+import { buildMachineRegistry } from '../navigation/MachineRegistry';
+import { FocusableGroup } from '../navigation/FocusOpacity';
+import { MachineLOD } from '../navigation/MachineLOD';
 import { MezzanineBay, Walkway, AccessLadder, SafetyRailing, SteelFrameBay, SteelPlatform } from './factory/PlantStructure';
 import {
   BeltBridge,
@@ -818,17 +821,13 @@ export function MaterialHandlingLine() {
       <DustCollection active={lineActive} />
       <Electrical active={lineActive} />
 
-      <SelectableMachine id="silo" position={[0, 2, 0]} size={[3.2, 6, 3.2]} />
-      <SelectableMachine id="elevator" position={ELEVATOR_POS} size={[2.2, 7, 2.2]} />
-      <SelectableMachine id="vibro" position={SEPARATOR_POS} size={[3.5, 3, 2.2]} />
-      <SelectableMachine id="roller_mill" position={ROLLER_MILL_POS} size={[3.2, 4, 2.8]} />
-      <SelectableMachine id="flour_bin_a" position={FLOUR_BIN_A_POS} size={[3, 8, 3]} />
-      <SelectableMachine id="packing" position={PACKING_POS} size={[3, 4, 2.5]} />
-      <SelectableMachine id="check_weigher" position={CHECK_WEIGHER_POS} size={[2.8, 2.5, 1.6]} />
-      <SelectableMachine id="metal_detector" position={METAL_DETECTOR_POS} size={[3, 2.8, 1.8]} />
-      <SelectableMachine id="palletizer" position={PALLETIZER_POS} size={[6, 4, 6]} />
+      {buildMachineRegistry().map((m) => (
+        <SelectableMachine key={m.id} id={m.id} position={m.position} size={m.size} />
+      ))}
 
-      <SiloModel />
+      <FocusableGroup machineId="silo">
+        <SiloModel />
+      </FocusableGroup>
 
       <SlideGate position={[0, SILO_OUTLET_Y, 0]} />
 
@@ -873,37 +872,40 @@ export function MaterialHandlingLine() {
 
       <ScrewToElevatorSpout />
 
-      <BucketElevatorComponent
-        position={ELEVATOR_POS}
-        width={REF.elevator.width}
-        depth={REF.elevator.depth}
-        height={REF.elevator.height}
-        rpm={REF.elevator.rpm}
-        beltSpeed={REF.elevator.beltSpeed}
-        active={lineActive}
-        label="ELEVATOR-01"
-        showDataPanel={false}
-        showClickText={false}
-        showPlatform
-      />
+      <FocusableGroup machineId="elevator">
+        <BucketElevatorComponent
+          position={ELEVATOR_POS}
+          width={REF.elevator.width}
+          depth={REF.elevator.depth}
+          height={REF.elevator.height}
+          rpm={REF.elevator.rpm}
+          beltSpeed={REF.elevator.beltSpeed}
+          active={lineActive}
+          label="ELEVATOR-01"
+          showDataPanel={false}
+          showClickText={false}
+          showPlatform
+        />
+      </FocusableGroup>
 
       {/* Elevator head discharge → Vibro Separator feed inlet */}
       <ElevatorToSeparatorDuct />
 
       {/* Vibro Separator (pre-cleaner) */}
-      <VibroSeparatorComponent
-        position={SEPARATOR_POS}
-        width={REF.separator.width}
-        depth={REF.separator.depth}
-        height={REF.separator.height}
-        rpm={REF.separator.rpm}
-        amplitude={REF.separator.amplitude}
-        active={lineActive}
-        label="VIBRO-01"
-        showDataPanel={false}
-        showClickText={false}
-      />
-
+      <FocusableGroup machineId="vibro">
+        <VibroSeparatorComponent
+          position={SEPARATOR_POS}
+          width={REF.separator.width}
+          depth={REF.separator.depth}
+          height={REF.separator.height}
+          rpm={REF.separator.rpm}
+          amplitude={REF.separator.amplitude}
+          active={lineActive}
+          label="VIBRO-01"
+          showDataPanel={false}
+          showClickText={false}
+        />
+      </FocusableGroup>
       {/* Vibro → Destoner */}
       <SeparatorToDestonerDuct />
       <DestonerPlatform />
@@ -978,16 +980,17 @@ export function MaterialHandlingLine() {
       {/* Conditioning Bin → Roller Mill */}
       <ConditioningBinToRollerMillDuct />
 
-      <RollerMillComponent
-        position={ROLLER_MILL_POS}
-        width={REF.rollerMill.width}
-        height={REF.rollerMill.height}
-        depth={REF.rollerMill.depth}
-        active={lineActive}
-        showDataPanel={false}
-        showClickText={false}
-      />
-
+      <FocusableGroup machineId="roller_mill">
+        <RollerMillComponent
+          position={ROLLER_MILL_POS}
+          width={REF.rollerMill.width}
+          height={REF.rollerMill.height}
+          depth={REF.rollerMill.depth}
+          active={lineActive}
+          showDataPanel={false}
+          showClickText={false}
+        />
+      </FocusableGroup>
       {/* Roller Mill → Plansifter */}
       <RollerMillToPlansifterDuct />
 
@@ -1032,18 +1035,20 @@ export function MaterialHandlingLine() {
       {/* Flour streams → finished-product storage */}
       <FlourToStorageDucts />
 
-      <FlourBinComponent
-        position={FLOUR_BIN_A_POS}
-        label="FLOUR BIN A"
-        radius={REF.flourBin.radius}
-        height={REF.flourBin.height}
-        coneHeight={REF.flourBin.coneHeight}
-        legHeight={REF.flourBin.legHeight}
-        capacity={REF.flourBin.capacity}
-        fillPercent={85}
-        active={lineActive}
-        showDataPanel={false}
-      />
+      <FocusableGroup machineId="flour_bin_a">
+        <FlourBinComponent
+          position={FLOUR_BIN_A_POS}
+          label="FLOUR BIN A"
+          radius={REF.flourBin.radius}
+          height={REF.flourBin.height}
+          coneHeight={REF.flourBin.coneHeight}
+          legHeight={REF.flourBin.legHeight}
+          capacity={REF.flourBin.capacity}
+          fillPercent={85}
+          active={lineActive}
+          showDataPanel={false}
+        />
+      </FocusableGroup>
       <FlourBinComponent
         position={FLOUR_BIN_B_POS}
         label="FLOUR BIN B"
@@ -1072,15 +1077,17 @@ export function MaterialHandlingLine() {
       {/* Flour Bin A → Packing Machine (packing cell start) */}
       <FlourBinAToPackingDuct />
 
-      <PackingMachineComponent
-        position={PACKING_POS}
-        width={REF.packingMachine.width}
-        depth={REF.packingMachine.depth}
-        height={REF.packingMachine.height}
-        active={lineActive}
-        showDataPanel={false}
-        showClickText={false}
-      />
+      <FocusableGroup machineId="packing">
+        <PackingMachineComponent
+          position={PACKING_POS}
+          width={REF.packingMachine.width}
+          depth={REF.packingMachine.depth}
+          height={REF.packingMachine.height}
+          active={lineActive}
+          showDataPanel={false}
+          showClickText={false}
+        />
+      </FocusableGroup>
 
       {/* Packing takeaway → Bag Conveyor (length along +X, away from flour bins) */}
       <group position={BAG_CONVEYOR_POS}>
@@ -1109,38 +1116,55 @@ export function MaterialHandlingLine() {
       </group>
 
       {/* Bag Sewing → Check Weigher (length along +X) */}
-      <CheckWeigherComponent
-        position={CHECK_WEIGHER_POS}
-        length={REF.checkWeigher.length}
-        width={REF.checkWeigher.width}
-        height={REF.checkWeigher.height}
-        active={lineActive}
-        showDataPanel={false}
-        showClickText={false}
-      />
+      <FocusableGroup machineId="check_weigher">
+        <CheckWeigherComponent
+          position={CHECK_WEIGHER_POS}
+          length={REF.checkWeigher.length}
+          width={REF.checkWeigher.width}
+          height={REF.checkWeigher.height}
+          active={lineActive}
+          showDataPanel={false}
+          showClickText={false}
+        />
+      </FocusableGroup>
 
       {/* Check Weigher → Metal Detector (length along +X toward palletizer) */}
-      <MetalDetectorComponent
-        position={METAL_DETECTOR_POS}
-        length={REF.metalDetector.length}
-        width={REF.metalDetector.width}
-        height={REF.metalDetector.height}
-        tunnelHeight={REF.metalDetector.tunnelHeight}
-        tunnelDepth={REF.metalDetector.tunnelDepth}
-        active={lineActive}
-        showDataPanel={false}
-        showClickText={false}
-      />
+      <FocusableGroup machineId="metal_detector">
+        <MetalDetectorComponent
+          position={METAL_DETECTOR_POS}
+          length={REF.metalDetector.length}
+          width={REF.metalDetector.width}
+          height={REF.metalDetector.height}
+          tunnelHeight={REF.metalDetector.tunnelHeight}
+          tunnelDepth={REF.metalDetector.tunnelDepth}
+          active={lineActive}
+          showDataPanel={false}
+          showClickText={false}
+        />
+      </FocusableGroup>
 
       {/* Metal Detector → Robotic Palletizer (final packing cell) */}
-      <PalletizerComponent
-        position={PALLETIZER_POS}
-        cellSize={REF.palletizer.cellSize}
-        height={REF.palletizer.height}
-        active={lineActive}
-        showDataPanel={false}
-        showClickText={false}
-      />
+      <FocusableGroup machineId="palletizer">
+        <MachineLOD
+          distance={32}
+          full={
+            <PalletizerComponent
+              position={PALLETIZER_POS}
+              cellSize={REF.palletizer.cellSize}
+              height={REF.palletizer.height}
+              active={lineActive}
+              showDataPanel={false}
+              showClickText={false}
+            />
+          }
+          simple={
+            <mesh position={PALLETIZER_POS} castShadow={false}>
+              <boxGeometry args={[5, 3, 5]} />
+              <meshStandardMaterial color="#6a7278" />
+            </mesh>
+          }
+        />
+      </FocusableGroup>
 
       {warehouseNear && <WarehouseStaging active={lineActive} />}
 

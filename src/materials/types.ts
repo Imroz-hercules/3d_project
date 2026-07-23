@@ -7,6 +7,7 @@ export type PlantMaterials = {
   paintBlue: THREE.MeshStandardMaterial;
   paintDark: THREE.MeshStandardMaterial;
   paintYellow: THREE.MeshStandardMaterial;
+  paintOrange: THREE.MeshStandardMaterial;
   galvanized: THREE.MeshStandardMaterial;
   rubber: THREE.MeshStandardMaterial;
   concrete: THREE.MeshStandardMaterial;
