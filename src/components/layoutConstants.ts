@@ -102,6 +102,17 @@ export const REF = {
     /** Gap from scourer outlet to dampener feed flange (metres). */
     gapFromScourer: 1.5,
   },
+  conditioningBin: {
+    radius: 1.5,
+    height: 6,
+    coneHeight: 1.5,
+    legHeight: 2.5,
+    capacity: 12,
+  },
+  conditioningBinLayout: {
+    /** Gap from dampener outlet to bin feed flange (metres). */
+    gapFromDampener: 2.0,
+  },
 } as const;
 
 export function hopperCenterX() {
@@ -358,4 +369,43 @@ export function dampenerOutletWorldPos(): [number, number, number] {
   const [dx, dy, dz] = dampenerPosition();
   const { length, radius } = REF.dampener;
   return [dx + length / 3, dy - radius - 0.72, dz];
+}
+
+/* ==========================================================================
+   CONDITIONING BIN LAYOUT HELPERS
+   ========================================================================== */
+
+/** Lift so cone tip / outlet clear the floor (matches ConditioningBinComponent). */
+export function conditioningBinBodyLift() {
+  return REF.conditioningBin.coneHeight / 2 + 0.7;
+}
+
+/**
+ * Conditioning bin group origin — base on ground (y = 0).
+ * Component is rotated 180° in the line so the side inlet faces −X (toward dampener).
+ */
+export function conditioningBinPosition(): [number, number, number] {
+  const [ox, , oz] = dampenerOutletWorldPos();
+  const { radius } = REF.conditioningBin;
+  const gap = REF.conditioningBinLayout.gapFromDampener;
+  // After Y=π rotation, inlet flange is at local −(radius + 0.15)
+  const x = ox + gap + radius + 0.15;
+  return [x, 0, oz];
+}
+
+/** Conditioning bin feed inlet flange — world position (faces −X). */
+export function conditioningBinInletWorldPos(): [number, number, number] {
+  const [bx, by, bz] = conditioningBinPosition();
+  const { radius, height, coneHeight } = REF.conditioningBin;
+  const totalHeight = height + coneHeight;
+  const lift = conditioningBinBodyLift();
+  return [bx - radius - 0.15, by + lift + totalHeight - 0.15, bz];
+}
+
+/** Conditioning bin bottom outlet flange — world position. */
+export function conditioningBinOutletWorldPos(): [number, number, number] {
+  const [bx, by, bz] = conditioningBinPosition();
+  const { coneHeight } = REF.conditioningBin;
+  const lift = conditioningBinBodyLift();
+  return [bx, by + lift - coneHeight / 2 - 0.65, bz];
 }

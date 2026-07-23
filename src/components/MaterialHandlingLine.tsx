@@ -4,6 +4,7 @@
  * MaterialHandlingLine — full flour mill line:
  * Silo → Hopper → Rotary Valve → Screw Conveyor → Bucket Elevator
  * → Vibro Separator → Destoner → Magnetic Separator → Scourer → Dampener
+ * → Conditioning Bin
  */
 
 import { useMemo, useState } from 'react';
@@ -18,6 +19,7 @@ import { DestonerComponent } from './Destoner';
 import { MagneticSeparatorComponent } from './MagneticSeparator';
 import { ScourerComponent } from './scourer';
 import { DampenerComponent } from './damping';
+import { ConditioningBinComponent } from './conditoningbin';
 import { MaterialFlow } from './MaterialFlow';
 import {
   REF,
@@ -45,6 +47,9 @@ import {
   dampenerPosition,
   dampenerInletWorldPos,
   dampenerOutletWorldPos,
+  conditioningBinPosition,
+  conditioningBinInletWorldPos,
+  conditioningBinOutletWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -72,6 +77,7 @@ const DESTONER_POS = destonerPosition();
 const MAGNETIC_POS = magneticPosition();
 const SCOURER_POS = scourerPosition();
 const DAMPENER_POS = dampenerPosition();
+const CONDITIONING_BIN_POS = conditioningBinPosition();
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -242,6 +248,21 @@ function ScourerToDampenerDuct() {
   );
 }
 
+/** Dampener outlet → conditioning bin side inlet (horizontal then rise). */
+function DampenerToConditioningBinDuct() {
+  const start = dampenerOutletWorldPos();
+  const end = conditioningBinInletWorldPos();
+  const mid: V3 = [end[0], start[1], end[2]];
+  return (
+    <>
+      <RoundDuct start={start} end={mid} radius={0.2} />
+      <RoundDuct start={mid} end={end} radius={0.2} />
+      <SquareFlange size={0.48} thickness={0.04} position={start} />
+      <SquareFlange size={0.48} thickness={0.04} position={end} />
+    </>
+  );
+}
+
 /** Steel platform under elevated destoner. */
 function DestonerPlatform() {
   const [dx, dy, dz] = DESTONER_POS;
@@ -287,12 +308,15 @@ export function MaterialHandlingLine() {
   const scourerOutlet = scourerOutletWorldPos();
   const dampenerInlet = dampenerInletWorldPos();
   const dampenerOutlet = dampenerOutletWorldPos();
+  const binInlet = conditioningBinInletWorldPos();
+  const binOutlet = conditioningBinOutletWorldPos();
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
   const [dx, dy, dz] = DESTONER_POS;
   const [mx, my, mz] = MAGNETIC_POS;
   const [scx, scy, scz] = SCOURER_POS;
   const [dampX, dampY, dampZ] = DAMPENER_POS;
+  const [binX, , binZ] = CONDITIONING_BIN_POS;
   const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
@@ -339,6 +363,11 @@ export function MaterialHandlingLine() {
       dampenerInlet,
       [dampX, dampY, dampZ],
       dampenerOutlet,
+      // → Conditioning bin
+      [binInlet[0], dampenerOutlet[1], binInlet[2]],
+      binInlet,
+      [binX, binInlet[1] * 0.55, binZ],
+      binOutlet,
     ];
   }, [
     bridgeY,
@@ -371,6 +400,10 @@ export function MaterialHandlingLine() {
     dampX,
     dampY,
     dampZ,
+    binInlet,
+    binOutlet,
+    binX,
+    binZ,
   ]);
 
   return (
@@ -505,6 +538,23 @@ export function MaterialHandlingLine() {
         showDataPanel={false}
         showClickText={false}
       />
+
+      {/* Dampener → Conditioning Bin */}
+      <DampenerToConditioningBinDuct />
+
+      {/* Rotated so side inlet faces −X toward the dampener */}
+      <group position={CONDITIONING_BIN_POS} rotation={[0, Math.PI, 0]}>
+        <ConditioningBinComponent
+          radius={REF.conditioningBin.radius}
+          height={REF.conditioningBin.height}
+          coneHeight={REF.conditioningBin.coneHeight}
+          legHeight={REF.conditioningBin.legHeight}
+          capacity={REF.conditioningBin.capacity}
+          fillPercent={62}
+          autoDemo={false}
+          showDataPanel={false}
+        />
+      </group>
 
       <MaterialFlow path={flowPath} active={lineActive} speed={0.07} />
     </group>
