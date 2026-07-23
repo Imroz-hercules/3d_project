@@ -169,7 +169,7 @@ export function AccessLadder({
 }
 
 /* ==========================================================================
-   SUPPORT COLUMNS
+   SUPPORT COLUMNS (internal to mezzanine)
    ========================================================================== */
 
 function SupportColumns({
@@ -199,6 +199,154 @@ function SupportColumns({
         </mesh>
       ))}
     </>
+  );
+}
+
+/* ==========================================================================
+   STEEL FRAME PRIMITIVES
+   ========================================================================== */
+
+export function BasePlate({
+  size = 0.4,
+  thickness = 0.04,
+  position = [0, 0, 0] as V3,
+}: {
+  size?: number;
+  thickness?: number;
+  position?: V3;
+}) {
+  return (
+    <mesh position={[position[0], position[1] + thickness / 2, position[2]]} receiveShadow castShadow>
+      <boxGeometry args={[size, thickness, size]} />
+      <meshStandardMaterial color={COLORS.steelLight} metalness={0.7} roughness={0.4} />
+    </mesh>
+  );
+}
+
+export function SteelColumn({
+  height,
+  size = 0.2,
+  position = [0, 0, 0] as V3,
+  basePlate = true,
+}: {
+  height: number;
+  size?: number;
+  position?: V3;
+  basePlate?: boolean;
+}) {
+  return (
+    <group position={position}>
+      {basePlate && <BasePlate size={size * 2.2} />}
+      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[size, height, size]} />
+        <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Beam along local +X by default; rotate group for other axes. */
+export function SteelBeam({
+  length,
+  size = 0.18,
+  position = [0, 0, 0] as V3,
+  rotation = [0, 0, 0] as V3,
+}: {
+  length: number;
+  size?: number;
+  position?: V3;
+  rotation?: V3;
+}) {
+  return (
+    <group position={position} rotation={rotation}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[length, size, size * 0.7]} />
+        <meshStandardMaterial color={COLORS.steelLight} metalness={0.75} roughness={0.35} />
+      </mesh>
+    </group>
+  );
+}
+
+/** X-brace in the XZ plane of a rectangular bay face (width × height). */
+export function BraceX({
+  width,
+  height,
+  position = [0, 0, 0] as V3,
+  rotation = [0, 0, 0] as V3,
+  thickness = 0.06,
+}: {
+  width: number;
+  height: number;
+  position?: V3;
+  rotation?: V3;
+  thickness?: number;
+}) {
+  const len = Math.hypot(width, height);
+  const angle = Math.atan2(height, width);
+  return (
+    <group position={position} rotation={rotation}>
+      <mesh rotation={[0, 0, angle]} castShadow>
+        <boxGeometry args={[len, thickness, thickness]} />
+        <meshStandardMaterial color={COLORS.steel} metalness={0.7} roughness={0.4} />
+      </mesh>
+      <mesh rotation={[0, 0, -angle]} castShadow>
+        <boxGeometry args={[len, thickness, thickness]} />
+        <meshStandardMaterial color={COLORS.steel} metalness={0.7} roughness={0.4} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * Rectangular steel bay: 4 columns + perimeter beams + optional X braces on two faces.
+ * Places structure under elevated decks so machines do not appear to float.
+ */
+export function SteelFrameBay({
+  width,
+  depth,
+  height,
+  position = [0, 0, 0] as V3,
+  brace = true,
+}: {
+  width: number;
+  depth: number;
+  height: number;
+  position?: V3;
+  brace?: boolean;
+}) {
+  const hx = width / 2 - 0.12;
+  const hz = depth / 2 - 0.12;
+  const corners: V3[] = [
+    [hx, 0, hz],
+    [-hx, 0, hz],
+    [hx, 0, -hz],
+    [-hx, 0, -hz],
+  ];
+  return (
+    <group position={position}>
+      {corners.map((c, i) => (
+        <SteelColumn key={i} height={height} position={c} />
+      ))}
+      {/* Primary beams at top */}
+      <SteelBeam length={width - 0.2} position={[0, height, hz]} />
+      <SteelBeam length={width - 0.2} position={[0, height, -hz]} />
+      <SteelBeam
+        length={depth - 0.2}
+        position={[hx, height, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+      />
+      <SteelBeam
+        length={depth - 0.2}
+        position={[-hx, height, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+      />
+      {brace && height > 2 && (
+        <>
+          <BraceX width={width - 0.4} height={height - 0.3} position={[0, height / 2, hz]} />
+          <BraceX width={width - 0.4} height={height - 0.3} position={[0, height / 2, -hz]} />
+        </>
+      )}
+    </group>
   );
 }
 
@@ -242,6 +390,7 @@ export function MezzanineBay({
   ladder = true,
   ladderSide = 'negX' as 'negX' | 'posX' | 'negZ' | 'posZ',
   openSides = [] as Array<'negX' | 'posX' | 'negZ' | 'posZ'>,
+  showColumns = true,
   children,
 }: {
   width: number;
@@ -251,6 +400,8 @@ export function MezzanineBay({
   ladder?: boolean;
   ladderSide?: 'negX' | 'posX' | 'negZ' | 'posZ';
   openSides?: Array<'negX' | 'posX' | 'negZ' | 'posZ'>;
+  /** Set false when a SteelFrameBay already provides columns under this deck. */
+  showColumns?: boolean;
   children?: ReactNode;
 }) {
   const open = new Set(openSides);
@@ -258,7 +409,7 @@ export function MezzanineBay({
 
   return (
     <group position={position}>
-      <SupportColumns width={width} depth={depth} height={deckY} />
+      {showColumns && <SupportColumns width={width} depth={depth} height={deckY} />}
       <SteelPlatform width={width} depth={depth} position={[0, deckY, 0]} />
 
       {!open.has('posZ') && (

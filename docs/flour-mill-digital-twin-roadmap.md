@@ -52,8 +52,8 @@ Grain Silo
 
 ### Still open (this roadmap)
 
-- Complete steel / platforms / walkways plant-wide
 - Building envelope (walls, roof, docks)
+- Warehouse & logistics (staging, forklift path)
 - True digital-twin SCADA (click → PLC tags, alarms, trends)
 
 ---
@@ -267,10 +267,10 @@ Goal: operators could “walk” the plant. Machines sit on real structure.
 
 ### Build
 
-- [ ] Columns under elevated machines (mill deck, upper gallery)
-- [ ] Primary beams
-- [ ] Cross bracing (X or K bracing on tall frames)
-- [ ] Base plates / anchor visuals
+- [x] Columns under elevated machines (mill deck, upper gallery)
+- [x] Primary beams
+- [x] Cross bracing (X or K bracing on tall frames)
+- [x] Base plates / anchor visuals
 
 ### Working steps
 
@@ -292,11 +292,11 @@ Goal: operators could “walk” the plant. Machines sit on real structure.
 
 ### Priority platforms
 
-- [ ] Destoner / cleaning mezzanine (partially exists)
-- [ ] Roller mill service platform
-- [ ] Plansifter / purifier upper gallery
-- [ ] Packing machine operator side
-- [ ] Palletizer HMI outside fence (already near cell)
+- [x] Destoner / cleaning mezzanine (partially exists)
+- [x] Roller mill service platform
+- [x] Plansifter / purifier upper gallery
+- [x] Packing machine operator side
+- [x] Palletizer HMI outside fence (already near cell)
 
 ---
 
@@ -304,11 +304,11 @@ Goal: operators could “walk” the plant. Machines sit on real structure.
 
 ### Priority ladders
 
-- [ ] Flour bins A/B/C
-- [ ] Conditioning bin
-- [ ] Plansifter gallery
-- [ ] Bag filter (when built)
-- [ ] Silo (if not present)
+- [x] Flour bins A/B/C
+- [x] Conditioning bin
+- [x] Plansifter gallery
+- [x] Bag filter (when built)
+- [x] Silo (if not present)
 
 Use existing `AccessLadder` from `PlantStructure.tsx`; standardize height/width.
 
@@ -318,9 +318,9 @@ Use existing `AccessLadder` from `PlantStructure.tsx`; standardize height/width.
 
 ### Build
 
-- [ ] Cleaning aisle walkway linking machines
-- [ ] Cross-aisle bridge conditioning → milling
-- [ ] Packing cell side walkway (operator route, outside robot fence)
+- [x] Cleaning aisle walkway linking machines
+- [x] Cross-aisle bridge conditioning → milling
+- [x] Packing cell side walkway (operator route, outside robot fence)
 
 ### Working steps
 
@@ -339,8 +339,8 @@ Every platform edge and walkway open side gets:
 top rail → mid rail → toe plate
 ```
 
-- [ ] Audit all `SteelPlatform` / `Walkway` / `MezzanineBay` for missing rails
-- [ ] Yellow safety rail where plant already uses `#e0a92c`
+- [x] Audit all `SteelPlatform` / `Walkway` / `MezzanineBay` for missing rails
+- [x] Yellow safety rail where plant already uses `#e0a92c`
 
 ---
 
@@ -502,11 +502,11 @@ simulate.ts  →  tag store  →  React UI overlay
 | # | Phase | Stage | Priority | Status guide |
 |--:|-------|------:|----------|--------------|
 | 1 | Connect every machine | 2 | Critical | Sprint 1 done (elbows/flanges/supports/bridges) |
-| 2 | Steel structure | 3 | High | Partial |
-| 3 | Platforms | 3 | High | Partial |
-| 4 | Ladders | 3 | Medium | Partial |
-| 5 | Walkways | 3 | High | Partial |
-| 6 | Handrails | 3 | Medium | Partial |
+| 2 | Steel structure | 3 | High | Sprint 5 done |
+| 3 | Platforms | 3 | High | Sprint 5 done |
+| 4 | Ladders | 3 | Medium | Sprint 5 done |
+| 5 | Walkways | 3 | High | Sprint 5 done |
+| 6 | Handrails | 3 | Medium | Sprint 5 done |
 | 7 | Dust collection | 2 | Critical | Sprint 2 done |
 | 8 | Pneumatic pipes | 2 | High | Sprint 2 done (kit + flour header) |
 | 9 | Electrical | 3 | Medium | Sprint 4 done |

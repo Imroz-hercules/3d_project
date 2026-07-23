@@ -33,7 +33,7 @@ import { CheckWeigherComponent } from './CheckWeigher';
 import { MetalDetectorComponent } from './MetalDetector';
 import { PalletizerComponent } from './Palletizer';
 import { MaterialFlow, DustMotes } from './MaterialFlow';
-import { MezzanineBay, Walkway, AccessLadder } from './factory/PlantStructure';
+import { MezzanineBay, Walkway, AccessLadder, SafetyRailing, SteelFrameBay, SteelPlatform } from './factory/PlantStructure';
 import {
   BeltBridge,
   ElbowedPipe,
@@ -115,6 +115,7 @@ import {
   palletizerInletWorldPos,
   palletizerOutletWorldPos,
   dustTakeoffWorldPos,
+  bagFilterPosition,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -387,7 +388,7 @@ function ByproductChutes() {
   );
 }
 
-/** Steel platforms, walkways, and mezzanines for hybrid plant zones. */
+/** Steel platforms, walkways, ladders, and frames for hybrid plant zones. */
 function PlantInfrastructure() {
   const millDeckY = REF.zones.milling.millDeckY;
   const upperDeckY = REF.zones.milling.upperDeckY;
@@ -396,13 +397,41 @@ function PlantInfrastructure() {
   const [pux] = PURIFIER_POS;
   const [elevX, , elevZ] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
+  const [binX, , binZ] = CONDITIONING_BIN_POS;
+  const [bfx] = BRAN_FINISHER_POS;
+  const [pkx, , pkz] = PACKING_POS;
+  const [plx, , plz] = PALLETIZER_POS;
+  const [filterX, , filterZ] = bagFilterPosition();
 
   const millBayWidth = REF.rollerMill.width + 3.2;
   const upperBayWidth = Math.max(8, pux - psx + 5);
   const upperBayCenterX = (psx + pux) / 2;
+  const cleaningWalkLen = Math.max(6, binX - sepX + 2);
+  const packingWalkLen = Math.max(8, plx - pkx + 3);
+
+  const binLadderH = REF.flourBin.legHeight + REF.flourBin.height * 0.55;
+  const condLadderH = REF.conditioningBin.legHeight + REF.conditioningBin.height * 0.45;
+  const filterLadderH = REF.dustSystem.bagFilterHeight * 0.85;
+  const siloLadderH = REF.silo.legHeight + REF.silo.cylHeight * 0.35;
 
   return (
     <group>
+      {/* —— Steel frames under elevated milling decks —— */}
+      <SteelFrameBay
+        width={millBayWidth}
+        depth={5.2}
+        height={millDeckY}
+        position={[rmx, 0, rmz]}
+        brace
+      />
+      <SteelFrameBay
+        width={upperBayWidth}
+        depth={5.5}
+        height={upperDeckY}
+        position={[upperBayCenterX, 0, psz]}
+        brace
+      />
+
       {/* Transfer walkway: elevator head area toward cleaning aisle */}
       <Walkway
         length={Math.abs(sepZ - elevZ) * 0.55}
@@ -413,15 +442,29 @@ function PlantInfrastructure() {
       />
       <AccessLadder height={3.2} caged position={[elevX + 1.2, 0, elevZ + 0.8]} />
 
-      {/* Cleaning aisle short operator walk beside vibro */}
+      {/* Cleaning aisle operator walkway linking machines */}
       <Walkway
-        length={4}
-        width={1.0}
-        position={[sepX, 0.02, sepZ - REF.separator.depth / 2 - 0.7]}
-        railBothSides={false}
+        length={cleaningWalkLen}
+        width={1.1}
+        position={[(sepX + binX) / 2, 0.02, sepZ - REF.separator.depth / 2 - 0.85]}
+        railBothSides
       />
 
-      {/* Milling mezzanine — roller mill deck */}
+      {/* Cross-aisle bridge: conditioning → milling deck */}
+      <Walkway
+        length={Math.abs(binZ - rmz) + 1.5}
+        width={1.2}
+        position={[(binX + rmx) / 2, millDeckY, (binZ + rmz) / 2]}
+        rotation={[0, Math.PI / 2, 0]}
+        railBothSides
+      />
+      <AccessLadder
+        height={millDeckY}
+        caged
+        position={[binX + 1.8, 0, binZ - 1.2]}
+      />
+
+      {/* Milling mezzanine — roller mill service platform */}
       <MezzanineBay
         width={millBayWidth}
         depth={5.2}
@@ -430,6 +473,7 @@ function PlantInfrastructure() {
         ladder
         ladderSide="posZ"
         openSides={['negZ']}
+        showColumns={false}
       />
 
       {/* Inter-deck ladder mill → upper gallery */}
@@ -447,6 +491,7 @@ function PlantInfrastructure() {
         position={[upperBayCenterX, 0, psz]}
         ladder={false}
         openSides={['posZ', 'negZ']}
+        showColumns={false}
       />
       <Walkway
         length={upperBayWidth - 1}
@@ -454,33 +499,80 @@ function PlantInfrastructure() {
         position={[upperBayCenterX, upperDeckY, psz + 2.4]}
         railBothSides
       />
+
+      {/* Packing operator side platform */}
+      <SteelPlatform
+        width={REF.packingMachine.width + 1.2}
+        depth={1.4}
+        position={[pkx, 0.05, pkz + REF.packingMachine.depth / 2 + 0.95]}
+      />
+      <SafetyRailing
+        length={REF.packingMachine.width + 1.0}
+        position={[pkx, 0.15, pkz + REF.packingMachine.depth / 2 + 1.55]}
+      />
+
+      {/* Packing cell side walkway (outside robot fence) */}
+      <Walkway
+        length={packingWalkLen}
+        width={1.15}
+        position={[(pkx + plx) / 2, 0.02, plz + REF.palletizer.cellSize / 2 + 1.4]}
+        railBothSides
+      />
+
+      {/* Bin / tank access ladders */}
+      <AccessLadder
+        height={condLadderH}
+        caged
+        position={[binX + REF.conditioningBin.radius + 0.45, 0, binZ]}
+      />
+      <AccessLadder
+        height={binLadderH}
+        caged
+        position={[FLOUR_BIN_A_POS[0] + REF.flourBin.radius + 0.4, 0, FLOUR_BIN_A_POS[2]]}
+      />
+      <AccessLadder
+        height={binLadderH}
+        caged
+        position={[FLOUR_BIN_B_POS[0] + REF.flourBin.radius + 0.4, 0, FLOUR_BIN_B_POS[2]]}
+      />
+      <AccessLadder
+        height={binLadderH}
+        caged
+        position={[FLOUR_BIN_C_POS[0] + REF.flourBin.radius + 0.4, 0, FLOUR_BIN_C_POS[2]]}
+      />
+      <AccessLadder
+        height={filterLadderH}
+        caged
+        position={[filterX + REF.dustSystem.bagFilterWidth / 2 + 0.4, 0, filterZ]}
+      />
+      <AccessLadder height={siloLadderH} caged position={[REF.silo.radius + 0.55, 0, 0]} />
+
+      {/* Bran finisher service pad with toe/rails */}
+      <SteelPlatform width={3.2} depth={2.4} position={[bfx, 0.05, psz]} />
+      <SafetyRailing length={3.0} position={[bfx, 0.15, psz + 1.1]} />
     </group>
   );
 }
 
-/** Steel platform under elevated destoner. */
+/** Elevated destoner mezzanine — deck, columns, rails, ladder. */
 function DestonerPlatform() {
   const [dx, dy, dz] = DESTONER_POS;
   const { length, width } = REF.destoner;
-  const legH = dy;
-  const legs: V3[] = [
-    [length / 2 - 0.25, legH / 2, width / 2 - 0.25],
-    [-length / 2 + 0.25, legH / 2, width / 2 - 0.25],
-    [length / 2 - 0.25, legH / 2, -width / 2 + 0.25],
-    [-length / 2 + 0.25, legH / 2, -width / 2 + 0.25],
-  ];
+  const deckW = length + 0.8;
+  const deckD = width + 1.0;
+
   return (
     <group position={[dx, 0, dz]}>
-      <mesh position={[0, dy - 0.06, 0]} receiveShadow castShadow>
-        <boxGeometry args={[length + 0.3, 0.12, width + 0.3]} />
-        <meshStandardMaterial color={COLORS.flangeSteel} metalness={0.7} roughness={0.4} />
-      </mesh>
-      {legs.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow receiveShadow>
-          <boxGeometry args={[0.18, legH, 0.18]} />
-          <meshStandardMaterial color={COLORS.steel} metalness={0.75} roughness={0.35} />
-        </mesh>
-      ))}
+      <SteelFrameBay width={deckW} depth={deckD} height={dy} brace={dy > 1.2} />
+      <SteelPlatform width={deckW} depth={deckD} position={[0, dy, 0]} />
+      <SafetyRailing length={deckW} position={[0, dy + 0.1, deckD / 2 - 0.04]} />
+      <SafetyRailing length={deckW} position={[0, dy + 0.1, -(deckD / 2 - 0.04)]} />
+      <SafetyRailing
+        length={deckD}
+        position={[deckW / 2 - 0.04, dy + 0.1, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+      />
+      <AccessLadder height={dy} position={[-(deckW / 2 + 0.35), 0, 0]} />
     </group>
   );
 }
