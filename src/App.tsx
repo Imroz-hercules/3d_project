@@ -48,8 +48,8 @@ function App() {
       <TwinHud />
 
       <Canvas
-        shadows
-        dpr={[1, 2]}
+        shadows={false}
+        dpr={[1, 1.5]}
         camera={{
           position: [groundR * 0.55, groundR * 0.7, groundR * 0.65],
           fov: 48,
@@ -62,8 +62,8 @@ function App() {
         <directionalLight
           position={[40, 55, 30]}
           intensity={1.45}
-          castShadow
-          shadow-mapSize={[2048, 2048]}
+          // castShadow
+          // shadow-mapSize={[2048, 2048]}
         />
         <hemisphereLight args={["#cfe8ff", "#4a4a3f", 0.45]} />
         <Sky sunPosition={[100, 30, 100]} turbidity={6} rayleigh={1} mieCoefficient={0.005} />
