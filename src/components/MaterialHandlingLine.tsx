@@ -3,7 +3,7 @@
 /**
  * MaterialHandlingLine — full flour mill line:
  * Silo → Hopper → Rotary Valve → Screw Conveyor → Bucket Elevator
- * → Vibro Separator → Destoner → Magnetic Separator
+ * → Vibro Separator → Destoner → Magnetic Separator → Scourer
  */
 
 import { useMemo, useState } from 'react';
@@ -16,6 +16,7 @@ import { BucketElevatorComponent } from './bucketElivter';
 import { VibroSeparatorComponent } from './VibroSeparator';
 import { DestonerComponent } from './Destoner';
 import { MagneticSeparatorComponent } from './MagneticSeparator';
+import { ScourerComponent } from './scourer';
 import { MaterialFlow } from './MaterialFlow';
 import {
   REF,
@@ -37,6 +38,9 @@ import {
   magneticPosition,
   magneticInletWorldPos,
   magneticOutletWorldPos,
+  scourerPosition,
+  scourerInletWorldPos,
+  scourerOutletWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -62,6 +66,7 @@ const ELEVATOR_POS = elevatorPosition();
 const SEPARATOR_POS = separatorPosition();
 const DESTONER_POS = destonerPosition();
 const MAGNETIC_POS = magneticPosition();
+const SCOURER_POS = scourerPosition();
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -202,6 +207,21 @@ function DestonerToMagneticDuct() {
   );
 }
 
+/** Magnetic bottom outlet → scourer top inlet (horizontal then rise). */
+function MagneticToScourerDuct() {
+  const start = magneticOutletWorldPos();
+  const end = scourerInletWorldPos();
+  const mid: V3 = [end[0], start[1], end[2]];
+  return (
+    <>
+      <RoundDuct start={start} end={mid} radius={0.16} />
+      <RoundDuct start={mid} end={end} radius={0.16} />
+      <SquareFlange size={0.38} thickness={0.04} position={start} />
+      <SquareFlange size={0.38} thickness={0.04} position={end} />
+    </>
+  );
+}
+
 /** Steel platform under elevated destoner. */
 function DestonerPlatform() {
   const [dx, dy, dz] = DESTONER_POS;
@@ -243,10 +263,13 @@ export function MaterialHandlingLine() {
   const destonerCleanOut = destonerCleanOutletPos();
   const magneticInlet = magneticInletWorldPos();
   const magneticOutlet = magneticOutletWorldPos();
+  const scourerInlet = scourerInletWorldPos();
+  const scourerOutlet = scourerOutletWorldPos();
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
   const [dx, dy, dz] = DESTONER_POS;
   const [mx, my, mz] = MAGNETIC_POS;
+  const [scx, scy, scz] = SCOURER_POS;
   const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
@@ -283,6 +306,11 @@ export function MaterialHandlingLine() {
       magneticInlet,
       [mx, my, mz],
       magneticOutlet,
+      // → Scourer
+      [scourerInlet[0], magneticOutlet[1], scourerInlet[2]],
+      scourerInlet,
+      [scx, scy, scz],
+      scourerOutlet,
     ];
   }, [
     bridgeY,
@@ -305,6 +333,11 @@ export function MaterialHandlingLine() {
     mx,
     my,
     mz,
+    scourerInlet,
+    scourerOutlet,
+    scx,
+    scy,
+    scz,
   ]);
 
   return (
@@ -411,6 +444,18 @@ export function MaterialHandlingLine() {
         length={REF.magnetic.length}
         width={REF.magnetic.width}
         height={REF.magnetic.height}
+        active={lineActive}
+        showDataPanel={false}
+        showClickText={false}
+      />
+
+      {/* Magnetic Separator → Scourer */}
+      <MagneticToScourerDuct />
+
+      <ScourerComponent
+        position={SCOURER_POS}
+        length={REF.scourer.length}
+        radius={REF.scourer.radius}
         active={lineActive}
         showDataPanel={false}
         showClickText={false}

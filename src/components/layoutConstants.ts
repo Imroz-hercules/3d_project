@@ -84,6 +84,15 @@ export const REF = {
     /** Gap from destoner clean outlet to magnet inlet centre X (metres). */
     gapFromDestoner: 1.4,
   },
+  scourer: {
+    length: 2.0,
+    radius: 0.6,
+    legHeight: 1.2,
+  },
+  scourerLayout: {
+    /** Gap from magnetic outlet to scourer feed flange (metres). */
+    gapFromMagnetic: 1.5,
+  },
 } as const;
 
 export function hopperCenterX() {
@@ -278,4 +287,35 @@ export function magneticOutletWorldPos(): [number, number, number] {
   const [mx, my, mz] = magneticPosition();
   const { height } = REF.magnetic;
   return [mx, my - height / 2 - 0.52, mz];
+}
+
+/* ==========================================================================
+   SCOURER LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Scourer group origin — housing centre on X axis cylinder.
+ * Legs extend to y = −legHeight; place so feet sit on the ground.
+ */
+export function scourerPosition(): [number, number, number] {
+  const [ox, , oz] = magneticOutletWorldPos();
+  const { length, legHeight } = REF.scourer;
+  const gap = REF.scourerLayout.gapFromMagnetic;
+  // Feed inlet local X = −length/3
+  const x = ox + gap + length / 3;
+  return [x, legHeight, oz];
+}
+
+/** Scourer top feed inlet flange — world position. */
+export function scourerInletWorldPos(): [number, number, number] {
+  const [sx, sy, sz] = scourerPosition();
+  const { length, radius } = REF.scourer;
+  return [sx - length / 3, sy + radius + 0.62, sz];
+}
+
+/** Scourer clean grain outlet flange — world position. */
+export function scourerOutletWorldPos(): [number, number, number] {
+  const [sx, sy, sz] = scourerPosition();
+  const { length, radius } = REF.scourer;
+  return [sx + length / 3, sy - radius - 0.62, sz];
 }
