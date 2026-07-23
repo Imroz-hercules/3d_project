@@ -53,6 +53,8 @@ export const REF = {
       /** Upper gallery deck under plansifter + purifier. */
       upperDeckY: 5.5,
     },
+    /** Finished-product flour bins — continues milling aisle further +X. */
+    storage: { z: -3.0, floorY: 0 },
     gaps: {
       /** Extra X gap at cleaning → conditioning boundary (metres). */
       cleaningToConditioning: 3.5,
@@ -176,9 +178,22 @@ export const REF = {
     /** Gap from purifier centre to bran finisher centre X (metres). */
     gapFromPurifier: 4.0,
   },
+  flourBin: {
+    radius: 1.2,
+    height: 5,
+    coneHeight: 1.8,
+    legHeight: 2.5,
+    capacity: 20,
+  },
+  flourBinLayout: {
+    /** Gap from bran finisher centre to flour-bin row centre X (metres). */
+    gapFromBranFinisher: 5.5,
+    /** Centre-to-centre spacing along Z for bins A/B/C (metres). */
+    spacingZ: 4.0,
+  },
 } as const;
 
-export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling';
+export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage';
 
 /** World-space origin hint for a plant zone (aisle Z + floor/deck Y). */
 export function zoneOrigin(zone: ZoneId): [number, number, number] {
@@ -190,6 +205,9 @@ export function zoneOrigin(zone: ZoneId): [number, number, number] {
   }
   if (zone === 'conditioning') {
     return [0, REF.zones.conditioning.floorY, REF.zones.conditioning.z];
+  }
+  if (zone === 'storage') {
+    return [0, REF.zones.storage.floorY, REF.zones.storage.z];
   }
   return [0, REF.zones.raw.floorY, REF.zones.raw.z];
 }
@@ -642,4 +660,44 @@ export function branFinisherBranOutletWorldPos(): [number, number, number] {
   const [bx, by, bz] = branFinisherPosition();
   const { length } = REF.branFinisher;
   return [bx + length / 2 + 0.85, by - 0.1, bz];
+}
+
+/* ==========================================================================
+   FLOUR BIN (FINISHED PRODUCT STORAGE) LAYOUT HELPERS
+   ========================================================================== */
+
+export type FlourBinId = 'A' | 'B' | 'C';
+
+const FLOUR_BIN_Z_OFFSET: Record<FlourBinId, number> = {
+  A: -1,
+  B: 0,
+  C: 1,
+};
+
+/**
+ * Flour bin group origin — storage aisle, feet on grade.
+ * Three bins (A/B/C) spaced along Z about the storage aisle centreline.
+ */
+export function flourBinPosition(id: FlourBinId = 'B'): [number, number, number] {
+  const [fx] = branFinisherPosition();
+  const gap = REF.flourBinLayout.gapFromBranFinisher;
+  const spacing = REF.flourBinLayout.spacingZ;
+  const z = REF.zones.storage.z + FLOUR_BIN_Z_OFFSET[id] * spacing;
+  return [fx + gap, REF.zones.storage.floorY, z];
+}
+
+/** Side fill-pipe flange near top of bin — world position. */
+export function flourBinInletWorldPos(id: FlourBinId = 'B'): [number, number, number] {
+  const [bx, by, bz] = flourBinPosition(id);
+  const { radius, height, coneHeight, legHeight } = REF.flourBin;
+  const totalHeight = height + coneHeight;
+  // Body lifted so cone tip sits at legHeight; fill pipe near top on +X side
+  return [bx + radius + 0.9, by + legHeight + totalHeight - 0.45, bz];
+}
+
+/** Rotary-valve discharge flange under bin — world position. */
+export function flourBinOutletWorldPos(id: FlourBinId = 'B'): [number, number, number] {
+  const [bx, by, bz] = flourBinPosition(id);
+  const { legHeight } = REF.flourBin;
+  return [bx, by + legHeight - 0.7, bz];
 }

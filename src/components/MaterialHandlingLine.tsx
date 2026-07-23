@@ -2,10 +2,11 @@
 
 /**
  * MaterialHandlingLine — hybrid flour mill plant:
- * Raw (Z=0) → Cleaning/Conditioning (+Z aisle) → Milling (−Z decks)
+ * Raw (Z=0) → Cleaning/Conditioning (+Z aisle) → Milling (−Z decks) → Storage
  * Silo → Hopper → Valve → Screw → Elevator
  * → Vibro → Destoner → Magnet → Scourer → Dampener → Conditioning Bin
  * → Roller Mill → Plansifter → Purifier → Bran Finisher
+ * → Flour Bins A/B/C
  */
 
 import { useMemo, useState } from 'react';
@@ -25,6 +26,7 @@ import { RollerMillComponent } from './rollermill';
 import { PlansifterComponent } from './plansifter';
 import { PurifierComponent } from './purifier';
 import { BranFinisherComponent } from './branFinsiher';
+import { FlourBinComponent } from './flourBin';
 import { MaterialFlow } from './MaterialFlow';
 import { MezzanineBay, Walkway, AccessLadder } from './factory/PlantStructure';
 import {
@@ -62,12 +64,16 @@ import {
   plansifterPosition,
   plansifterInletWorldPos,
   plansifterSemolinaOutletWorldPos,
+  plansifterFlourOutletWorldPos,
   purifierPosition,
   purifierInletWorldPos,
   purifierBranOutletWorldPos,
   branFinisherPosition,
   branFinisherInletWorldPos,
-  branFinisherBranOutletWorldPos,
+  branFinisherFlourOutletWorldPos,
+  flourBinPosition,
+  flourBinInletWorldPos,
+  flourBinOutletWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -100,6 +106,9 @@ const ROLLER_MILL_POS = rollerMillPosition();
 const PLANSIFTER_POS = plansifterPosition();
 const PURIFIER_POS = purifierPosition();
 const BRAN_FINISHER_POS = branFinisherPosition();
+const FLOUR_BIN_A_POS = flourBinPosition('A');
+const FLOUR_BIN_B_POS = flourBinPosition('B');
+const FLOUR_BIN_C_POS = flourBinPosition('C');
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -347,6 +356,57 @@ function PurifierToBranFinisherDuct() {
   );
 }
 
+/** Plansifter flour + bran-finisher recovered flour → flour bin fill header. */
+function FlourToStorageDucts() {
+  const flourOut = plansifterFlourOutletWorldPos();
+  const recovered = branFinisherFlourOutletWorldPos();
+  const binA = flourBinInletWorldPos('A');
+  const binB = flourBinInletWorldPos('B');
+  const binC = flourBinInletWorldPos('C');
+
+  // Shared header above storage aisle at bin fill height
+  const headerY = binB[1];
+  const headerX = binB[0] - REF.flourBin.radius - 1.4;
+  const header: V3 = [headerX, headerY, binB[2]];
+  const headerA: V3 = [headerX, headerY, binA[2]];
+  const headerC: V3 = [headerX, headerY, binC[2]];
+
+  // Plansifter flour drop then run to header
+  const flourDrop: V3 = [flourOut[0], headerY, flourOut[2]];
+  const flourToHeader: V3 = [headerX, headerY, flourOut[2]];
+
+  // Recovered flour rises/runs to header
+  const recoveredRise: V3 = [recovered[0], headerY, recovered[2]];
+  const recoveredToHeader: V3 = [headerX, headerY, recovered[2]];
+
+  return (
+    <>
+      {/* Primary flour from plansifter */}
+      <RoundDuct start={flourOut} end={flourDrop} radius={0.14} />
+      <RoundDuct start={flourDrop} end={flourToHeader} radius={0.14} />
+      <RoundDuct start={flourToHeader} end={header} radius={0.14} />
+
+      {/* Recovered flour from bran finisher */}
+      <RoundDuct start={recovered} end={recoveredRise} radius={0.12} />
+      <RoundDuct start={recoveredRise} end={recoveredToHeader} radius={0.12} />
+      <RoundDuct start={recoveredToHeader} end={header} radius={0.12} />
+
+      {/* Header manifold → bins A / B / C */}
+      <RoundDuct start={header} end={headerA} radius={0.13} />
+      <RoundDuct start={header} end={headerC} radius={0.13} />
+      <RoundDuct start={headerA} end={binA} radius={0.13} />
+      <RoundDuct start={header} end={binB} radius={0.13} />
+      <RoundDuct start={headerC} end={binC} radius={0.13} />
+
+      <SquareFlange size={0.36} thickness={0.04} position={flourOut} />
+      <SquareFlange size={0.32} thickness={0.04} position={recovered} />
+      <SquareFlange size={0.34} thickness={0.04} position={binA} />
+      <SquareFlange size={0.34} thickness={0.04} position={binB} />
+      <SquareFlange size={0.34} thickness={0.04} position={binC} />
+    </>
+  );
+}
+
 /** Steel platforms, walkways, and mezzanines for hybrid plant zones. */
 function PlantInfrastructure() {
   const millDeckY = REF.zones.milling.millDeckY;
@@ -468,11 +528,9 @@ export function MaterialHandlingLine() {
   const millInlet = rollerMillInletWorldPos();
   const millOutlet = rollerMillOutletWorldPos();
   const sifterInlet = plansifterInletWorldPos();
-  const semolinaOutlet = plansifterSemolinaOutletWorldPos();
-  const purifierInlet = purifierInletWorldPos();
-  const purifierBranOut = purifierBranOutletWorldPos();
-  const branFinisherInlet = branFinisherInletWorldPos();
-  const branFinisherBranOut = branFinisherBranOutletWorldPos();
+  const flourOut = plansifterFlourOutletWorldPos();
+  const flourBinBInlet = flourBinInletWorldPos('B');
+  const flourBinBOutlet = flourBinOutletWorldPos('B');
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
   const [dx, dy, dz] = DESTONER_POS;
@@ -482,12 +540,12 @@ export function MaterialHandlingLine() {
   const [binX, , binZ] = CONDITIONING_BIN_POS;
   const [rmx, rmy, rmz] = ROLLER_MILL_POS;
   const [psx, psy, psz] = PLANSIFTER_POS;
-  const [pux, puy, puz] = PURIFIER_POS;
-  const [bfx, bfy, bfz] = BRAN_FINISHER_POS;
+  const [fbx, fby, fbz] = FLOUR_BIN_B_POS;
   const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
     const h = REF.elevator.height;
+    const headerX = flourBinBInlet[0] - REF.flourBin.radius - 1.4;
     return [
       [0, SILO_OUTLET_Y + 1.5, 0],
       [0, SILO_OUTLET_Y, 0],
@@ -535,25 +593,23 @@ export function MaterialHandlingLine() {
       binInlet,
       [binX, binInlet[1] * 0.55, binZ],
       binOutlet,
-      // → Roller mill (cross-aisle: +X, then −Z, then rise to mill deck)
+      // → Roller mill (cross-aisle)
       [millInlet[0], binOutlet[1], binOutlet[2]],
       [millInlet[0], binOutlet[1], millInlet[2]],
       millInlet,
       [rmx, rmy, rmz],
       millOutlet,
-      // → Plansifter → Purifier → Bran Finisher (bran stream)
+      // → Plansifter → flour stream → storage
       [sifterInlet[0], millOutlet[1], sifterInlet[2]],
       sifterInlet,
       [psx, psy, psz],
-      semolinaOutlet,
-      [purifierInlet[0], semolinaOutlet[1], purifierInlet[2]],
-      purifierInlet,
-      [pux, puy, puz],
-      purifierBranOut,
-      [branFinisherInlet[0], purifierBranOut[1], branFinisherInlet[2]],
-      branFinisherInlet,
-      [bfx, bfy, bfz],
-      branFinisherBranOut,
+      flourOut,
+      [flourOut[0], flourBinBInlet[1], flourOut[2]],
+      [headerX, flourBinBInlet[1], flourOut[2]],
+      [headerX, flourBinBInlet[1], flourBinBInlet[2]],
+      flourBinBInlet,
+      [fbx, fby + REF.flourBin.legHeight + REF.flourBin.height * 0.5, fbz],
+      flourBinBOutlet,
     ];
   }, [
     bridgeY,
@@ -596,20 +652,15 @@ export function MaterialHandlingLine() {
     rmy,
     rmz,
     sifterInlet,
-    semolinaOutlet,
+    flourOut,
     psx,
     psy,
     psz,
-    purifierInlet,
-    purifierBranOut,
-    pux,
-    puy,
-    puz,
-    branFinisherInlet,
-    branFinisherBranOut,
-    bfx,
-    bfy,
-    bfz,
+    flourBinBInlet,
+    flourBinBOutlet,
+    fbx,
+    fby,
+    fbz,
   ]);
 
   return (
@@ -816,6 +867,46 @@ export function MaterialHandlingLine() {
         active={lineActive}
         showDataPanel={false}
         showClickText={false}
+      />
+
+      {/* Flour streams → finished-product storage */}
+      <FlourToStorageDucts />
+
+      <FlourBinComponent
+        position={FLOUR_BIN_A_POS}
+        label="FLOUR BIN A"
+        radius={REF.flourBin.radius}
+        height={REF.flourBin.height}
+        coneHeight={REF.flourBin.coneHeight}
+        legHeight={REF.flourBin.legHeight}
+        capacity={REF.flourBin.capacity}
+        fillPercent={85}
+        active={lineActive}
+        showDataPanel={false}
+      />
+      <FlourBinComponent
+        position={FLOUR_BIN_B_POS}
+        label="FLOUR BIN B"
+        radius={REF.flourBin.radius}
+        height={REF.flourBin.height}
+        coneHeight={REF.flourBin.coneHeight}
+        legHeight={REF.flourBin.legHeight}
+        capacity={REF.flourBin.capacity}
+        fillPercent={62}
+        active={lineActive}
+        showDataPanel={false}
+      />
+      <FlourBinComponent
+        position={FLOUR_BIN_C_POS}
+        label="FLOUR BIN C"
+        radius={REF.flourBin.radius}
+        height={REF.flourBin.height}
+        coneHeight={REF.flourBin.coneHeight}
+        legHeight={REF.flourBin.legHeight}
+        capacity={REF.flourBin.capacity}
+        fillPercent={28}
+        active={lineActive}
+        showDataPanel={false}
       />
 
       <MaterialFlow path={flowPath} active={lineActive} speed={0.07} />
