@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Sky, Environment } from "@react-three/drei";
+import { OrbitControls, Sky, Environment, Stats } from "@react-three/drei";
 import { Suspense, useState, type CSSProperties } from "react";
 
 import MaterialHandlingLine from "./components/MaterialHandlingLine";
@@ -57,6 +57,7 @@ function App() {
           far: 500,
         }}
       >
+        <Stats />
         <ambientLight intensity={0.45} />
         <directionalLight
           position={[40, 55, 30]}
