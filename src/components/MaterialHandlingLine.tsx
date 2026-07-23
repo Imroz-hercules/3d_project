@@ -2,11 +2,11 @@
 
 /**
  * MaterialHandlingLine — hybrid flour mill plant:
- * Raw (Z=0) → Cleaning/Conditioning (+Z aisle) → Milling (−Z decks) → Storage
+ * Raw (Z=0) → Cleaning/Conditioning (+Z aisle) → Milling (−Z decks) → Storage → Packing
  * Silo → Hopper → Valve → Screw → Elevator
  * → Vibro → Destoner → Magnet → Scourer → Dampener → Conditioning Bin
  * → Roller Mill → Plansifter → Purifier → Bran Finisher
- * → Flour Bins A/B/C
+ * → Flour Bins A/B/C → Packing Machine
  */
 
 import { useMemo, useState } from 'react';
@@ -27,6 +27,7 @@ import { PlansifterComponent } from './plansifter';
 import { PurifierComponent } from './purifier';
 import { BranFinisherComponent } from './branFinsiher';
 import { FlourBinComponent } from './flourBin';
+import { PackingMachineComponent } from './packingMachine';
 import { MaterialFlow } from './MaterialFlow';
 import { MezzanineBay, Walkway, AccessLadder } from './factory/PlantStructure';
 import {
@@ -74,6 +75,9 @@ import {
   flourBinPosition,
   flourBinInletWorldPos,
   flourBinOutletWorldPos,
+  packingMachinePosition,
+  packingMachineInletWorldPos,
+  packingMachineConveyorEndWorldPos,
   screwDischargeX,
   screwDischargeY,
   screwFloorY,
@@ -109,6 +113,7 @@ const BRAN_FINISHER_POS = branFinisherPosition();
 const FLOUR_BIN_A_POS = flourBinPosition('A');
 const FLOUR_BIN_B_POS = flourBinPosition('B');
 const FLOUR_BIN_C_POS = flourBinPosition('C');
+const PACKING_POS = packingMachinePosition();
 
 function SquareFlange({ size, thickness, position }: { size: number; thickness: number; position: V3 }) {
   return (
@@ -407,6 +412,21 @@ function FlourToStorageDucts() {
   );
 }
 
+/** Flour Bin A rotary valve → packing machine feed hopper. */
+function FlourBinAToPackingDuct() {
+  const start = flourBinOutletWorldPos('A');
+  const end = packingMachineInletWorldPos();
+  const mid: V3 = [end[0], start[1], end[2]];
+  return (
+    <>
+      <RoundDuct start={start} end={mid} radius={0.18} />
+      <RoundDuct start={mid} end={end} radius={0.18} />
+      <SquareFlange size={0.42} thickness={0.04} position={start} />
+      <SquareFlange size={0.42} thickness={0.04} position={end} />
+    </>
+  );
+}
+
 /** Steel platforms, walkways, and mezzanines for hybrid plant zones. */
 function PlantInfrastructure() {
   const millDeckY = REF.zones.milling.millDeckY;
@@ -529,8 +549,10 @@ export function MaterialHandlingLine() {
   const millOutlet = rollerMillOutletWorldPos();
   const sifterInlet = plansifterInletWorldPos();
   const flourOut = plansifterFlourOutletWorldPos();
-  const flourBinBInlet = flourBinInletWorldPos('B');
-  const flourBinBOutlet = flourBinOutletWorldPos('B');
+  const flourBinAInlet = flourBinInletWorldPos('A');
+  const flourBinAOutlet = flourBinOutletWorldPos('A');
+  const packingInlet = packingMachineInletWorldPos();
+  const packingConveyorEnd = packingMachineConveyorEndWorldPos();
   const [elevX] = ELEVATOR_POS;
   const [sepX, , sepZ] = SEPARATOR_POS;
   const [dx, dy, dz] = DESTONER_POS;
@@ -540,12 +562,13 @@ export function MaterialHandlingLine() {
   const [binX, , binZ] = CONDITIONING_BIN_POS;
   const [rmx, rmy, rmz] = ROLLER_MILL_POS;
   const [psx, psy, psz] = PLANSIFTER_POS;
-  const [fbx, fby, fbz] = FLOUR_BIN_B_POS;
+  const [fax, fay, faz] = FLOUR_BIN_A_POS;
+  const [pkx, pky, pkz] = PACKING_POS;
   const deckY = destonerDeckY();
 
   const flowPath: V3[] = useMemo(() => {
     const h = REF.elevator.height;
-    const headerX = flourBinBInlet[0] - REF.flourBin.radius - 1.4;
+    const headerX = flourBinAInlet[0] - REF.flourBin.radius - 1.4;
     return [
       [0, SILO_OUTLET_Y + 1.5, 0],
       [0, SILO_OUTLET_Y, 0],
@@ -599,17 +622,21 @@ export function MaterialHandlingLine() {
       millInlet,
       [rmx, rmy, rmz],
       millOutlet,
-      // → Plansifter → flour stream → storage
+      // → Plansifter → flour stream → Bin A → Packing
       [sifterInlet[0], millOutlet[1], sifterInlet[2]],
       sifterInlet,
       [psx, psy, psz],
       flourOut,
-      [flourOut[0], flourBinBInlet[1], flourOut[2]],
-      [headerX, flourBinBInlet[1], flourOut[2]],
-      [headerX, flourBinBInlet[1], flourBinBInlet[2]],
-      flourBinBInlet,
-      [fbx, fby + REF.flourBin.legHeight + REF.flourBin.height * 0.5, fbz],
-      flourBinBOutlet,
+      [flourOut[0], flourBinAInlet[1], flourOut[2]],
+      [headerX, flourBinAInlet[1], flourOut[2]],
+      [headerX, flourBinAInlet[1], flourBinAInlet[2]],
+      flourBinAInlet,
+      [fax, fay + REF.flourBin.legHeight + REF.flourBin.height * 0.5, faz],
+      flourBinAOutlet,
+      [packingInlet[0], flourBinAOutlet[1], packingInlet[2]],
+      packingInlet,
+      [pkx, pky + 1.5, pkz],
+      packingConveyorEnd,
     ];
   }, [
     bridgeY,
@@ -656,11 +683,16 @@ export function MaterialHandlingLine() {
     psx,
     psy,
     psz,
-    flourBinBInlet,
-    flourBinBOutlet,
-    fbx,
-    fby,
-    fbz,
+    flourBinAInlet,
+    flourBinAOutlet,
+    fax,
+    fay,
+    faz,
+    packingInlet,
+    packingConveyorEnd,
+    pkx,
+    pky,
+    pkz,
   ]);
 
   return (
@@ -907,6 +939,19 @@ export function MaterialHandlingLine() {
         fillPercent={28}
         active={lineActive}
         showDataPanel={false}
+      />
+
+      {/* Flour Bin A → Packing Machine (packing cell start) */}
+      <FlourBinAToPackingDuct />
+
+      <PackingMachineComponent
+        position={PACKING_POS}
+        width={REF.packingMachine.width}
+        depth={REF.packingMachine.depth}
+        height={REF.packingMachine.height}
+        active={lineActive}
+        showDataPanel={false}
+        showClickText={false}
       />
 
       <MaterialFlow path={flowPath} active={lineActive} speed={0.07} />

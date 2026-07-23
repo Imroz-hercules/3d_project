@@ -55,6 +55,8 @@ export const REF = {
     },
     /** Finished-product flour bins — continues milling aisle further +X. */
     storage: { z: -3.0, floorY: 0 },
+    /** Packing cell — aligned with Flour Bin A (outer storage row). */
+    packing: { z: -7.0, floorY: 0 },
     gaps: {
       /** Extra X gap at cleaning → conditioning boundary (metres). */
       cleaningToConditioning: 3.5,
@@ -191,9 +193,18 @@ export const REF = {
     /** Centre-to-centre spacing along Z for bins A/B/C (metres). */
     spacingZ: 4.0,
   },
+  packingMachine: {
+    width: 2.4,
+    depth: 1.8,
+    height: 2.0,
+  },
+  packingLayout: {
+    /** Gap from flour bin A centre to packing machine centre X (metres). */
+    gapFromFlourBin: 3.8,
+  },
 } as const;
 
-export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage';
+export type ZoneId = 'raw' | 'cleaning' | 'conditioning' | 'milling' | 'storage' | 'packing';
 
 /** World-space origin hint for a plant zone (aisle Z + floor/deck Y). */
 export function zoneOrigin(zone: ZoneId): [number, number, number] {
@@ -208,6 +219,9 @@ export function zoneOrigin(zone: ZoneId): [number, number, number] {
   }
   if (zone === 'storage') {
     return [0, REF.zones.storage.floorY, REF.zones.storage.z];
+  }
+  if (zone === 'packing') {
+    return [0, REF.zones.packing.floorY, REF.zones.packing.z];
   }
   return [0, REF.zones.raw.floorY, REF.zones.raw.z];
 }
@@ -700,4 +714,34 @@ export function flourBinOutletWorldPos(id: FlourBinId = 'B'): [number, number, n
   const [bx, by, bz] = flourBinPosition(id);
   const { legHeight } = REF.flourBin;
   return [bx, by + legHeight - 0.7, bz];
+}
+
+/* ==========================================================================
+   PACKING MACHINE LAYOUT HELPERS
+   ========================================================================== */
+
+/**
+ * Packing machine group origin — packing cell, fed from Flour Bin A rotary valve.
+ * Feet on grade; takeaway conveyor extends in +Z.
+ */
+export function packingMachinePosition(): [number, number, number] {
+  const [ax, , az] = flourBinPosition('A');
+  const gap = REF.packingLayout.gapFromFlourBin;
+  return [ax + gap, REF.zones.packing.floorY, az];
+}
+
+/** Feed-hopper top flange — mates with bin A discharge duct. */
+export function packingMachineInletWorldPos(): [number, number, number] {
+  const [px, py, pz] = packingMachinePosition();
+  const { height } = REF.packingMachine;
+  // Hoppers group at y=1.2; flange at height*0.9+0.15 within that group
+  return [px, py + 1.2 + height * 0.9 + 0.15, pz];
+}
+
+/** Takeaway conveyor discharge end — start of bag conveyor cell. */
+export function packingMachineConveyorEndWorldPos(): [number, number, number] {
+  const [px, py, pz] = packingMachinePosition();
+  const { width, depth } = REF.packingMachine;
+  const legHeight = 0.8;
+  return [px, py + legHeight - 0.02, pz + depth / 2 + 1.2];
 }
