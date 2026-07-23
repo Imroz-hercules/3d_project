@@ -219,42 +219,59 @@ function BagClampAndSpout({ width, depth, clampOpen }: { width: number; depth: n
    ANIMATED BAG
    ========================================================================== */
 
-function AnimatedBag({ width, depth, cycleProgress }: { width: number; depth: number; cycleProgress: number }) {
-  // cycleProgress: 0 to 1
-  // 0.0 - 0.1: Clamp closes, bag appears
-  // 0.1 - 0.5: Bag fills (scales Y)
-  // 0.5 - 0.6: Clamp opens, bag drops
-  // 0.6 - 1.0: Bag moves on conveyor
+function AnimatedBag({
+  width,
+  depth,
+  cycleProgressRef,
+  active,
+}: {
+  width: number;
+  depth: number;
+  cycleProgressRef: React.MutableRefObject<number>;
+  active: boolean;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null!);
 
-  let posY = 0.5;
-  let scaleY = 0.01;
-  let posX = 0;
-  let visible = true;
+  useFrame(() => {
+    if (!meshRef.current) return;
+    if (!active) {
+      meshRef.current.visible = false;
+      return;
+    }
 
-  if (cycleProgress < 0.1) {
-    posY = 0.5;
-    scaleY = 0.01;
-  } else if (cycleProgress < 0.5) {
-    const fillProg = (cycleProgress - 0.1) / 0.4;
-    posY = 0.5;
-    scaleY = fillProg * 0.8 + 0.01;
-  } else if (cycleProgress < 0.6) {
-    const dropProg = (cycleProgress - 0.5) / 0.1;
-    posY = 0.5 - dropProg * 0.4;
-    scaleY = 0.81;
-  } else {
-    const convProg = (cycleProgress - 0.6) / 0.4;
-    posY = 0.1; // On conveyor
-    scaleY = 0.81;
-    posX = convProg * 1.2; // Move along conveyor
-    if (cycleProgress > 0.95) visible = false;
-  }
+    const cycleProgress = cycleProgressRef.current;
+    let posY = 0.5;
+    let scaleY = 0.01;
+    let posX = 0;
+    let visible = true;
 
-  if (!visible) return null;
+    if (cycleProgress < 0.1) {
+      posY = 0.5;
+      scaleY = 0.01;
+    } else if (cycleProgress < 0.5) {
+      const fillProg = (cycleProgress - 0.1) / 0.4;
+      posY = 0.5;
+      scaleY = fillProg * 0.8 + 0.01;
+    } else if (cycleProgress < 0.6) {
+      const dropProg = (cycleProgress - 0.5) / 0.1;
+      posY = 0.5 - dropProg * 0.4;
+      scaleY = 0.81;
+    } else {
+      const convProg = (cycleProgress - 0.6) / 0.4;
+      posY = 0.1;
+      scaleY = 0.81;
+      posX = convProg * 1.2;
+      if (cycleProgress > 0.95) visible = false;
+    }
+
+    meshRef.current.visible = visible;
+    meshRef.current.position.set(posX, posY, depth / 2 + 0.6);
+    meshRef.current.scale.set(1, Math.max(0.01, scaleY / 0.81), 1);
+  });
 
   return (
-    <mesh position={[posX, posY, depth / 2 + 0.6]} castShadow>
-      <boxGeometry args={[width * 0.4, scaleY, depth * 0.4]} />
+    <mesh ref={meshRef} position={[0, 0.5, depth / 2 + 0.6]} castShadow>
+      <boxGeometry args={[width * 0.4, 0.81, depth * 0.4]} />
       <meshStandardMaterial color={COLORS.bagWhite} roughness={0.9} metalness={0} />
     </mesh>
   );
@@ -393,36 +410,30 @@ export function PackingMachineComponent({
   showClickText = true,
 }: PackingMachineProps) {
   const [internalActive, setInternalActive] = useState(false);
-  const [cycleProgress, setCycleProgress] = useState(0);
   const [bagCount, setBagCount] = useState(1542);
   const [clampOpen, setClampOpen] = useState(true);
+  const cycleRef = useRef(0);
+  const bagMeshProgress = useRef(0);
   
   const active = controlledActive !== undefined ? controlledActive : internalActive;
 
   useFrame((_, delta) => {
     if (active) {
-      // Cycle takes 4 seconds
-      const speed = 1 / 4; 
-      let newProgress = cycleProgress + delta * speed;
-      
+      const speed = 1 / 4;
+      let newProgress = cycleRef.current + delta * speed;
       if (newProgress >= 1) {
         newProgress = 0;
-        setBagCount(prev => prev + 1);
+        setBagCount((prev) => prev + 1);
       }
-      
-      setCycleProgress(newProgress);
+      cycleRef.current = newProgress;
+      bagMeshProgress.current = newProgress;
 
-      // Clamp logic based on cycle
-      if (newProgress < 0.1 || (newProgress >= 0.5 && newProgress < 0.6)) {
-        setClampOpen(false); // Closing or Closed
-      } else if (newProgress >= 0.1 && newProgress < 0.5) {
-        setClampOpen(false); // Filling (Clamp closed)
-      } else {
-        setClampOpen(true); // Open (Dropping and Conveying)
-      }
+      const shouldOpen = newProgress >= 0.6;
+      setClampOpen((prev) => (prev === shouldOpen ? prev : shouldOpen));
     } else {
+      cycleRef.current = 0;
+      bagMeshProgress.current = 0;
       setClampOpen(true);
-      setCycleProgress(0);
     }
   });
 
@@ -431,7 +442,7 @@ export function PackingMachineComponent({
       <MainFrame width={width} depth={depth} />
       <Hoppers width={width} depth={depth} height={height} />
       <BagClampAndSpout width={width} depth={depth} clampOpen={clampOpen} />
-      <AnimatedBag width={width} depth={depth} cycleProgress={cycleProgress} />
+      <AnimatedBag width={width} depth={depth} cycleProgressRef={bagMeshProgress} active={active} />
       <OperatorPanel position={[width / 2 + 0.1, 1.5, depth / 2 - 0.2]} />
       <SafetyGuards width={width} depth={depth} />
       
@@ -443,7 +454,6 @@ export function PackingMachineComponent({
         />
       )}
 
-      {/* Click target */}
       <mesh position={[0, 1.5, 0]} onClick={() => setInternalActive(!internalActive)} visible={false}>
         <boxGeometry args={[width + 1, 3.5, depth + 2]} />
         <meshBasicMaterial transparent opacity={0} />

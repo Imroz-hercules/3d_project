@@ -278,33 +278,35 @@ function BagGuidesAndControl({ width, depth, height }: { width: number; depth: n
    ========================================================================== */
 
 function SewingBag({ active, onComplete }: { active: boolean; onComplete: () => void }) {
-  const bagRef = useRef<THREE.Mesh>(null!);
-  const [progress, setProgress] = useState(0);
+  const bagRef = useRef<THREE.Group>(null!);
+  const progressRef = useRef(0);
+  const doneRef = useRef(false);
 
   useFrame((_, delta) => {
-    if (active && bagRef.current) {
-      const speed = 0.4;
-      const newProgress = progress + delta * speed;
-      setProgress(newProgress);
-      
-      bagRef.current.position.z = -1.0 + newProgress;
-      
-      if (newProgress >= 2.0) {
-        onComplete();
-      }
+    if (!active || !bagRef.current || doneRef.current) return;
+    const speed = 0.4;
+    progressRef.current = Math.min(2.0, progressRef.current + delta * speed);
+    bagRef.current.position.z = -1.0 + progressRef.current;
+    if (progressRef.current >= 2.0 - 0.001) {
+      doneRef.current = true;
+      onComplete();
     }
   });
 
-  if (!active && progress === 0) return null;
+  useEffect(() => {
+    progressRef.current = 0;
+    doneRef.current = false;
+    if (bagRef.current) bagRef.current.position.z = -1.0;
+  }, [active]);
+
+  if (!active) return null;
 
   return (
     <group ref={bagRef} position={[0, 0.4, -1.0]}>
-      {/* Bag Body */}
       <mesh castShadow>
         <boxGeometry args={[0.4, 0.7, 0.3]} />
         <meshStandardMaterial color={COLORS.bagWhite} roughness={0.9} metalness={0} />
       </mesh>
-      {/* Stitched Seam (appears as it passes the needle) */}
       <mesh position={[0, 0.36, 0]}>
         <boxGeometry args={[0.38, 0.02, 0.28]} />
         <meshStandardMaterial color={COLORS.bagSeam} roughness={0.8} />

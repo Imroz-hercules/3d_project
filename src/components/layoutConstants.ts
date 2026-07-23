@@ -44,19 +44,19 @@ export const REF = {
    */
   zones: {
     raw: { z: 0, floorY: 0 },
-    cleaning: { z: 4.5, floorY: 0 },
-    conditioning: { z: 4.5, floorY: 0 },
+    cleaning: { z: 3.0, floorY: 0 },
+    conditioning: { z: 3.0, floorY: 0 },
     milling: {
-      z: -3.0,
+      z: -2.0,
       /** Steel mezzanine under roller mill + bran finisher. */
       millDeckY: 2.8,
       /** Upper gallery deck under plansifter + purifier. */
       upperDeckY: 5.5,
     },
-    /** Finished-product flour bins — continues milling aisle further +X. */
-    storage: { z: -3.0, floorY: 0 },
-    /** Packing cell — aligned with Flour Bin A (outer storage row). */
-    packing: { z: -7.0, floorY: 0 },
+    /** Finished-product flour bins — same aisle as milling for a readable twin. */
+    storage: { z: -2.0, floorY: 0 },
+    /** Packing cell — slightly toward +Z so it stays in the default overview. */
+    packing: { z: -2.0, floorY: 0 },
     gaps: {
       /** Extra X gap at cleaning → conditioning boundary (metres). */
       cleaningToConditioning: 3.5,
@@ -189,9 +189,9 @@ export const REF = {
   },
   flourBinLayout: {
     /** Gap from bran finisher centre to flour-bin row centre X (metres). */
-    gapFromBranFinisher: 5.5,
-    /** Centre-to-centre spacing along Z for bins A/B/C (metres). */
-    spacingZ: 4.0,
+    gapFromBranFinisher: 4.5,
+    /** Centre-to-centre spacing along +Z for bins A/B/C (metres). */
+    spacingZ: 2.8,
   },
   packingMachine: {
     width: 2.4,
@@ -200,7 +200,7 @@ export const REF = {
   },
   packingLayout: {
     /** Gap from flour bin A centre to packing machine centre X (metres). */
-    gapFromFlourBin: 3.8,
+    gapFromFlourBin: 3.5,
   },
   bagConveyor: {
     length: 3.5,
@@ -701,14 +701,15 @@ export function branFinisherBranOutletWorldPos(): [number, number, number] {
 export type FlourBinId = 'A' | 'B' | 'C';
 
 const FLOUR_BIN_Z_OFFSET: Record<FlourBinId, number> = {
-  A: -1,
-  B: 0,
-  C: 1,
+  /** Spread toward +Z so storage stays near the milling aisle overview. */
+  A: 0,
+  B: 1,
+  C: 2,
 };
 
 /**
  * Flour bin group origin — storage aisle, feet on grade.
- * Three bins (A/B/C) spaced along Z about the storage aisle centreline.
+ * Three bins (A/B/C) spaced along +Z from the milling centreline.
  */
 export function flourBinPosition(id: FlourBinId = 'B'): [number, number, number] {
   const [fx] = branFinisherPosition();
@@ -740,7 +741,7 @@ export function flourBinOutletWorldPos(id: FlourBinId = 'B'): [number, number, n
 
 /**
  * Packing machine group origin — packing cell, fed from Flour Bin A rotary valve.
- * Feet on grade; takeaway conveyor extends in +Z.
+ * Kept on Bin A X/Z so the takeaway (+Z) stays in the overview frustum.
  */
 export function packingMachinePosition(): [number, number, number] {
   const [ax, , az] = flourBinPosition('A');
