@@ -41,8 +41,16 @@ export function isActionable(e: FactoryEvent): boolean {
   return e.severity === 'warning' || e.severity === 'alarm' || e.severity === 'maintenance' || e.severity === 'operator';
 }
 
+let activeCache: FactoryEvent[] = [];
+let activeSourceRef: FactoryEvent[] | null = null;
+
 export function getActiveNotifications(): FactoryEvent[] {
-  return getEvents().filter(isActionable);
+  const all = getEvents();
+  // Reuse cached filter while the events array reference is unchanged
+  if (all === activeSourceRef) return activeCache;
+  activeSourceRef = all;
+  activeCache = all.filter(isActionable);
+  return activeCache;
 }
 
 export function useActiveNotifications(): FactoryEvent[] {

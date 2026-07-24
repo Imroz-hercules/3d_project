@@ -38,12 +38,15 @@ export function usePanelChrome(): PanelChrome {
 
 export function setLeftExpanded(v: boolean) {
   if (chrome.leftPinned && !v) return;
+  if (chrome.leftExpanded === v) return;
   chrome = { ...chrome, leftExpanded: v };
   emit();
 }
 
 export function setLeftPinned(v: boolean) {
-  chrome = { ...chrome, leftPinned: v, leftExpanded: v || chrome.leftExpanded };
+  const leftExpanded = v || chrome.leftExpanded;
+  if (chrome.leftPinned === v && chrome.leftExpanded === leftExpanded) return;
+  chrome = { ...chrome, leftPinned: v, leftExpanded };
   emit();
 }
 
@@ -53,12 +56,15 @@ export function toggleLeftPin() {
 
 export function setRightOpen(v: boolean) {
   if (chrome.rightPinned && !v) return;
+  if (chrome.rightOpen === v) return;
   chrome = { ...chrome, rightOpen: v };
   emit();
 }
 
 export function setRightPinned(v: boolean) {
-  chrome = { ...chrome, rightPinned: v, rightOpen: v || chrome.rightOpen };
+  const rightOpen = v || chrome.rightOpen;
+  if (chrome.rightPinned === v && chrome.rightOpen === rightOpen) return;
+  chrome = { ...chrome, rightPinned: v, rightOpen };
   emit();
 }
 
@@ -67,11 +73,13 @@ export function toggleRightPin() {
 }
 
 export function setInspectorTab(tab: InspectorTab) {
+  if (chrome.inspectorTab === tab) return;
   chrome = { ...chrome, inspectorTab: tab };
   emit();
 }
 
 export function setNotifyPopoverOpen(v: boolean) {
+  if (chrome.notifyPopoverOpen === v) return;
   chrome = { ...chrome, notifyPopoverOpen: v };
   emit();
 }

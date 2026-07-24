@@ -3,6 +3,22 @@ import { getTwinState, subscribeTwin } from '../../twin/tags';
 import { MACHINE_ORDER } from '../../twin/types';
 import type { FactoryHealth, PlantKpis } from './types';
 
+let healthCache: FactoryHealth = { status: 'healthy', running: 0, total: MACHINE_ORDER.length, alarms: 0 };
+let kpiCache: PlantKpis = { productionTph: 0, todayOutputT: 0, powerKw: 0, oeePct: 0 };
+
+function healthEqual(a: FactoryHealth, b: FactoryHealth): boolean {
+  return a.status === b.status && a.running === b.running && a.total === b.total && a.alarms === b.alarms;
+}
+
+function kpiEqual(a: PlantKpis, b: PlantKpis): boolean {
+  return (
+    a.productionTph === b.productionTph &&
+    a.todayOutputT === b.todayOutputT &&
+    a.powerKw === b.powerKw &&
+    a.oeePct === b.oeePct
+  );
+}
+
 export function computeFactoryHealth(): FactoryHealth {
   const { machines } = getTwinState();
   const total = MACHINE_ORDER.length;
@@ -16,7 +32,10 @@ export function computeFactoryHealth(): FactoryHealth {
     else if (m.alarm === 'WARN') warnings += 1;
   }
   const status = alarms > 0 ? 'alarm' : warnings > 0 ? 'warning' : 'healthy';
-  return { status, running, total, alarms };
+  const next: FactoryHealth = { status, running, total, alarms };
+  if (healthEqual(healthCache, next)) return healthCache;
+  healthCache = next;
+  return healthCache;
 }
 
 export function computePlantKpis(): PlantKpis {
@@ -33,12 +52,15 @@ export function computePlantKpis(): PlantKpis {
   const health = computeFactoryHealth();
   const availability = health.total ? health.running / health.total : 0;
   const oeePct = lineActive ? availability * 0.92 * 0.97 * 100 : 0;
-  return {
+  const next: PlantKpis = {
     productionTph: Number(productionTph.toFixed(1)),
     todayOutputT: Number(todayOutputT.toFixed(1)),
     powerKw: Number(powerKw.toFixed(0)),
     oeePct: Number(oeePct.toFixed(1)),
   };
+  if (kpiEqual(kpiCache, next)) return kpiCache;
+  kpiCache = next;
+  return kpiCache;
 }
 
 export function useFactoryHealth(): FactoryHealth {
