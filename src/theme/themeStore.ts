@@ -28,6 +28,12 @@ const state: ThemeState = {
   name: typeof window !== 'undefined' ? readStored() : DEFAULT_THEME,
 };
 
+/** Cached for useSyncExternalStore — must return the same reference until theme changes. */
+let snapshot: { name: ThemeName; tokens: ThemeTokens } = {
+  name: state.name,
+  tokens: resolveTheme(state.name),
+};
+
 const listeners = new Set<Listener>();
 const changeListeners = new Set<ThemeChangeListener>();
 
@@ -43,12 +49,19 @@ function persist(name: ThemeName) {
   }
 }
 
+function refreshSnapshot() {
+  snapshot = {
+    name: state.name,
+    tokens: resolveTheme(state.name),
+  };
+}
+
 export function getThemeName(): ThemeName {
   return state.name;
 }
 
 export function getTheme(): { name: ThemeName; tokens: ThemeTokens } {
-  return { name: state.name, tokens: resolveTheme(state.name) };
+  return snapshot;
 }
 
 export function isNight(): boolean {
@@ -75,6 +88,7 @@ export function setTheme(name: ThemeName) {
   if (name === state.name) return;
   const prev = state.name;
   state.name = name;
+  refreshSnapshot();
   persist(name);
   emit();
   changeListeners.forEach((l) => l(prev, name));
