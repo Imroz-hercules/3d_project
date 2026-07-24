@@ -8,19 +8,12 @@ import { IndustrialFloor } from "./components/factory/IndustrialFloor";
 import { plantCenter, plantGroundRadius } from "./components/layoutConstants";
 import { PlantMaterialsProvider } from "./materials";
 import { HDRI_FACTORY } from "./materials/paths";
-import { TwinHud } from "./twin/TwinHud";
 import { CameraRig } from "./navigation/CameraRig";
 import { NavFocusController } from "./navigation/NavFocusController";
-import { ZonePresetBar } from "./navigation/ZonePresetBar";
-import { MachineSearch } from "./navigation/MachineSearch";
-import { NavHistoryButtons } from "./navigation/NavHistoryButtons";
-import { NavBreadcrumb } from "./navigation/NavBreadcrumb";
-import { Minimap } from "./navigation/Minimap";
-import { toggleDebugOrbit } from "./navigation/navStore";
-import { useDebugOrbit } from "./navigation/useNavState";
+import { OperatorShell } from "./shell";
+import { useVisibilityLayers } from "./shell/services/visibility";
 import {
   ThemeRoot,
-  ThemeToggle,
   ThemeSceneBridge,
   useTheme,
   type SceneFrameValues,
@@ -29,16 +22,13 @@ import {
 function App() {
   const [cx, , cz] = plantCenter();
   const groundR = plantGroundRadius();
-  const [showBuilding, setShowBuilding] = useState(true);
-  const [cutaway, setCutaway] = useState(true);
-  const debugOrbit = useDebugOrbit();
+  const vis = useVisibilityLayers();
   const { tokens } = useTheme();
   const [envIntensity, setEnvIntensity] = useState(tokens.scene.environment.environmentIntensity);
   const [shadowOpacity, setShadowOpacity] = useState(tokens.scene.rendering.contactShadowOpacity);
   const lastSceneUi = useRef({ env: envIntensity, shadow: shadowOpacity });
 
   useEffect(() => {
-    // Ensure React-side env/shadow targets track theme even if bridge remounts
     lastSceneUi.current = {
       env: tokens.scene.environment.environmentIntensity,
       shadow: tokens.scene.rendering.contactShadowOpacity,
@@ -58,35 +48,7 @@ function App() {
   return (
     <ThemeRoot>
       <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-        <div className="stwin-toolbar">
-          <ThemeToggle />
-          <button
-            type="button"
-            className="stwin-btn"
-            onClick={() => setShowBuilding((v) => !v)}
-          >
-            {showBuilding ? "Hide building" : "Show building"}
-          </button>
-          {showBuilding && (
-            <button
-              type="button"
-              className="stwin-btn"
-              onClick={() => setCutaway((v) => !v)}
-            >
-              {cutaway ? "Full walls" : "Cutaway"}
-            </button>
-          )}
-          <button type="button" className="stwin-btn" onClick={() => toggleDebugOrbit()}>
-            {debugOrbit ? "Controls: Orbit" : "Controls: Camera"}
-          </button>
-          <NavHistoryButtons />
-          <MachineSearch />
-        </div>
-
-        <NavBreadcrumb />
-        <TwinHud />
-        <ZonePresetBar />
-        <Minimap />
+        <OperatorShell />
 
         <Canvas
           shadows={false}
@@ -120,7 +82,9 @@ function App() {
               <IndustrialFloor radius={groundR} />
               <group position={[-cx, 0, -cz]}>
                 <MaterialHandlingLine />
-                {showBuilding && <BuildingEnvelope cutaway={cutaway} showLights={false} />}
+                {vis.building && (
+                  <BuildingEnvelope cutaway={vis.cutaway} showLights={false} />
+                )}
               </group>
               <ContactShadows
                 key={tokens.name}
