@@ -30,7 +30,6 @@ import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import {
-  matPaintBlue,
   matPaintDark,
   matPaintedSteel,
   matRubber,

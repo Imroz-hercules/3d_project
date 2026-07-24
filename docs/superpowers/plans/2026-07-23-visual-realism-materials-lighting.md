@@ -4,7 +4,7 @@
 >
 > **Revision:** Rewritten after review. Prioritizes material architecture → whole-scene lighting/floor → infrastructure PBR → one gold-standard machine → copy style. Explicitly defers bevels, triplanar, 4K, and procedural dirt shaders.
 >
-> **Execution progress (2026-07-23):** Sprints 1–4 implemented in code. **Stop for Sprint 4 visual gate** before Sprint 5.
+> **Execution progress (2026-07-23):** Sprints 1–5 implemented in code. Next: Sprint 6 (industrial details) when ready.
 
 **Goal:** Make the flour-mill digital twin look like a convincing industrial plant by building a shared material system once, upgrading the whole scene (HDRI + lighting + concrete floor), finishing one reference machine (roller mill) to 100%, then copying that style — without undoing the FPS work in `docs/superpowers/plans/2026-07-23-scene-performance-optimization.md`.
 

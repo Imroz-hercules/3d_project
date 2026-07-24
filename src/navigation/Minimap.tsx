@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import {
   zoneBoundsFromRegistry,
   ZONE_FLOW,
@@ -9,17 +8,8 @@ import { buildMachineRegistry } from './MachineRegistry';
 import { navigateTo } from './navStore';
 import { useCameraPose, useNavState } from './useNavState';
 import { useTwinState } from '../twin/useTwinState';
+import { useTheme } from '../theme';
 import type { ProcessZoneId } from './types';
-
-const wrap: CSSProperties = {
-  position: 'absolute',
-  right: 12,
-  bottom: 16,
-  zIndex: 10,
-  color: '#e8e4d4',
-  fontFamily: 'system-ui, sans-serif',
-  pointerEvents: 'auto',
-};
 
 export function Minimap() {
   const zones = zoneBoundsFromRegistry();
@@ -28,6 +18,8 @@ export function Minimap() {
   const pose = useCameraPose();
   const { focus } = useNavState();
   const { selectedId } = useTwinState();
+  const { tokens } = useTheme();
+  const nav = tokens.hud.navigation;
 
   const w = 200;
   const h = 150;
@@ -61,18 +53,9 @@ export function Minimap() {
   const tipY = camY + pose.dirZ * arrowLen;
 
   return (
-    <div style={wrap}>
-      <div style={{ fontSize: 11, marginBottom: 4, opacity: 0.8 }}>Factory Map</div>
-      <svg
-        width={w}
-        height={h}
-        style={{
-          background: 'rgba(20, 24, 28, 0.92)',
-          borderRadius: 6,
-          border: '1px solid #6a7278',
-          display: 'block',
-        }}
-      >
+    <div className="stwin-minimap">
+      <div className="stwin-minimap__label">Factory Map</div>
+      <svg width={w} height={h} className="stwin-minimap__svg">
         <defs>
           <marker
             id="navArrow"
@@ -82,7 +65,7 @@ export function Minimap() {
             refY="3"
             orient="auto"
           >
-            <path d="M0,0 L6,3 L0,6 Z" fill="rgba(232,228,212,0.5)" />
+            <path d="M0,0 L6,3 L0,6 Z" fill={nav.minimapFlow} />
           </marker>
         </defs>
 
@@ -95,8 +78,8 @@ export function Minimap() {
               y={sz(z.minZ)}
               width={Math.max(4, sx(z.maxX) - sx(z.minX))}
               height={Math.max(4, sz(z.maxZ) - sz(z.minZ))}
-              fill={active ? 'rgba(79,195,247,0.45)' : 'rgba(79,195,247,0.2)'}
-              stroke={active ? '#e8e4d4' : '#4fc3f7'}
+              fill={active ? nav.activeZone : nav.inactiveZone}
+              stroke={active ? nav.activeZoneStroke : nav.inactiveZoneStroke}
               strokeWidth={active ? 1.5 : 1}
               style={{ cursor: 'pointer' }}
               onClick={() => navigateTo({ kind: 'zone', zone: z.id })}
@@ -115,7 +98,7 @@ export function Minimap() {
               y1={a.y}
               x2={b.x}
               y2={b.y}
-              stroke="rgba(232,228,212,0.35)"
+              stroke={nav.minimapFlow}
               strokeWidth={1.5}
               markerEnd="url(#navArrow)"
             />
@@ -128,7 +111,7 @@ export function Minimap() {
             cx={sx(m.position[0])}
             cy={sz(m.position[2])}
             r={selectedId === m.id ? 4.5 : 3}
-            fill={selectedId === m.id ? '#3ecf8e' : '#9aa3a8'}
+            fill={selectedId === m.id ? nav.selectedMachine : nav.machineDot}
             style={{ cursor: 'pointer' }}
             onClick={(e) => {
               e.stopPropagation();
@@ -139,18 +122,18 @@ export function Minimap() {
           </circle>
         ))}
 
-        <circle cx={camX} cy={camY} r={4} fill="#e8e4d4" />
+        <circle cx={camX} cy={camY} r={4} fill={nav.minimapCamera} />
         <line
           x1={camX}
           y1={camY}
           x2={tipX}
           y2={tipY}
-          stroke="#ffcc66"
+          stroke={nav.minimapArrow}
           strokeWidth={2}
         />
         <polygon
           points={`${tipX},${tipY} ${tipX - pose.dirZ * 4 - pose.dirX * 3},${tipY + pose.dirX * 4 - pose.dirZ * 3} ${tipX + pose.dirZ * 4 - pose.dirX * 3},${tipY - pose.dirX * 4 - pose.dirZ * 3}`}
-          fill="#ffcc66"
+          fill={nav.minimapArrow}
         />
       </svg>
     </div>

@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { Sky, Stats, Environment, ContactShadows } from "@react-three/drei";
-import { Suspense, useState, type CSSProperties } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import MaterialHandlingLine from "./components/MaterialHandlingLine";
 import { BuildingEnvelope } from "./components/factory/BuildingEnvelope";
@@ -18,6 +18,13 @@ import { NavBreadcrumb } from "./navigation/NavBreadcrumb";
 import { Minimap } from "./navigation/Minimap";
 import { toggleDebugOrbit } from "./navigation/navStore";
 import { useDebugOrbit } from "./navigation/useNavState";
+import {
+  ThemeRoot,
+  ThemeToggle,
+  ThemeSceneBridge,
+  useTheme,
+  type SceneFrameValues,
+} from "./theme";
 
 function App() {
   const [cx, , cz] = plantCenter();
@@ -25,106 +32,115 @@ function App() {
   const [showBuilding, setShowBuilding] = useState(true);
   const [cutaway, setCutaway] = useState(true);
   const debugOrbit = useDebugOrbit();
+  const { tokens } = useTheme();
+  const [envIntensity, setEnvIntensity] = useState(tokens.scene.environment.environmentIntensity);
+  const [shadowOpacity, setShadowOpacity] = useState(tokens.scene.rendering.contactShadowOpacity);
+  const lastSceneUi = useRef({ env: envIntensity, shadow: shadowOpacity });
+
+  useEffect(() => {
+    // Ensure React-side env/shadow targets track theme even if bridge remounts
+    lastSceneUi.current = {
+      env: tokens.scene.environment.environmentIntensity,
+      shadow: tokens.scene.rendering.contactShadowOpacity,
+    };
+  }, [tokens.name]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const onSceneFrameValues = useCallback((v: SceneFrameValues) => {
+    const prev = lastSceneUi.current;
+    const envChanged = Math.abs(prev.env - v.environmentIntensity) > 0.02;
+    const shadowChanged = Math.abs(prev.shadow - v.contactShadowOpacity) > 0.02;
+    if (!envChanged && !shadowChanged) return;
+    lastSceneUi.current = { env: v.environmentIntensity, shadow: v.contactShadowOpacity };
+    if (envChanged) setEnvIntensity(v.environmentIntensity);
+    if (shadowChanged) setShadowOpacity(v.contactShadowOpacity);
+  }, []);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-      <div
-        style={{
-          position: "absolute",
-          top: 12,
-          left: 12,
-          zIndex: 10,
-          display: "flex",
-          gap: 8,
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setShowBuilding((v) => !v)}
-          style={btnStyle}
-        >
-          {showBuilding ? "Hide building" : "Show building"}
-        </button>
-        {showBuilding && (
+    <ThemeRoot>
+      <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
+        <div className="stwin-toolbar">
+          <ThemeToggle />
           <button
             type="button"
-            onClick={() => setCutaway((v) => !v)}
-            style={btnStyle}
+            className="stwin-btn"
+            onClick={() => setShowBuilding((v) => !v)}
           >
-            {cutaway ? "Full walls" : "Cutaway"}
+            {showBuilding ? "Hide building" : "Show building"}
           </button>
-        )}
-        <button type="button" onClick={() => toggleDebugOrbit()} style={btnStyle}>
-          {debugOrbit ? "Controls: Orbit" : "Controls: Camera"}
-        </button>
-        <NavHistoryButtons />
-        <MachineSearch />
+          {showBuilding && (
+            <button
+              type="button"
+              className="stwin-btn"
+              onClick={() => setCutaway((v) => !v)}
+            >
+              {cutaway ? "Full walls" : "Cutaway"}
+            </button>
+          )}
+          <button type="button" className="stwin-btn" onClick={() => toggleDebugOrbit()}>
+            {debugOrbit ? "Controls: Orbit" : "Controls: Camera"}
+          </button>
+          <NavHistoryButtons />
+          <MachineSearch />
+        </div>
+
+        <NavBreadcrumb />
+        <TwinHud />
+        <ZonePresetBar />
+        <Minimap />
+
+        <Canvas
+          shadows={false}
+          dpr={[1, 1.5]}
+          gl={{
+            antialias: true,
+            powerPreference: "high-performance",
+            toneMappingExposure: tokens.scene.rendering.exposure,
+          }}
+          camera={{
+            position: [groundR * 0.55, groundR * 0.7, groundR * 0.65],
+            fov: 48,
+            near: 0.5,
+            far: 500,
+          }}
+          onCreated={({ gl }) => {
+            gl.setClearColor(tokens.scene.environment.clearColor);
+          }}
+        >
+          {import.meta.env.DEV && <Stats />}
+          <ThemeSceneBridge
+            scene={tokens.scene}
+            motion={tokens.motion}
+            onFrameValues={onSceneFrameValues}
+          />
+          <Sky sunPosition={[100, 40, 100]} turbidity={3} rayleigh={0.6} mieCoefficient={0.003} />
+
+          <Suspense fallback={null}>
+            <Environment files={HDRI_FACTORY} environmentIntensity={envIntensity} background={false} />
+            <PlantMaterialsProvider enableTextures>
+              <IndustrialFloor radius={groundR} />
+              <group position={[-cx, 0, -cz]}>
+                <MaterialHandlingLine />
+                {showBuilding && <BuildingEnvelope cutaway={cutaway} showLights={false} />}
+              </group>
+              <ContactShadows
+                key={tokens.name}
+                position={[0, 0.01, 0]}
+                opacity={shadowOpacity}
+                scale={groundR * 2.2}
+                blur={2.5}
+                far={40}
+                resolution={512}
+                frames={1}
+              />
+            </PlantMaterialsProvider>
+          </Suspense>
+
+          <NavFocusController />
+          <CameraRig maxDistance={groundR * 2.5} />
+        </Canvas>
       </div>
-
-      <NavBreadcrumb />
-      <TwinHud />
-      <ZonePresetBar />
-      <Minimap />
-
-      <Canvas
-        shadows={false}
-        dpr={[1, 1.5]}
-        gl={{
-          antialias: true,
-          powerPreference: "high-performance",
-          toneMappingExposure: 1.05,
-        }}
-        camera={{
-          position: [groundR * 0.55, groundR * 0.7, groundR * 0.65],
-          fov: 48,
-          near: 0.5,
-          far: 500,
-        }}
-      >
-        {import.meta.env.DEV && <Stats />}
-        <ambientLight intensity={0.28} />
-        <hemisphereLight args={["#dfe7f2", "#6a6a5e", 0.35]} />
-        <directionalLight position={[30, 50, 20]} intensity={1.85} />
-        <Sky sunPosition={[100, 40, 100]} turbidity={3} rayleigh={0.6} mieCoefficient={0.003} />
-
-        <Suspense fallback={null}>
-          <Environment files={HDRI_FACTORY} environmentIntensity={0.55} background={false} />
-          <PlantMaterialsProvider enableTextures>
-            <IndustrialFloor radius={groundR} />
-            <group position={[-cx, 0, -cz]}>
-              <MaterialHandlingLine />
-              {showBuilding && <BuildingEnvelope cutaway={cutaway} showLights={false} />}
-            </group>
-            <ContactShadows
-              position={[0, 0.01, 0]}
-              opacity={0.35}
-              scale={groundR * 2.2}
-              blur={2.5}
-              far={40}
-              resolution={512}
-              frames={1}
-            />
-          </PlantMaterialsProvider>
-        </Suspense>
-
-        <NavFocusController />
-        <CameraRig maxDistance={groundR * 2.5} />
-      </Canvas>
-    </div>
+    </ThemeRoot>
   );
 }
-
-const btnStyle: CSSProperties = {
-  background: "rgba(30, 36, 42, 0.88)",
-  color: "#e8e4d4",
-  border: "1px solid #6a7278",
-  borderRadius: 6,
-  padding: "8px 12px",
-  fontSize: 13,
-  fontFamily: "system-ui, sans-serif",
-  cursor: "pointer",
-};
 
 export default App;

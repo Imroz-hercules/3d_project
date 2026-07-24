@@ -166,26 +166,22 @@ function Rotor({ radius, length, vaneCount, active, rpm }: { radius: number; len
 
   return (
     <group ref={rotorRef}>
-      <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matSteel}>
         <cylinderGeometry args={[radius * 0.12, radius * 0.12, length * 1.3, 16]} />
-        <meshStandardMaterial color={COLORS.rotorSteel} metalness={0.85} roughness={0.2} />
       </mesh>
       {vanes.map((angle, i) => (
         <group key={i} rotation={[angle, 0, 0]}>
-          <mesh position={[0, radius * 0.5, 0]} castShadow>
+          <mesh position={[0, radius * 0.5, 0]} castShadow dispose={null} material={matSteel}>
             <boxGeometry args={[length * 0.85, radius * 0.85, 0.025]} />
-            <meshStandardMaterial color={COLORS.rotorSteel} metalness={0.8} roughness={0.25} />
           </mesh>
-          <mesh position={[0, radius * 0.92, 0]}>
+          <mesh position={[0, radius * 0.92, 0]} dispose={null} material={matSteelDark}>
             <boxGeometry args={[length * 0.82, 0.015, 0.03]} />
-            <meshStandardMaterial color={COLORS.rotorDark} metalness={0.9} roughness={0.15} />
           </mesh>
         </group>
       ))}
       {[-length / 2, length / 2].map((pos, i) => (
-        <mesh key={i} position={[pos, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <mesh key={i} position={[pos, 0, 0]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteelDark}>
           <cylinderGeometry args={[radius * 0.95, radius * 0.95, 0.02, 24]} />
-          <meshStandardMaterial color={COLORS.rotorDark} metalness={0.8} roughness={0.25} />
         </mesh>
       ))}
     </group>
@@ -206,39 +202,32 @@ function GearMotor({ position, active, rpm, hovered, onHover }: { position: V3; 
     <group position={position}
       onPointerOver={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); onHover(true); }}
       onPointerOut={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); onHover(false); }}>
-      <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matPaintBlue}>
         <cylinderGeometry args={[0.22, 0.22, 0.55, 24]} />
-        <meshStandardMaterial color={hovered ? COLORS.motorBlueLight : COLORS.motorBlue} metalness={0.6} roughness={0.4} />
       </mesh>
       {Array.from({ length: 14 }, (_, i) => {
         const z = -0.22 + (i / 13) * 0.44;
         return (
-          <mesh key={i} position={[0, 0, z]} rotation={[0, 0, Math.PI / 2]}>
+          <mesh key={i} position={[0, 0, z]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matPaintDark}>
             <cylinderGeometry args={[0.24, 0.24, 0.015, 24]} />
-            <meshStandardMaterial color={COLORS.motorBlueDark} metalness={0.65} roughness={0.4} />
           </mesh>
         );
       })}
-      <mesh position={[0, 0, 0.3]} rotation={[0, 0, Math.PI / 2]} castShadow>
+      <mesh position={[0, 0, 0.3]} rotation={[0, 0, Math.PI / 2]} castShadow dispose={null} material={matPaintDark}>
         <cylinderGeometry args={[0.23, 0.2, 0.08, 24]} />
-        <meshStandardMaterial color={COLORS.motorBlueDark} metalness={0.65} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 0, 0.36]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, 0, 0.36]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matPaintDark}>
         <cylinderGeometry args={[0.21, 0.21, 0.06, 24, 1, true]} />
-        <meshStandardMaterial color={COLORS.motorBlueDark} metalness={0.7} roughness={0.35} side={THREE.DoubleSide} />
       </mesh>
-      <mesh ref={fanRef} position={[0, 0, 0.34]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh ref={fanRef} position={[0, 0, 0.34]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matStructureSteel}>
         <cylinderGeometry args={[0.18, 0.18, 0.02, 6]} />
-        <meshStandardMaterial color={COLORS.housingDark} metalness={0.7} roughness={0.35} />
       </mesh>
-      <mesh position={[0, 0.24, 0]} castShadow>
+      <mesh position={[0, 0.24, 0]} castShadow dispose={null} material={matPaintDark}>
         <boxGeometry args={[0.12, 0.08, 0.1]} />
-        <meshStandardMaterial color={COLORS.motorBlueDark} metalness={0.6} roughness={0.4} />
       </mesh>
       {[-0.15, 0.15].map((x, i) => (
-        <mesh key={i} position={[x, -0.22, 0]} castShadow>
+        <mesh key={i} position={[x, -0.22, 0]} castShadow dispose={null} material={matPaintDark}>
           <boxGeometry args={[0.08, 0.04, 0.35]} />
-          <meshStandardMaterial color={COLORS.motorBlueDark} metalness={0.7} roughness={0.35} />
         </mesh>
       ))}
       <mesh position={[0, 0.24, 0.06]}>
@@ -256,11 +245,11 @@ function GearMotor({ position, active, rpm, hovered, onHover }: { position: V3; 
 function Gearbox({ position }: { position: V3 }) {
   return (
     <group position={position}>
-      <mesh castShadow><boxGeometry args={[0.2, 0.28, 0.22]} /><meshStandardMaterial color={COLORS.gearboxGray} metalness={0.7} roughness={0.4} /></mesh>
-      <mesh position={[0, 0, 0.15]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.04, 0.04, 0.1, 16]} /><meshStandardMaterial color={COLORS.rotorSteel} metalness={0.85} roughness={0.2} /></mesh>
-      <mesh position={[0, 0, -0.15]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.05, 0.05, 0.1, 16]} /><meshStandardMaterial color={COLORS.rotorSteel} metalness={0.85} roughness={0.2} /></mesh>
+      <mesh castShadow dispose={null} material={matPaintDark}><boxGeometry args={[0.2, 0.28, 0.22]} /></mesh>
+      <mesh position={[0, 0, 0.15]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteel}><cylinderGeometry args={[0.04, 0.04, 0.1, 16]} /></mesh>
+      <mesh position={[0, 0, -0.15]} rotation={[0, 0, Math.PI / 2]} dispose={null} material={matSteel}><cylinderGeometry args={[0.05, 0.05, 0.1, 16]} /></mesh>
       {[[-0.08, -0.12], [0.08, -0.12], [-0.08, 0.12], [0.08, 0.12]].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0, z]}><cylinderGeometry args={[0.02, 0.02, 0.24, 6]} /><meshStandardMaterial color={COLORS.boltSteel} metalness={0.9} roughness={0.3} /></mesh>
+        <mesh key={i} position={[x, 0, z]} dispose={null} material={matSteelDark}><cylinderGeometry args={[0.02, 0.02, 0.24, 6]} /></mesh>
       ))}
     </group>
   );
@@ -269,9 +258,9 @@ function Gearbox({ position }: { position: V3 }) {
 function SafetyGuard({ position }: { position: V3 }) {
   return (
     <group position={position}>
-      <mesh castShadow><boxGeometry args={[0.18, 0.32, 0.25]} /><meshStandardMaterial color={COLORS.safetyYellow} metalness={0.5} roughness={0.5} /></mesh>
+      <mesh castShadow dispose={null} material={matRailYellow}><boxGeometry args={[0.18, 0.32, 0.25]} /></mesh>
       {[-0.1, 0.1].map((x, i) => (
-        <mesh key={i} position={[x, -0.18, 0]}><boxGeometry args={[0.04, 0.04, 0.2]} /><meshStandardMaterial color={COLORS.safetyYellowDark} metalness={0.6} roughness={0.45} /></mesh>
+        <mesh key={i} position={[x, -0.18, 0]} dispose={null} material={matRailYellow}><boxGeometry args={[0.04, 0.04, 0.2]} /></mesh>
       ))}
       <mesh position={[0, 0, 0.13]}><boxGeometry args={[0.16, 0.04, 0.005]} /><meshStandardMaterial color="#000000" /></mesh>
     </group>
@@ -293,8 +282,8 @@ function SupportLegs({ width, depth }: { width: number; depth: number }) {
     <group>
       {legPositions.map((pos, i) => (
         <group key={i}>
-          <mesh position={pos} castShadow><boxGeometry args={[0.08, depth / 2 + 0.15, 0.08]} /><meshStandardMaterial color={COLORS.housingDark} metalness={0.7} roughness={0.4} /></mesh>
-          <mesh position={[pos[0], -depth / 2 - 0.15, pos[2]]}><boxGeometry args={[0.14, 0.02, 0.14]} /><meshStandardMaterial color={COLORS.flangeSteel} metalness={0.75} roughness={0.35} /></mesh>
+          <mesh position={pos} castShadow dispose={null} material={matPaintedSteel}><boxGeometry args={[0.08, depth / 2 + 0.15, 0.08]} /></mesh>
+          <mesh position={[pos[0], -depth / 2 - 0.15, pos[2]]} dispose={null} material={matSteel}><boxGeometry args={[0.14, 0.02, 0.14]} /></mesh>
         </group>
       ))}
     </group>

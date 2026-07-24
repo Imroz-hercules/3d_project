@@ -34,7 +34,6 @@ import {
   matRubber,
   matSteel,
   matSteelDark,
-  matStructureSteel,
   matRailYellow,
 } from '../materials';
 
