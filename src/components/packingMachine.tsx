@@ -1,27 +1,12 @@
 'use client';
 
 /**
- * PackingMachine.tsx - INDUSTRIAL AUTOMATIC PACKING MACHINE
+ * PackingMachine.tsx — HIGH-FIDELITY INDUSTRIAL AUTOMATIC PACKING MACHINE
  * ------------------------------------------------------------------------
- * A highly detailed industrial packing machine (weigh filler) for a flour mill 
- * digital twin. This is the centerpiece of the packing cell, receiving flour 
- * from the bin, weighing it, filling the bag, and discharging it.
- * 
- * Key Features:
- * - Heavy powder-coated steel main frame
- * - Stainless steel feed and weigh hoppers
- * - Visible load cells (4 pucks) supporting the weigh hopper
- * - Pneumatic bag clamp system (animated opening/closing jaws)
- * - Stainless steel filling spout
- * - Animated bag filling cycle (clamp -> fill -> drop -> convey)
- * - Integrated takeaway belt conveyor with moving rollers
- * - Operator control panel with HMI screen and Emergency Stop
- * - Yellow safety guards and service platform
- * - Real-time PLC data panel
- * 
- * Usage:
- *   import { PackingMachine } from './PackingMachine';
- *   <PackingMachine position={[0, 0, 0]} active={true} />
+ * Upgraded for zoom-level realism. Features PBR clearcoat materials, 
+ * realistic hex bolts, flanged hopper connections, robust I-beam support 
+ * legs with gussets, detailed pneumatic bag clamp, realistic flour bag 
+ * with seam details, and an enhanced operator panel with safety guards.
  * ------------------------------------------------------------------------
  */
 
@@ -29,95 +14,186 @@ import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
-import {
-  matPaintDark,
-  matPaintedSteel,
-  matRubber,
-  matSteel,
-  matSteelDark,
-  matStructureSteel,
-  matRailYellow,
-} from '../materials';
 
 type V3 = [number, number, number];
 
+/* ==========================================================================
+   1. HIGH-FIDELITY PBR MATERIALS
+   ========================================================================== */
+
+const matBody = new THREE.MeshPhysicalMaterial({
+  color: '#b8c0c8',
+  metalness: 0.6,
+  roughness: 0.4,
+  clearcoat: 0.35,
+  clearcoatRoughness: 0.4,
+});
+
+const matBodyDark = new THREE.MeshStandardMaterial({
+  color: '#6b7278',
+  metalness: 0.75,
+  roughness: 0.45,
+});
+
+const matStructure = new THREE.MeshStandardMaterial({
+  color: '#4a5058',
+  metalness: 0.82,
+  roughness: 0.5,
+});
+
+const matBolt = new THREE.MeshStandardMaterial({
+  color: '#2a2e32',
+  metalness: 0.92,
+  roughness: 0.28,
+});
+
+const matSafety = new THREE.MeshStandardMaterial({
+  color: '#e0a92c',
+  metalness: 0.5,
+  roughness: 0.6,
+});
+
+const matRubber = new THREE.MeshStandardMaterial({
+  color: '#1a1a1a',
+  metalness: 0.1,
+  roughness: 0.9,
+});
+
 const COLORS = {
-  frameSteel: '#4a555c',
-  frameSteelDark: '#3a454c',
-  stainless: '#d4d8dc',
-  stainlessDark: '#a0a8b0',
-  safetyYellow: '#e0a92c',
-  safetyYellowDark: '#c88a0a',
+  accentGreen: '#3fae56',
+  accentRed: '#a4222c',
+  accentCyan: '#00d4ff',
+  accentYellow: '#e0a92c',
   hmiScreen: '#00d4ff',
   hmiBody: '#2a2a2a',
   eStopRed: '#ff2222',
-  bagWhite: '#f5f5f0',
-  beltBlack: '#1a1a1a',
-  rollerSteel: '#6b7278',
-  accentGreen: '#3fae56',
-  accentRed: '#a4222c',
   concrete: '#9a9a92',
 } as const;
 
 /* ==========================================================================
-   MAIN FRAME & CONVEYOR STRUCTURE
+   2. DETAIL HELPERS
+   ========================================================================== */
+
+/** Realistic hex bolt with shank, head, and top highlight */
+function Bolt({ position, rotation = [0, 0, 0] as V3, size = 0.02 }: { position: V3; rotation?: V3; size?: number }) {
+  return (
+    <group position={position} rotation={rotation}>
+      <mesh material={matBolt}>
+        <cylinderGeometry args={[size * 0.6, size * 0.6, size * 1.5, 12]} />
+      </mesh>
+      <mesh position={[0, size * 0.8, 0]} material={matBolt}>
+        <cylinderGeometry args={[size, size, size * 0.5, 6]} />
+      </mesh>
+      <mesh position={[0, size * 1.05, 0]} material={matBodyDark}>
+        <cylinderGeometry args={[size * 0.7, size * 0.7, size * 0.05, 6]} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Bolt circle for flanges */
+function BoltCircle({ radius, count, y = 0, z = 0, size = 0.02, rotation = [0, 0, 0] as V3 }: { radius: number; count: number; y?: number; z?: number; size?: number; rotation?: V3 }) {
+  return (
+    <>
+      {Array.from({ length: count }, (_, i) => {
+        const a = (i / count) * Math.PI * 2;
+        return (
+          <Bolt
+            key={i}
+            position={[Math.cos(a) * radius, y, Math.sin(a) * radius + z]}
+            rotation={rotation}
+            size={size}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+/* ==========================================================================
+   3. MAIN FRAME (I-beam legs, base plates, gussets, bracing)
    ========================================================================== */
 
 function MainFrame({ width, depth }: { width: number; depth: number }) {
   const legHeight = 0.8;
   const legPositions: V3[] = [
-    [width / 2 - 0.15, legHeight / 2, depth / 2 - 0.15],
-    [-width / 2 + 0.15, legHeight / 2, depth / 2 - 0.15],
-    [width / 2 - 0.15, legHeight / 2, -depth / 2 + 0.15],
-    [-width / 2 + 0.15, legHeight / 2, -depth / 2 + 0.15],
+    [width / 2 - 0.2, legHeight / 2, depth / 2 - 0.2],
+    [-width / 2 + 0.2, legHeight / 2, depth / 2 - 0.2],
+    [width / 2 - 0.2, legHeight / 2, -depth / 2 + 0.2],
+    [-width / 2 + 0.2, legHeight / 2, -depth / 2 + 0.2],
   ];
 
   return (
     <group>
-      {/* Legs */}
       {legPositions.map((pos, i) => (
-        <mesh key={i} position={pos} castShadow receiveShadow dispose={null} material={matPaintedSteel}>
-          <boxGeometry args={[0.15, legHeight, 0.15]} />
-        </mesh>
-      ))}
-      
-      {/* Base Plates */}
-      {legPositions.map((pos, i) => (
-        <mesh key={`base-${i}`} position={[pos[0], -legHeight / 2 + 0.05, pos[2]]} dispose={null} material={matStructureSteel}>
-          <boxGeometry args={[0.3, 0.1, 0.3]} />
-        </mesh>
+        <group key={i}>
+          {/* I-beam leg simulation */}
+          <mesh position={pos} castShadow material={matStructure}>
+            <boxGeometry args={[0.16, legHeight, 0.16]} />
+          </mesh>
+          <mesh position={pos} material={matStructure}>
+            <boxGeometry args={[0.18, legHeight, 0.06]} />
+          </mesh>
+          <mesh position={pos} material={matStructure}>
+            <boxGeometry args={[0.06, legHeight, 0.18]} />
+          </mesh>
+
+          {/* Base plate */}
+          <mesh position={[pos[0], -legHeight / 2 + 0.04, pos[2]]} castShadow material={matStructure}>
+            <boxGeometry args={[0.35, 0.08, 0.35]} />
+          </mesh>
+
+          {/* Anchor bolts */}
+          {[-0.12, 0.12].map((dx) =>
+            [-0.12, 0.12].map((dz) => (
+              <Bolt key={`${dx}-${dz}`} position={[pos[0] + dx, -legHeight / 2 + 0.09, pos[2] + dz]} size={0.018} />
+            ))
+          )}
+
+          {/* Top gusset plate */}
+          <mesh position={[pos[0], legHeight / 2 - 0.1, pos[2]]} castShadow material={matStructure}>
+            <boxGeometry args={[0.2, 0.25, 0.05]} />
+          </mesh>
+        </group>
       ))}
 
       {/* Top Frame (Supports the hoppers) */}
-      <mesh position={[0, legHeight + 0.1, 0]} castShadow dispose={null} material={matPaintedSteel}>
+      <mesh position={[0, legHeight + 0.1, 0]} castShadow material={matStructure}>
         <boxGeometry args={[width, 0.2, depth]} />
       </mesh>
 
-      {/* Conveyor Structure (Extends out the +X side toward bag line) */}
+      {/* Conveyor Structure */}
       <group position={[width / 2 + 0.6, legHeight - 0.1, 0]}>
         {/* Conveyor Side Rails */}
-        <mesh position={[0, 0, 0.28]} castShadow dispose={null} material={matPaintedSteel}>
+        <mesh position={[0, 0, 0.28]} castShadow material={matStructure}>
           <boxGeometry args={[1.2, 0.15, 0.08]} />
         </mesh>
-        <mesh position={[0, 0, -0.28]} castShadow dispose={null} material={matPaintedSteel}>
+        <mesh position={[0, 0, -0.28]} castShadow material={matStructure}>
           <boxGeometry args={[1.2, 0.15, 0.08]} />
         </mesh>
+        
         {/* Conveyor Belt */}
-        <mesh position={[0, 0.08, 0]} castShadow dispose={null} material={matRubber}>
+        <mesh position={[0, 0.08, 0]} castShadow material={matRubber}>
           <boxGeometry args={[1.15, 0.04, 0.5]} />
         </mesh>
+        
         {/* Rollers */}
         {Array.from({ length: 6 }, (_, i) => {
           const x = -0.5 + (i / 5) * 1.0;
           return (
-            <mesh key={i} position={[x, 0.08, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteel}>
+            <mesh key={i} position={[x, 0.08, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow material={matBodyDark}>
               <cylinderGeometry args={[0.06, 0.06, 0.45, 16]} />
             </mesh>
           );
         })}
-        {/* Conveyor Motor/Drive at the end */}
-        <mesh position={[0.65, 0, 0]} castShadow dispose={null} material={matPaintDark}>
-          <boxGeometry args={[0.2, 0.2, 0.3]} />
+
+        {/* Conveyor Drive Motor */}
+        <mesh position={[0.65, 0, 0]} castShadow material={matBodyDark}>
+          <boxGeometry args={[0.25, 0.25, 0.3]} />
+        </mesh>
+        {/* Drive motor safety guard */}
+        <mesh position={[0.65, 0.15, 0]} material={matSafety}>
+          <boxGeometry args={[0.2, 0.15, 0.25]} />
         </mesh>
       </group>
     </group>
@@ -125,50 +201,59 @@ function MainFrame({ width, depth }: { width: number; depth: number }) {
 }
 
 /* ==========================================================================
-   HOPPERS & LOAD CELLS
+   4. HOPPERS & LOAD CELLS
    ========================================================================== */
 
 function Hoppers({ width, depth, height }: { width: number; depth: number; height: number }) {
-  const baseY = 1.2; // Top of the main frame legs
+  const baseY = 1.2;
 
   return (
     <group position={[0, baseY, 0]}>
-      {/* Load Cells (4 pucks between frame and weigh hopper) */}
+      {/* Load Cells (4 pucks) */}
       {[
-        [width / 2 - 0.3, 0, depth / 2 - 0.3],
-        [-width / 2 + 0.3, 0, depth / 2 - 0.3],
-        [width / 2 - 0.3, 0, -depth / 2 + 0.3],
-        [-width / 2 + 0.3, 0, -depth / 2 + 0.3],
+        [width * 0.35, 0, depth * 0.35],
+        [-width * 0.35, 0, depth * 0.35],
+        [width * 0.35, 0, -depth * 0.35],
+        [-width * 0.35, 0, -depth * 0.35],
       ].map((pos, i) => (
-        <mesh key={i} position={pos} dispose={null} material={matSteelDark}>
-          <cylinderGeometry args={[0.06, 0.06, 0.15, 16]} />
+        <group key={i} position={pos}>
+          <mesh castShadow material={matBodyDark}>
+            <cylinderGeometry args={[0.06, 0.06, 0.15, 16]} />
+          </mesh>
+          {/* Load cell mounting bolts */}
+          <Bolt position={[0, 0.08, 0]} size={0.015} />
+          <Bolt position={[0, -0.08, 0]} rotation={[0, Math.PI, 0]} size={0.015} />
+        </group>
+      ))}
+
+      {/* Weigh Hopper */}
+      <mesh position={[0, height * 0.3 + 0.15, 0]} castShadow receiveShadow material={matBody}>
+        <boxGeometry args={[width * 0.8, height * 0.6, depth * 0.8]} />
+      </mesh>
+      
+      {/* Weigh hopper stiffener rings */}
+      {[-0.15, 0.15].map((y, i) => (
+        <mesh key={i} position={[0, height * 0.3 + 0.15 + y, 0]} material={matStructure}>
+           <boxGeometry args={[width * 0.82, 0.05, depth * 0.82]} />
         </mesh>
       ))}
 
-      {/* Weigh Hopper (Boxy, stainless steel) */}
-      <mesh position={[0, height / 2 + 0.15, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
-        <boxGeometry args={[width * 0.8, height * 0.6, depth * 0.8]} />
-      </mesh>
-
-      {/* Feed Hopper (Inverted pyramid on top) */}
-      <mesh position={[0, height * 0.6 + 0.15 + height * 0.3, 0]} castShadow receiveShadow dispose={null} material={matSteel}>
-        <coneGeometry args={[width * 0.45, height * 0.6, 4]} />
-      </mesh>
-      {/* Rotate cone to align with box */}
-      <mesh position={[0, height * 0.6 + 0.15 + height * 0.3, 0]} rotation={[0, Math.PI / 4, 0]} castShadow dispose={null} material={matSteel}>
+      {/* Feed Hopper (Inverted pyramid) */}
+      <mesh position={[0, height * 0.6 + 0.15 + height * 0.3, 0]} rotation={[0, Math.PI / 4, 0]} castShadow receiveShadow material={matBody}>
         <boxGeometry args={[width * 0.85, height * 0.6, depth * 0.85]} />
       </mesh>
       
-      {/* Feed Hopper Top Flange (Connection to Rotary Valve) */}
-      <mesh position={[0, height * 0.9 + 0.15, 0]} dispose={null} material={matSteelDark}>
+      {/* Feed Hopper Top Flange */}
+      <mesh position={[0, height * 0.9 + 0.15, 0]} material={matStructure}>
         <cylinderGeometry args={[0.4, 0.4, 0.1, 24]} />
       </mesh>
+      <BoltCircle radius={0.4} count={8} y={height * 0.9 + 0.15} z={0} size={0.016} rotation={[0, 0, 0]} />
     </group>
   );
 }
 
 /* ==========================================================================
-   BAG CLAMP & FILLING SPOUT
+   5. BAG CLAMP & FILLING SPOUT
    ========================================================================== */
 
 function BagClampAndSpout({ width, depth, clampOpen }: { width: number; depth: number; clampOpen: boolean }) {
@@ -177,36 +262,51 @@ function BagClampAndSpout({ width, depth, clampOpen }: { width: number; depth: n
 
   return (
     <group position={[0, baseY - 0.2, 0]}>
-      {/* Filling Spout (Center tube) */}
-      <mesh castShadow dispose={null} material={matSteel}>
+      {/* Filling Spout */}
+      <mesh castShadow material={matBody}>
         <cylinderGeometry args={[0.12, 0.12, 0.6, 24]} />
       </mesh>
-      <mesh position={[0, -0.35, 0]} dispose={null} material={matSteelDark}>
+      <mesh position={[0, -0.35, 0]} material={matStructure}>
         <cylinderGeometry args={[0.14, 0.14, 0.1, 24]} />
+      </mesh>
+      {/* Spout flange */}
+      <mesh position={[0, -0.42, 0]} rotation={[Math.PI / 2, 0, 0]} material={matStructure}>
+        <torusGeometry args={[0.15, 0.02, 8, 24]} />
       </mesh>
 
       {/* Left Jaw */}
-      <mesh position={[-jawOffset - 0.15, 0.1, 0]} castShadow dispose={null} material={matSteelDark}>
+      <mesh position={[-jawOffset - 0.15, 0.1, 0]} castShadow material={matBodyDark}>
         <boxGeometry args={[0.15, 0.3, depth * 0.6]} />
       </mesh>
       {/* Right Jaw */}
-      <mesh position={[jawOffset + 0.15, 0.1, 0]} castShadow dispose={null} material={matSteelDark}>
+      <mesh position={[jawOffset + 0.15, 0.1, 0]} castShadow material={matBodyDark}>
         <boxGeometry args={[0.15, 0.3, depth * 0.6]} />
       </mesh>
 
-      {/* Pneumatic Cylinders (Above jaws) */}
-      <mesh position={[-0.3, 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteelDark}>
-        <cylinderGeometry args={[0.04, 0.04, 0.3, 16]} />
-      </mesh>
-      <mesh position={[0.3, 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} dispose={null} material={matSteelDark}>
-        <cylinderGeometry args={[0.04, 0.04, 0.3, 16]} />
-      </mesh>
+      {/* Pneumatic Cylinders */}
+      <group position={[-0.3, 0.4, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh castShadow material={matBodyDark}>
+          <cylinderGeometry args={[0.05, 0.05, 0.35, 16]} />
+        </mesh>
+        {/* Piston rod */}
+        <mesh position={[0, -0.2, 0]} material={matBody}>
+          <cylinderGeometry args={[0.02, 0.02, 0.15, 12]} />
+        </mesh>
+      </group>
+      <group position={[0.3, 0.4, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh castShadow material={matBodyDark}>
+          <cylinderGeometry args={[0.05, 0.05, 0.35, 16]} />
+        </mesh>
+        <mesh position={[0, -0.2, 0]} material={matBody}>
+          <cylinderGeometry args={[0.02, 0.02, 0.15, 12]} />
+        </mesh>
+      </group>
     </group>
   );
 }
 
 /* ==========================================================================
-   ANIMATED BAG
+   6. REALISTIC ANIMATED FLOUR BAG
    ========================================================================== */
 
 function AnimatedBag({
@@ -221,6 +321,7 @@ function AnimatedBag({
   active: boolean;
 }) {
   const meshRef = useRef<THREE.Mesh>(null!);
+  const seamRef = useRef<THREE.Mesh>(null!);
 
   useFrame(() => {
     if (!meshRef.current) return;
@@ -257,27 +358,44 @@ function AnimatedBag({
     meshRef.current.visible = visible;
     meshRef.current.position.set(posX, posY, 0);
     meshRef.current.scale.set(1, Math.max(0.01, scaleY / 0.81), 1);
+    
+    if (seamRef.current) {
+        seamRef.current.scale.set(1, Math.max(0.01, scaleY / 0.81), 1);
+        seamRef.current.position.y = (scaleY * 0.81) / 2; // Keep seam at top
+    }
   });
 
   return (
-    <mesh ref={meshRef} position={[0, 0.5, 0]} castShadow>
-      <boxGeometry args={[depth * 0.35, 0.81, width * 0.22]} />
-      <meshStandardMaterial color={COLORS.bagWhite} roughness={0.9} metalness={0} />
-    </mesh>
+    <group ref={meshRef} position={[0, 0.5, 0]}>
+      {/* Main Bag Body */}
+      <mesh castShadow>
+        <boxGeometry args={[depth * 0.35, 0.81, width * 0.22]} />
+        <meshStandardMaterial color="#f0f0eb" roughness={0.95} metalness={0} />
+      </mesh>
+      {/* Bag Seam / Fold line detail */}
+      <mesh ref={seamRef} position={[0, 0.4, 0]}>
+        <boxGeometry args={[depth * 0.36, 0.02, width * 0.23]} />
+        <meshStandardMaterial color="#d0d0cb" roughness={0.95} metalness={0} />
+      </mesh>
+      {/* Subtle bag branding/text simulation */}
+      <mesh position={[0, 0.1, width * 0.111]}>
+         <planeGeometry args={[depth * 0.25, 0.3]} />
+         <meshStandardMaterial color="#e0e0db" roughness={0.95} metalness={0} />
+      </mesh>
+    </group>
   );
 }
 
 /* ==========================================================================
-   OPERATOR PANEL
+   7. OPERATOR PANEL (Enhanced)
    ========================================================================== */
 
 function OperatorPanel({ position }: { position: V3 }) {
   return (
     <group position={position}>
       {/* Panel Box */}
-      <mesh castShadow>
+      <mesh castShadow material={matBodyDark}>
         <boxGeometry args={[0.6, 0.8, 0.2]} />
-        <meshStandardMaterial color={COLORS.hmiBody} metalness={0.5} roughness={0.5} />
       </mesh>
       
       {/* HMI Screen */}
@@ -286,7 +404,7 @@ function OperatorPanel({ position }: { position: V3 }) {
         <meshStandardMaterial color={COLORS.hmiScreen} emissive={COLORS.hmiScreen} emissiveIntensity={0.5} metalness={0.1} roughness={0.2} />
       </mesh>
       
-      {/* Buttons */}
+      {/* Start/Stop Buttons */}
       <mesh position={[-0.15, -0.15, 0.11]}>
         <cylinderGeometry args={[0.03, 0.03, 0.04, 16]} />
         <meshStandardMaterial color={COLORS.accentGreen} />
@@ -296,13 +414,13 @@ function OperatorPanel({ position }: { position: V3 }) {
         <meshStandardMaterial color={COLORS.accentRed} />
       </mesh>
       
-      {/* Emergency Stop (Big Red Mushroom) */}
-      <mesh position={[0.15, -0.15, 0.12]}>
-        <cylinderGeometry args={[0.05, 0.05, 0.03, 16]} />
-        <meshStandardMaterial color={COLORS.eStopRed} />
-      </mesh>
-      <mesh position={[0.15, -0.15, 0.14]}>
+      {/* Emergency Stop (Big Red Mushroom with Yellow Ring) */}
+      <mesh position={[0.15, -0.15, 0.11]}>
         <cylinderGeometry args={[0.06, 0.06, 0.02, 16]} />
+        <meshStandardMaterial color={COLORS.accentYellow} />
+      </mesh>
+      <mesh position={[0.15, -0.15, 0.13]}>
+        <cylinderGeometry args={[0.05, 0.05, 0.03, 16]} />
         <meshStandardMaterial color={COLORS.eStopRed} />
       </mesh>
     </group>
@@ -310,37 +428,54 @@ function OperatorPanel({ position }: { position: V3 }) {
 }
 
 /* ==========================================================================
-   SAFETY GUARDS & PLATFORM
+   8. SAFETY GUARDS & PLATFORM
    ========================================================================== */
 
 function SafetyGuards({ width, depth }: { width: number; depth: number }) {
   return (
     <group>
       {/* Yellow Safety Rails around the clamp area */}
-      <mesh position={[width / 2 + 0.1, 0.8, depth / 2 + 0.2]} dispose={null} material={matRailYellow}>
+      <mesh position={[width / 2 + 0.1, 0.8, depth / 2 + 0.2]} castShadow material={matSafety}>
         <boxGeometry args={[0.05, 0.8, 0.6]} />
       </mesh>
-      <mesh position={[-width / 2 - 0.1, 0.8, depth / 2 + 0.2]} dispose={null} material={matRailYellow}>
+      <mesh position={[-width / 2 - 0.1, 0.8, depth / 2 + 0.2]} castShadow material={matSafety}>
         <boxGeometry args={[0.05, 0.8, 0.6]} />
       </mesh>
-      <mesh position={[0, 1.2, depth / 2 + 0.2]} dispose={null} material={matRailYellow}>
+      <mesh position={[0, 1.2, depth / 2 + 0.2]} material={matSafety}>
         <boxGeometry args={[width + 0.3, 0.05, 0.05]} />
+      </mesh>
+      {/* Toe board */}
+      <mesh position={[0, 0.45, depth / 2 + 0.2]} material={matSafety}>
+        <boxGeometry args={[width + 0.3, 0.1, 0.04]} />
       </mesh>
 
       {/* Service Platform (Back/Side) */}
-      <mesh position={[-width / 2 - 0.5, 1.5, 0]} castShadow dispose={null} material={matPaintedSteel}>
-        <boxGeometry args={[0.8, 0.05, depth + 0.4]} />
+      <mesh position={[-width / 2 - 0.5, 1.5, 0]} castShadow material={matBodyDark}>
+        <boxGeometry args={[0.8, 0.08, depth + 0.4]} />
       </mesh>
+      {/* Platform grating pattern */}
+      {Array.from({ length: 4 }, (_, i) => {
+        const z = -depth / 2 + 0.2 + (i / 3) * depth;
+        return (
+          <mesh key={i} position={[-width / 2 - 0.5, 1.54, z]} material={matStructure}>
+            <boxGeometry args={[0.75, 0.02, 0.04]} />
+          </mesh>
+        );
+      })}
+      
       {/* Platform Railing */}
-      <mesh position={[-width / 2 - 0.9, 1.9, 0]} dispose={null} material={matRailYellow}>
+      <mesh position={[-width / 2 - 0.9, 1.9, 0]} material={matSafety}>
         <boxGeometry args={[0.05, 0.8, depth + 0.4]} />
+      </mesh>
+      <mesh position={[-width / 2 - 0.9, 1.55, 0]} material={matSafety}>
+        <boxGeometry args={[0.05, 0.1, depth + 0.4]} />
       </mesh>
     </group>
   );
 }
 
 /* ==========================================================================
-   PLC DATA PANEL
+   9. PLC DATA PANEL
    ========================================================================== */
 
 function DataPanel({ position, active, bagCount }: { position: V3; active: boolean; bagCount: number }) {
@@ -359,8 +494,14 @@ function DataPanel({ position, active, bagCount }: { position: V3; active: boole
   return (
     <Float speed={1.5} rotationIntensity={0.05} floatIntensity={0.15}>
       <group position={position}>
-        <mesh position={[0, -0.5, -0.02]}><planeGeometry args={[2.2, 2.2]} /><meshStandardMaterial color="#ffffff" transparent opacity={0.92} side={THREE.DoubleSide} /></mesh>
-        <mesh position={[0, -0.5, -0.015]}><planeGeometry args={[2.24, 2.24]} /><meshStandardMaterial color={COLORS.safetyYellow} transparent opacity={0.4} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, -0.5, -0.02]}>
+          <planeGeometry args={[2.2, 2.2]} />
+          <meshStandardMaterial color="#ffffff" transparent opacity={0.92} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, -0.5, -0.015]}>
+          <planeGeometry args={[2.24, 2.24]} />
+          <meshStandardMaterial color={COLORS.accentCyan} transparent opacity={0.3} side={THREE.DoubleSide} />
+        </mesh>
         {lines.map((line, i) => (
           <Text key={i} position={[-1, -i * 0.22, 0]} fontSize={line.size} color={line.color} anchorX="left" anchorY="top" fontWeight={line.bold ? 'bold' : 'normal'}>
             {line.text}
@@ -372,7 +513,7 @@ function DataPanel({ position, active, bagCount }: { position: V3; active: boole
 }
 
 /* ==========================================================================
-   MAIN PACKING MACHINE COMPONENT
+   10. MAIN PACKING MACHINE COMPONENT
    ========================================================================== */
 
 export interface PackingMachineProps {
@@ -445,7 +586,7 @@ export function PackingMachineComponent({
       </mesh>
       
       {showClickText && (
-        <Text position={[0, 3.5, depth / 2 + 0.5]} fontSize={0.1} color={COLORS.hmiScreen} anchorX="center" anchorY="middle">
+        <Text position={[0, 3.5, depth / 2 + 0.5]} fontSize={0.1} color={COLORS.accentCyan} anchorX="center" anchorY="middle">
           {active ? '● CLICK TO STOP CYCLE' : '○ CLICK TO START CYCLE'}
         </Text>
       )}
@@ -454,7 +595,7 @@ export function PackingMachineComponent({
 }
 
 /* ==========================================================================
-   SCENE EXPORT
+   11. ENVIRONMENT & EXPORT
    ========================================================================== */
 
 function Ground() {
@@ -474,7 +615,19 @@ function Lights() {
     <>
       <ambientLight intensity={0.6} />
       <hemisphereLight args={['#cfe8ff', '#4a4a3f', 0.5]} />
-      <directionalLight position={[10, 15, 10]} intensity={1.4} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-left={-10} shadow-camera-right={10} shadow-camera-top={10} shadow-camera-bottom={-10} shadow-camera-far={40} />
+      <directionalLight
+        position={[10, 15, 10]}
+        intensity={1.4}
+        castShadow
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
+        shadow-camera-left={-10}
+        shadow-camera-right={10}
+        shadow-camera-top={10}
+        shadow-camera-bottom={-10}
+        shadow-camera-far={40}
+        shadow-bias={-0.0001}
+      />
     </>
   );
 }
