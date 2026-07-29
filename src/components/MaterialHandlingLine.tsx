@@ -60,6 +60,7 @@ import { SafetyProps } from './factory/SafetyProps';
 import { EnvironmentalWear } from './factory/EnvironmentalWear';
 import { EquipmentIds } from './factory/EquipmentIds';
 import { FlourDust, MoistureVapor } from './effects/FlourDust';
+import { SightGlassFlow } from './effects/SightGlassFlow';
 import {
   REF,
   ductBridgeY,
@@ -1223,6 +1224,29 @@ export function MaterialHandlingLine() {
       />
       <MoistureVapor
         position={[dampX, dampY + REF.dampener.radius + 0.5, dampZ]}
+        active={lineActive}
+      />
+
+      {/* Sight glasses on vertical feed drops: product visible in transit */}
+      <SightGlassFlow
+        start={[millInlet[0], millInlet[1] + 1.4, millInlet[2]]}
+        end={[millInlet[0], millInlet[1] + 0.35, millInlet[2]]}
+        radius={0.16}
+        color="#c8a24a"
+        active={lineActive}
+      />
+      <SightGlassFlow
+        start={[packingInlet[0], packingInlet[1] + 1.3, packingInlet[2]]}
+        end={[packingInlet[0], packingInlet[1] + 0.3, packingInlet[2]]}
+        radius={0.13}
+        color="#f5f0e0"
+        active={lineActive}
+      />
+      <SightGlassFlow
+        start={[dampenerInlet[0], dampenerInlet[1] + 1.1, dampenerInlet[2]]}
+        end={[dampenerInlet[0], dampenerInlet[1] + 0.25, dampenerInlet[2]]}
+        radius={0.12}
+        color="#c8a24a"
         active={lineActive}
       />
     </group>
