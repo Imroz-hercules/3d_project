@@ -335,7 +335,7 @@ function SieveCabinet({ width, height, depth, active, isDoorOpen, onDoorToggle }
         width={doorWidth} 
         height={doorHeight} 
         isOpen={isDoorOpen} 
-        onToggle={onToggle} 
+        onToggle={onDoorToggle} 
       />
       <InspectionDoor 
         position={[doorWidth / 2 + 0.02, 0, depth / 2 + 0.02]} 
@@ -343,7 +343,7 @@ function SieveCabinet({ width, height, depth, active, isDoorOpen, onDoorToggle }
         width={doorWidth} 
         height={doorHeight} 
         isOpen={isDoorOpen} 
-        onToggle={onToggle} 
+        onToggle={onDoorToggle} 
       />
     </group>
   );
