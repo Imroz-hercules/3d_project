@@ -58,6 +58,7 @@ import { Electrical } from './factory/Electrical';
 import { FloorMarkings } from './factory/FloorMarkings';
 import { SafetyProps } from './factory/SafetyProps';
 import { EnvironmentalWear } from './factory/EnvironmentalWear';
+import { EquipmentIds } from './factory/EquipmentIds';
 import {
   REF,
   ductBridgeY,
@@ -840,6 +841,7 @@ export function MaterialHandlingLine() {
       <FloorMarkings />
       <SafetyProps />
       <EnvironmentalWear />
+      <EquipmentIds />
       <PlantInfrastructure />
       <DustCollection active={lineActive} />
       <Electrical active={lineActive} />
