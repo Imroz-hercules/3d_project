@@ -15,6 +15,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import { ScrollingBelt } from './machineParts/animation';
 
 type V3 = [number, number, number];
 
@@ -65,12 +66,6 @@ const matSafety = new THREE.MeshStandardMaterial({
   color: '#e0a92c',
   metalness: 0.5,
   roughness: 0.6,
-});
-
-const matRubber = new THREE.MeshStandardMaterial({
-  color: '#1a1a1a',
-  metalness: 0.1,
-  roughness: 0.9,
 });
 
 const COLORS = {
@@ -194,7 +189,6 @@ function ConveyorFrame({ length, width, height }: { length: number; width: numbe
    ========================================================================== */
 
 function BeltAndRollers({ length, width, height, active }: { length: number; width: number; height: number; active: boolean }) {
-  const beltRef = useRef<THREE.Mesh>(null!);
   const driveRollerRef = useRef<THREE.Mesh>(null!);
   const tailRollerRef = useRef<THREE.Mesh>(null!);
 
@@ -207,10 +201,14 @@ function BeltAndRollers({ length, width, height, active }: { length: number; wid
 
   return (
     <group>
-      {/* Belt Surface */}
-      <mesh ref={beltRef} position={[0, height - 0.05, 0]} castShadow receiveShadow material={matRubber}>
-        <boxGeometry args={[length - 0.3, 0.04, width - 0.2]} />
-      </mesh>
+      {/* Belt Surface — texture scrolls in sync with roller rotation */}
+      <ScrollingBelt
+        length={length - 0.3}
+        width={width - 0.2}
+        position={[0, height - 0.05, 0]}
+        active={active}
+        speed={0.36}
+      />
 
       {/* Drive Roller (Right end) */}
       <mesh ref={driveRollerRef} position={[length / 2 - 0.15, height - 0.1, 0]} rotation={[0, 0, Math.PI / 2]} castShadow material={matBodyDark}>
