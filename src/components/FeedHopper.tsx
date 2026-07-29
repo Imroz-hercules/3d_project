@@ -593,7 +593,9 @@ function VentWithScreen({ position }: { position: V3 }) {
    10. LEVEL SENSOR PORTS
    ========================================================================== */
 
-function LevelSensorPorts({ boxHeight, funnelTopY }: { boxHeight: number; funnelTopY: number }) {
+function LevelSensorPorts({ boxHeight, funnelTopY, depth }: {
+  boxHeight: number; funnelTopY: number; depth: number;
+}) {
   const ports = [0.25, 0.55, 0.85];
   return (
     <>
@@ -641,9 +643,8 @@ function Nameplate({ position }: { position: V3 }) {
       </Text>
       {/* Plate screws */}
       {[[-0.4, 0.11], [0.4, 0.11], [-0.4, -0.11], [0.4, -0.11]].map(([x, y], i) => (
-        <mesh key={i} position={[x, y, 0.008]}>
+        <mesh key={i} position={[x, y, 0.008]} material={matBolt}>
           <cylinderGeometry args={[0.012, 0.012, 0.01, 6]} />
-          <meshStandardMaterial color={COLORS.bolt} metalness={0.9} roughness={0.3} />
         </mesh>
       ))}
     </group>
@@ -731,7 +732,7 @@ export function FeedHopperComponent({
       <VentWithScreen position={[width * 0.28, lidTopY + 0.12, 0]} />
 
       {/* Level sensor ports (3 heights) */}
-      <LevelSensorPorts boxHeight={boxHeight} funnelTopY={funnelTopY} />
+      <LevelSensorPorts boxHeight={boxHeight} funnelTopY={funnelTopY} depth={depth} />
 
       {/* Cable conduit bracket */}
       <CableConduit boxHeight={boxHeight} funnelTopY={funnelTopY} />
