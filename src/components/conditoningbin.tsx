@@ -53,15 +53,6 @@ const matGasket = new THREE.MeshStandardMaterial({
   roughness: 0.95,
 });
 
-const matGlass = new THREE.MeshPhysicalMaterial({
-  color: '#d4e6ff',
-  transparent: true,
-  opacity: 0.4,
-  roughness: 0.05,
-  transmission: 0.7,
-  thickness: 0.1,
-});
-
 const COLORS = {
   accentYellow: '#e0a92c',
   accentGreen: '#3fae56',
