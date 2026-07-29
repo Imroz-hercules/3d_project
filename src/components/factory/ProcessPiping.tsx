@@ -7,6 +7,7 @@
 
 import type { ReactNode } from 'react';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
   matDustDuct,
   matFlange,
@@ -54,6 +55,32 @@ function ductMat(color: string = COLORS.steel): THREE.MeshStandardMaterial {
    FLANGE / STRAIGHT DUCT
    ========================================================================== */
 
+/**
+ * Four hex bolts merged into one geometry (single draw call), built at unit
+ * scale: bolt centres at ±0.35, radius 0.055, fixed height. Scale X/Z by
+ * flange size at the mesh level.
+ */
+const boltQuadGeometry: THREE.BufferGeometry = (() => {
+  const parts: THREE.BufferGeometry[] = [];
+  const offsets: [number, number][] = [
+    [-0.35, -0.35],
+    [-0.35, 0.35],
+    [0.35, -0.35],
+    [0.35, 0.35],
+  ];
+  for (const [x, z] of offsets) {
+    const g = new THREE.CylinderGeometry(0.055, 0.055, 1, 6);
+    g.translate(x, 0, z);
+    parts.push(g);
+  }
+  const merged = mergeGeometries(parts);
+  for (const g of parts) g.dispose();
+  return merged;
+})();
+
+/** Bolts and gasket only appear on main-duct flanges (duct radius ≥ ~0.08). */
+const FLANGE_DETAIL_MIN_SIZE = 0.2;
+
 export function SquareFlange({
   size,
   thickness = 0.04,
@@ -63,11 +90,35 @@ export function SquareFlange({
   thickness?: number;
   position: V3;
 }) {
+  const detailed = size >= FLANGE_DETAIL_MIN_SIZE;
   return (
     <group position={position}>
       <mesh castShadow={false} receiveShadow={false} dispose={null} material={matFlange}>
         <boxGeometry args={[size, thickness, size]} />
       </mesh>
+      {detailed && (
+        <>
+          {/* Gasket seam */}
+          <mesh
+            position={[0, thickness / 2 + 0.005, 0]}
+            castShadow={false}
+            receiveShadow={false}
+            dispose={null}
+            material={matRubber}
+          >
+            <boxGeometry args={[size * 0.9, 0.012, size * 0.9]} />
+          </mesh>
+          {/* Corner bolts (merged, one draw call) */}
+          <mesh
+            geometry={boltQuadGeometry}
+            scale={[size, thickness + 0.035, size]}
+            castShadow={false}
+            receiveShadow={false}
+            dispose={null}
+            material={matSteelDark}
+          />
+        </>
+      )}
     </group>
   );
 }
@@ -93,9 +144,11 @@ export function RoundDuct({
     new THREE.Vector3(0, 1, 0),
     dir.clone().normalize()
   );
+  // Large main ducts get a rounder profile; small utility lines stay 8-sided.
+  const segments = radius >= 0.12 ? 12 : 8;
   return (
     <mesh position={mid.toArray() as V3} quaternion={quat} castShadow={false} receiveShadow={false} dispose={null} material={ductMat(color)}>
-      <cylinderGeometry args={[radius, radius, len, 8]} />
+      <cylinderGeometry args={[radius, radius, len, segments]} />
     </mesh>
   );
 }
