@@ -10,6 +10,7 @@ import { PlantMaterialsProvider } from "./materials";
 import { HDRI_FACTORY } from "./materials/paths";
 import { CameraRig } from "./navigation/CameraRig";
 import { NavFocusController } from "./navigation/NavFocusController";
+import { PostFX, usePostFxEnabled } from "./perf/PostFX";
 import { OperatorShell } from "./shell";
 import { useVisibilityLayers } from "./shell/services/visibility";
 import {
@@ -24,6 +25,7 @@ function App() {
   const groundR = plantGroundRadius();
   const vis = useVisibilityLayers();
   const { tokens } = useTheme();
+  const postFx = usePostFxEnabled();
   const [envIntensity, setEnvIntensity] = useState(tokens.scene.environment.environmentIntensity);
   const [shadowOpacity, setShadowOpacity] = useState(tokens.scene.rendering.contactShadowOpacity);
   const lastSceneUi = useRef({ env: envIntensity, shadow: shadowOpacity });
@@ -76,6 +78,9 @@ function App() {
           />
           <Sky sunPosition={[100, 40, 100]} turbidity={3} rayleigh={0.6} mieCoefficient={0.003} />
 
+          {/* Subtle depth haze: distant zones fade, foreground stays crisp */}
+          <fog attach="fog" args={[tokens.scene.environment.clearColor, groundR * 1.4, groundR * 4.2]} />
+
           <Suspense fallback={null}>
             <Environment files={HDRI_FACTORY} environmentIntensity={envIntensity} background={false} />
             <PlantMaterialsProvider enableTextures>
@@ -98,6 +103,8 @@ function App() {
               />
             </PlantMaterialsProvider>
           </Suspense>
+
+          {postFx && <PostFX />}
 
           <NavFocusController />
           <CameraRig maxDistance={groundR * 2.5} />
