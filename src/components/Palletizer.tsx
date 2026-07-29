@@ -11,9 +11,9 @@
  * ------------------------------------------------------------------------
  */
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
+import { OrbitControls, Sky, Text, Float, Instances, Instance } from '@react-three/drei';
 import * as THREE from 'three';
 
 type V3 = [number, number, number];
@@ -323,47 +323,56 @@ function SafetyFence({ size }: { size: number }) {
   const panelWidth = 1.0;
   const panelsPerSide = Math.floor(size / panelWidth);
 
+  // All panel frame bars and mesh infills as instances: 2 draw calls total
+  // instead of ~5 meshes per panel.
+  const { bars, infills } = useMemo(() => {
+    const bars: { position: V3; scale: V3 }[] = [];
+    const infills: { position: V3; scale: V3 }[] = [];
+
+    for (const sideX of [-1, 1]) {
+      for (let i = 0; i < panelsPerSide; i++) {
+        const z = -size / 2 + panelWidth / 2 + i * panelWidth;
+        if (sideX === -1 && Math.abs(z) < 0.6) continue; // Infeed opening
+        if (sideX === 1 && z > 0.4 && z < 1.6) continue; // Outfeed opening
+        const px = (sideX * size) / 2;
+        bars.push({ position: [px, fenceHeight - 0.05, z], scale: [0.08, 0.08, panelWidth - 0.1] });
+        bars.push({ position: [px, 0.05, z], scale: [0.08, 0.08, panelWidth - 0.1] });
+        bars.push({ position: [px + 0.04, fenceHeight / 2, z + panelWidth / 2 - 0.05], scale: [0.08, fenceHeight - 0.1, 0.08] });
+        bars.push({ position: [px + 0.04, fenceHeight / 2, z - panelWidth / 2 + 0.05], scale: [0.08, fenceHeight - 0.1, 0.08] });
+        infills.push({ position: [px + 0.04, fenceHeight / 2, z], scale: [0.02, fenceHeight - 0.15, panelWidth - 0.2] });
+      }
+    }
+    for (const sideZ of [-1, 1]) {
+      for (let i = 0; i < panelsPerSide; i++) {
+        const x = -size / 2 + panelWidth / 2 + i * panelWidth;
+        const pz = (sideZ * size) / 2;
+        bars.push({ position: [x, fenceHeight - 0.05, pz], scale: [panelWidth - 0.1, 0.08, 0.08] });
+        bars.push({ position: [x, 0.05, pz], scale: [panelWidth - 0.1, 0.08, 0.08] });
+        bars.push({ position: [x + panelWidth / 2 - 0.05, fenceHeight / 2, pz + 0.04], scale: [0.08, fenceHeight - 0.1, 0.08] });
+        bars.push({ position: [x - panelWidth / 2 + 0.05, fenceHeight / 2, pz + 0.04], scale: [0.08, fenceHeight - 0.1, 0.08] });
+        infills.push({ position: [x, fenceHeight / 2, pz + 0.04], scale: [panelWidth - 0.2, fenceHeight - 0.15, 0.02] });
+      }
+    }
+    return { bars, infills };
+  }, [size, panelsPerSide]);
+
   return (
     <group>
-      {/* Fence Panels */}
-      {[-1, 1].map((sideX) =>
-        Array.from({ length: panelsPerSide }, (_, i) => {
-          const z = -size / 2 + panelWidth / 2 + i * panelWidth;
-          if (sideX === -1 && Math.abs(z) < 0.6) return null; // Infeed opening
-          if (sideX === 1 && z > 0.4 && z < 1.6) return null; // Outfeed opening
-          return (
-            <group key={`x-${sideX}-${i}`} position={[sideX * size / 2, fenceHeight / 2, z]}>
-              {/* Yellow Frame */}
-              <mesh position={[0, fenceHeight / 2 - 0.05, 0]} material={matSafety}><boxGeometry args={[0.08, 0.08, panelWidth - 0.1]} /></mesh>
-              <mesh position={[0, -fenceHeight / 2 + 0.05, 0]} material={matSafety}><boxGeometry args={[0.08, 0.08, panelWidth - 0.1]} /></mesh>
-              <mesh position={[0.04, 0, panelWidth / 2 - 0.05]} material={matSafety}><boxGeometry args={[0.08, fenceHeight - 0.1, 0.08]} /></mesh>
-              <mesh position={[0.04, 0, -panelWidth / 2 + 0.05]} material={matSafety}><boxGeometry args={[0.08, fenceHeight - 0.1, 0.08]} /></mesh>
-              {/* Mesh infill */}
-              <mesh position={[0.04, 0, 0]}>
-                <boxGeometry args={[0.02, fenceHeight - 0.15, panelWidth - 0.2]} />
-                <meshStandardMaterial color={COLORS.fenceMesh} metalness={0.6} roughness={0.4} wireframe />
-              </mesh>
-            </group>
-          );
-        })
-      )}
-      {[-1, 1].map((sideZ) =>
-        Array.from({ length: panelsPerSide }, (_, i) => {
-          const x = -size / 2 + panelWidth / 2 + i * panelWidth;
-          return (
-            <group key={`z-${sideZ}-${i}`} position={[x, fenceHeight / 2, sideZ * size / 2]}>
-              <mesh position={[0, fenceHeight / 2 - 0.05, 0]} material={matSafety}><boxGeometry args={[panelWidth - 0.1, 0.08, 0.08]} /></mesh>
-              <mesh position={[0, -fenceHeight / 2 + 0.05, 0]} material={matSafety}><boxGeometry args={[panelWidth - 0.1, 0.08, 0.08]} /></mesh>
-              <mesh position={[panelWidth / 2 - 0.05, 0, 0.04]} material={matSafety}><boxGeometry args={[0.08, fenceHeight - 0.1, 0.08]} /></mesh>
-              <mesh position={[-panelWidth / 2 + 0.05, 0, 0.04]} material={matSafety}><boxGeometry args={[0.08, fenceHeight - 0.1, 0.08]} /></mesh>
-              <mesh position={[0, 0, 0.04]}>
-                <boxGeometry args={[panelWidth - 0.2, fenceHeight - 0.15, 0.02]} />
-                <meshStandardMaterial color={COLORS.fenceMesh} metalness={0.6} roughness={0.4} wireframe />
-              </mesh>
-            </group>
-          );
-        })
-      )}
+      {/* Fence frame bars — single instanced draw */}
+      <Instances limit={bars.length} material={matSafety} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        {bars.map((b, i) => (
+          <Instance key={i} position={b.position} scale={b.scale} />
+        ))}
+      </Instances>
+      {/* Mesh infill panels — single instanced draw */}
+      <Instances limit={infills.length} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color={COLORS.fenceMesh} metalness={0.6} roughness={0.4} wireframe />
+        {infills.map((b, i) => (
+          <Instance key={i} position={b.position} scale={b.scale} />
+        ))}
+      </Instances>
 
       {/* Sliding Safety Gate */}
       <group position={[0, fenceHeight / 2, size / 2]}>
