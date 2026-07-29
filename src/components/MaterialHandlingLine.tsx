@@ -35,6 +35,7 @@ import { PalletizerComponent } from './Palletizer';
 import { WarehouseStaging } from './WarehouseStaging';
 import { MaterialFlow, DustMotes } from './MaterialFlow';
 import { SelectableMachine } from '../twin/SelectableMachine';
+import { MachineCallout } from '../twin/MachineCallout';
 import { useLineActive, useTwinState } from '../twin/useTwinState';
 import { buildMachineRegistry } from '../navigation/MachineRegistry';
 import { useNavFocus } from '../navigation/useNavState';
@@ -851,6 +852,7 @@ export function MaterialHandlingLine() {
       {buildMachineRegistry().map((m) => (
         <SelectableMachine key={m.id} id={m.id} position={m.position} size={m.size} />
       ))}
+      <MachineCallout />
 
       <FocusableGroup machineId="silo">
         <group position={SILO_POS}>
