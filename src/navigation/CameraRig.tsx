@@ -9,12 +9,6 @@ import { plantCenter } from '../components/layoutConstants';
 
 export type FlyToFn = (view: FramedView, smooth?: boolean) => Promise<void>;
 
-let flyToImpl: FlyToFn | null = null;
-
-export function flyToView(view: FramedView, smooth = true) {
-  return flyToImpl?.(view, smooth) ?? Promise.resolve();
-}
-
 type ControlsApi = {
   setLookAt: (
     x: number,
@@ -29,6 +23,31 @@ type ControlsApi = {
   getTarget: (out: THREE.Vector3) => THREE.Vector3;
 };
 
+let flyToImpl: FlyToFn | null = null;
+let pendingFly: { view: FramedView; smooth: boolean } | null = null;
+
+export function flyToView(view: FramedView, smooth = true) {
+  if (flyToImpl) return flyToImpl(view, smooth);
+  pendingFly = { view, smooth };
+  return Promise.resolve();
+}
+
+function applyLookAt(ctrl: ControlsApi, view: FramedView, smooth: boolean) {
+  return ctrl.setLookAt(
+    view.position[0],
+    view.position[1],
+    view.position[2],
+    view.target[0],
+    view.target[1],
+    view.target[2],
+    smooth
+  );
+}
+
+/**
+ * Drives the main factory Canvas camera (CameraControls).
+ * Nav list / minimap both call flyToView — this is the 3D camera, not the 2D map.
+ */
 export function CameraRig({ maxDistance }: { maxDistance: number }) {
   const controlsRef = useRef<ControlsApi | null>(null);
   const debugOrbit = useDebugOrbit();
@@ -38,17 +57,18 @@ export function CameraRig({ maxDistance }: { maxDistance: number }) {
 
   useEffect(() => {
     flyToImpl = async (view, smooth = true) => {
+      if (debugOrbit) {
+        // Queue until Fly camera mode is restored
+        pendingFly = { view, smooth };
+        return;
+      }
       const ctrl = controlsRef.current;
-      if (!ctrl || debugOrbit) return;
-      await ctrl.setLookAt(
-        view.position[0],
-        view.position[1],
-        view.position[2],
-        view.target[0],
-        view.target[1],
-        view.target[2],
-        smooth
-      );
+      if (!ctrl) {
+        pendingFly = { view, smooth };
+        return;
+      }
+      pendingFly = null;
+      await applyLookAt(ctrl, view, smooth);
     };
     return () => {
       flyToImpl = null;
@@ -56,6 +76,13 @@ export function CameraRig({ maxDistance }: { maxDistance: number }) {
   }, [debugOrbit]);
 
   useFrame((_, delta) => {
+    // Flush queued nav when CameraControls is ready (fixes mount / Orbit→Fly races)
+    if (!debugOrbit && pendingFly && controlsRef.current) {
+      const { view, smooth } = pendingFly;
+      pendingFly = null;
+      void applyLookAt(controlsRef.current, view, smooth);
+    }
+
     if (debugOrbit) return;
     const ctrl = controlsRef.current;
     if (!ctrl) return;
@@ -90,7 +117,7 @@ export function CameraRig({ maxDistance }: { maxDistance: number }) {
         panSpeed={1}
         maxPolarAngle={Math.PI / 2.05}
         target={[0, 2, 0]}
-        minDistance={8}
+        minDistance={3}
         maxDistance={maxDistance}
       />
     );
@@ -100,9 +127,11 @@ export function CameraRig({ maxDistance }: { maxDistance: number }) {
     <CameraControls
       ref={controlsRef as never}
       makeDefault
-      minDistance={8}
+      minDistance={3}
       maxDistance={maxDistance}
       maxPolarAngle={Math.PI / 2.05}
+      dollyToCursor={false}
+      smoothTime={0.4}
     />
   );
 }

@@ -13,8 +13,11 @@ export interface FramedView {
   target: [number, number, number];
 }
 
-/** Isometric-ish offset on the view sphere (~40° yaw feel). */
+/** High overview / zone framing (isometric). */
 const ISO = { x: 0.55, y: 0.72, z: 0.62 };
+
+/** Closer factory-floor framing for a single machine (lower eye, fills viewport). */
+const MACHINE_VIEW = { x: 0.85, y: 0.38, z: 0.9 };
 
 function boxToSphere(min: THREE.Vector3, max: THREE.Vector3) {
   const center = new THREE.Vector3().addVectors(min, max).multiplyScalar(0.5);
@@ -48,8 +51,8 @@ export function frameZone(bounds: ZoneBounds, fovDeg = 48): FramedView {
   return toCameraSpace(pos, center);
 }
 
-/** Tight framing so the selected machine fills most of the viewport. */
-export function frameMachine(m: MachineRecord, fovDeg = 40): FramedView {
+/** Tight factory-floor framing so the selected machine fills the 3D viewport. */
+export function frameMachine(m: MachineRecord, fovDeg = 38): FramedView {
   const [x, y, z] = m.position;
   const [sx, sy, sz] = m.size;
   const min = new THREE.Vector3(x - sx / 2, y - sy / 2, z - sz / 2);
@@ -57,13 +60,13 @@ export function frameMachine(m: MachineRecord, fovDeg = 40): FramedView {
   const { radius } = boxToSphere(min, max);
   const target = m.cameraTarget
     ? new THREE.Vector3(...m.cameraTarget)
-    : new THREE.Vector3(x, y + sy * 0.35, z);
+    : new THREE.Vector3(x, y + sy * 0.4, z);
   const fov = THREE.MathUtils.degToRad(fovDeg);
-  const dist = (Math.max(radius, 1.2) * 1.2) / Math.sin(fov / 2);
+  const dist = (Math.max(radius, 1.5) * 1.1) / Math.sin(fov / 2);
   const pos = new THREE.Vector3(
-    target.x + dist * ISO.x,
-    target.y + dist * ISO.y,
-    target.z + dist * ISO.z
+    target.x + dist * MACHINE_VIEW.x,
+    Math.max(target.y + dist * MACHINE_VIEW.y, sy * 0.55 + 1.2),
+    target.z + dist * MACHINE_VIEW.z
   );
   return toCameraSpace(pos, target);
 }

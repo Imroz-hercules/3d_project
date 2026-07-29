@@ -5,11 +5,11 @@ import {
   overviewBoundsFromPlant,
 } from './zoneRegistry';
 import { buildMachineRegistry } from './MachineRegistry';
-import { navigateTo } from './navStore';
 import { useCameraPose, useNavState } from './useNavState';
 import { useTwinState } from '../twin/useTwinState';
 import { useTheme } from '../theme';
 import type { ProcessZoneId } from './types';
+import { focusMachine, focusZone } from '../shell/services/selection';
 
 export function Minimap() {
   const zones = zoneBoundsFromRegistry();
@@ -82,7 +82,7 @@ export function Minimap() {
               stroke={active ? nav.activeZoneStroke : nav.inactiveZoneStroke}
               strokeWidth={active ? 1.5 : 1}
               style={{ cursor: 'pointer' }}
-              onClick={() => navigateTo({ kind: 'zone', zone: z.id })}
+              onClick={() => focusZone(z.id)}
             >
               <title>{ZONE_LABELS[z.id]}</title>
             </rect>
@@ -115,7 +115,7 @@ export function Minimap() {
             style={{ cursor: 'pointer' }}
             onClick={(e) => {
               e.stopPropagation();
-              navigateTo({ kind: 'machine', machineId: m.id });
+              focusMachine(m.id);
             }}
           >
             <title>{m.name}</title>

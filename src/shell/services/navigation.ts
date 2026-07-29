@@ -1,5 +1,4 @@
 import type { ProcessZoneId } from '../../navigation/types';
-import { navigateTo } from '../../navigation/navStore';
 import { focusMachine, focusOverview, focusZone, resetCamera } from './selection';
 import { setLineActive, getTwinState } from '../../twin/tags';
 import { publishEvent } from './events';
@@ -50,11 +49,11 @@ export function pauseLine() {
 }
 
 export function cameraPresetOverview() {
-  navigateTo({ kind: 'overview' });
+  focusOverview();
 }
 
 export function cameraPresetZone(zone: ProcessZoneId) {
-  navigateTo({ kind: 'zone', zone });
+  focusZone(zone);
 }
 
 export { resetCamera };
