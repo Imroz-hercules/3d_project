@@ -114,11 +114,13 @@ export function CameraRig({ maxDistance }: { maxDistance: number }) {
     <CameraControls
       ref={controlsRef as never}
       makeDefault
-      minDistance={3}
+      minDistance={2}
       maxDistance={maxDistance}
+      /* Block top-down map angle; keep oblique hero shots (Wheat Bank style) */
+      minPolarAngle={0.55}
       maxPolarAngle={Math.PI / 2.05}
       dollyToCursor={false}
-      smoothTime={0.45}
+      smoothTime={0.5}
     />
   );
 }

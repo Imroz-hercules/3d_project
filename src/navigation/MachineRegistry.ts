@@ -22,20 +22,27 @@ import {
 
 /** Central list — rebuild whenever layout helpers change (cheap pure function). */
 export function buildMachineRegistry(): MachineRecord[] {
+  const silo = siloPosition();
+  const elev = elevatorPosition();
+  const bin = conditioningBinPosition();
+  const flourA = flourBinPosition('A');
+
   return [
     {
       id: 'silo',
       name: MACHINE_LABELS.silo,
-      position: [siloPosition()[0], 2, siloPosition()[2]],
+      position: [silo[0], 3, silo[2]],
       zone: 'raw',
       size: [3.2, 6, 3.2],
+      cameraTarget: [silo[0], 2.6, silo[2]],
     },
     {
       id: 'elevator',
       name: MACHINE_LABELS.elevator,
-      position: elevatorPosition(),
+      position: [elev[0], 3.5, elev[2]],
       zone: 'raw',
       size: [2.2, 7, 2.2],
+      cameraTarget: [elev[0], 3.0, elev[2]],
     },
     {
       id: 'vibro',
@@ -47,9 +54,10 @@ export function buildMachineRegistry(): MachineRecord[] {
     {
       id: 'conditioning_bin',
       name: MACHINE_LABELS.conditioning_bin,
-      position: conditioningBinPosition(),
+      position: [bin[0], 4, bin[2]],
       zone: 'conditioning',
       size: [4, 8, 4],
+      cameraTarget: [bin[0], 3.2, bin[2]],
     },
     {
       id: 'roller_mill',
@@ -61,9 +69,10 @@ export function buildMachineRegistry(): MachineRecord[] {
     {
       id: 'flour_bin_a',
       name: MACHINE_LABELS.flour_bin_a,
-      position: flourBinPosition('A'),
+      position: [flourA[0], 4, flourA[2]],
       zone: 'storage',
       size: [3, 8, 3],
+      cameraTarget: [flourA[0], 3.2, flourA[2]],
     },
     {
       id: 'packing',

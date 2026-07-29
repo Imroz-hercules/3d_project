@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useDebugOrbit, useNavFocus, useNavState } from './useNavState';
-import { frameZone, frameMachine } from './framing';
+import { frameOverview, frameZone, frameMachine } from './framing';
 import { overviewBoundsFromPlant, zoneBoundsFromRegistry } from './zoneRegistry';
 import { getMachine } from './MachineRegistry';
 import { flyToView } from './CameraRig';
@@ -25,7 +25,7 @@ export function NavFocusController() {
 
     if (focus.kind === 'overview') {
       selectMachine(null);
-      void flyToView(frameZone(overviewBoundsFromPlant()), smooth);
+      void flyToView(frameOverview(overviewBoundsFromPlant()), smooth);
       return;
     }
     if (focus.kind === 'zone') {
