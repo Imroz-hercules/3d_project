@@ -26,16 +26,6 @@ export function IndustrialFloor({ radius }: { radius: number }) {
       }),
     []
   );
-  const markMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: "#e0a92c",
-        roughness: 0.85,
-        metalness: 0,
-      }),
-    []
-  );
-
   const size = radius * 2;
   const joints: [number, number, number, number][] = [];
   for (let x = -radius + 6; x < radius; x += 6) {
@@ -68,13 +58,6 @@ export function IndustrialFloor({ radius }: { radius: number }) {
           <planeGeometry args={[w, d]} />
         </mesh>
       ))}
-
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} material={markMat}>
-        <planeGeometry args={[0.12, Math.min(size * 0.7, 40)]} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[8, -0.01, -2]} material={markMat}>
-        <planeGeometry args={[0.12, 18]} />
-      </mesh>
     </group>
   );
 }

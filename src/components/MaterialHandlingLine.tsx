@@ -55,6 +55,7 @@ import {
 } from './factory/ProcessPiping';
 import { DustCollection } from './factory/DustCollection';
 import { Electrical } from './factory/Electrical';
+import { FloorMarkings } from './factory/FloorMarkings';
 import {
   REF,
   ductBridgeY,
@@ -834,6 +835,7 @@ export function MaterialHandlingLine() {
 
   return (
     <group>
+      <FloorMarkings />
       <PlantInfrastructure />
       <DustCollection active={lineActive} />
       <Electrical active={lineActive} />
