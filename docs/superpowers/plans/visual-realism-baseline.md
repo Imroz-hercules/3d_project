@@ -12,6 +12,28 @@ Fill FPS / draw calls / triangles from the DEV Stats panel after each sprint.
 | After Sprint 5 (all machines) | | | | Style guide applied plant-wide |
 | After Sprint 8 (polish) | | | | Final |
 
+## Realism enhancement (2026-07-29 plan)
+
+Fill FPS / draw calls / triangles from the DEV Stats panel (overview camera) after loading with default flags (post-FX off, audio off).
+
+| Milestone | Overview FPS | Draw calls | Triangles | Notes |
+|-----------|--------------|------------|-----------|-------|
+| After Phase A | | | | Floor markings, safety props, wear decals, flange bolts (gated ≥0.2 m), equipment IDs. All static, shared materials. |
+| After Phase B | | | | ScrollingBelt + spin animations, LOD-gated dust/vapor (`useCameraNear`), sight-glass flow, status beacons, shared InspectionDoor, palletizer fence instanced (~90 → 2 draws). |
+| After Phase C | | | | Fog, machine callouts (selected only), spatial audio scaffold (off by default), live WS bridge (demo fallback), measure + X-ray toggles (off by default). Post-FX behind `?fx=1` — measure with fx on AND off. |
+
+Targets: overview FPS ≥ 45 (hard floor), draw calls < 600, triangles < 1.5M, textures ≤ 2K.
+
+Build check 2026-07-29: `vite build` clean — 796 modules, bundle 1.81 MB (512 kB gzip). `tsc -b` still fails on ~100 pre-existing errors unrelated to this initiative (tracked separately).
+
+Cost-mitigation summary for the new work:
+
+- Dust/vapor emitters render only when camera is within their LOD radius; near-zero cost at overview.
+- Sight-glass flow uses one instanced mesh per glass and is LOD-gated.
+- Flange bolt/gasket detail only renders for flanges ≥ 0.2 m; bolts are one merged geometry per flange.
+- Post-FX (SMAA/Bloom/Vignette) and audio are opt-in via URL flag / localStorage; default cost is zero.
+- X-ray and measure tools do no work while their layer toggles are off.
+
 ## Visual checklist
 
 - [ ] Metals respond to HDRI (soft reflections)
