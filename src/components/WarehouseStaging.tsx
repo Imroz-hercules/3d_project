@@ -34,7 +34,12 @@ const matWrap = new THREE.MeshPhysicalMaterial({
 });
 
 const matTruck = new THREE.MeshPhysicalMaterial({ color: '#2a5080', metalness: 0.6, roughness: 0.3, clearcoat: 0.5 });
-const matTruckDark = new THREE.MeshStandardMaterial({ color: '#1a3050', metalness: 0.5, roughness: 0.4 });
+const matTrailerWhite = new THREE.MeshStandardMaterial({ color: '#eceff1', metalness: 0.25, roughness: 0.45 });
+const matTrailerRoof = new THREE.MeshStandardMaterial({ color: '#d8dcdf', metalness: 0.3, roughness: 0.5 });
+const matChrome = new THREE.MeshStandardMaterial({ color: '#c8ced4', metalness: 0.95, roughness: 0.12 });
+const matGlassDark = new THREE.MeshPhysicalMaterial({ color: '#0e1a24', metalness: 0.8, roughness: 0.08, clearcoat: 1.0 });
+const matTailRed = new THREE.MeshStandardMaterial({ color: '#c62828', emissive: '#7a0f0f', emissiveIntensity: 0.5, roughness: 0.35 });
+const matAmber = new THREE.MeshStandardMaterial({ color: '#f2b45b', emissive: '#b97514', emissiveIntensity: 0.5, roughness: 0.35 });
 
 const matForkliftYellow = new THREE.MeshPhysicalMaterial({ color: '#f5a623', metalness: 0.4, roughness: 0.4, clearcoat: 0.3 });
 const matForkliftBlack = new THREE.MeshStandardMaterial({ color: '#2a2a2a', metalness: 0.5, roughness: 0.6 });
@@ -213,7 +218,209 @@ function StretchWrapperStub({ position }: { position: V3 }) {
 }
 
 /* ==========================================================================
-   5. TRUCK DOCK (With leveler, bumpers, and semi-truck)
+   5. SEMI-TRUCK (Tractor + box trailer, backed onto the dock)
+   ========================================================================== */
+
+/** Axle with correctly oriented tires (axis along Z) + chrome hubs. */
+function TruckAxle({ x, dual = true }: { x: number; dual?: boolean }) {
+  const tireW = dual ? 0.52 : 0.3;
+  return (
+    <group position={[x, 0.42, 0]}>
+      {[0.88, -0.88].map((z, i) => (
+        <group key={i} position={[0, 0, z]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow material={matRubber}>
+            <cylinderGeometry args={[0.42, 0.42, tireW, 20]} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]} material={matChrome}>
+            <cylinderGeometry args={[0.16, 0.16, tireW + 0.04, 16]} />
+          </mesh>
+        </group>
+      ))}
+      {/* Axle beam */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} material={matSteelDark}>
+        <cylinderGeometry args={[0.06, 0.06, 1.76, 8]} />
+      </mesh>
+    </group>
+  );
+}
+
+function SemiTruck({ position }: { position: V3 }) {
+  const REAR = -3.1; // trailer rear face (against dock bumpers)
+  const ribXs: number[] = [];
+  for (let x = REAR + 0.25; x < 1.1; x += 0.4) ribXs.push(x);
+
+  return (
+    <group position={position}>
+      {/* ---------- TRAILER ---------- */}
+      {/* Box body */}
+      <mesh position={[-0.9, 1.95, 0]} castShadow receiveShadow material={matTrailerWhite}>
+        <boxGeometry args={[4.4, 2.0, 2.3]} />
+      </mesh>
+      {/* Roof cap */}
+      <mesh position={[-0.9, 2.96, 0]} material={matTrailerRoof}>
+        <boxGeometry args={[4.42, 0.05, 2.32]} />
+      </mesh>
+      {/* Bottom rail */}
+      <mesh position={[-0.9, 0.92, 0]} castShadow material={matSteelDark}>
+        <boxGeometry args={[4.4, 0.14, 2.32]} />
+      </mesh>
+      {/* Corrugated side ribs */}
+      {ribXs.map((x, i) => (
+        <group key={i}>
+          <mesh position={[x, 1.95, 1.16]} material={matTrailerRoof}>
+            <boxGeometry args={[0.05, 1.85, 0.02]} />
+          </mesh>
+          <mesh position={[x, 1.95, -1.16]} material={matTrailerRoof}>
+            <boxGeometry args={[0.05, 1.85, 0.02]} />
+          </mesh>
+        </group>
+      ))}
+      {/* Side logo */}
+      <Text
+        position={[-0.9, 2.05, 1.19]}
+        fontSize={0.28}
+        color="#2a5080"
+        anchorX="center"
+        fontWeight="bold"
+      >
+        FLOUR MILL LOGISTICS
+      </Text>
+      {/* Rear doors + lock rods */}
+      <mesh position={[REAR - 0.02, 1.95, 0.575]} material={matTrailerRoof}>
+        <boxGeometry args={[0.05, 1.9, 1.1]} />
+      </mesh>
+      <mesh position={[REAR - 0.02, 1.95, -0.575]} material={matTrailerRoof}>
+        <boxGeometry args={[0.05, 1.9, 1.1]} />
+      </mesh>
+      {[0.8, 0.35, -0.35, -0.8].map((z, i) => (
+        <mesh key={i} position={[REAR - 0.06, 1.95, z]} material={matSteel}>
+          <cylinderGeometry args={[0.02, 0.02, 1.85, 8]} />
+        </mesh>
+      ))}
+      {/* Tail lights */}
+      <mesh position={[REAR - 0.05, 0.62, 1.0]} material={matTailRed}>
+        <boxGeometry args={[0.04, 0.12, 0.25]} />
+      </mesh>
+      <mesh position={[REAR - 0.05, 0.62, -1.0]} material={matTailRed}>
+        <boxGeometry args={[0.04, 0.12, 0.25]} />
+      </mesh>
+      {/* Underride guard */}
+      <mesh position={[REAR + 0.05, 0.45, 0]} material={matSteelDark}>
+        <boxGeometry args={[0.06, 0.08, 1.8]} />
+      </mesh>
+      {[0.5, -0.5].map((z, i) => (
+        <mesh key={i} position={[REAR + 0.05, 0.66, z]} material={matSteelDark}>
+          <boxGeometry args={[0.06, 0.44, 0.08]} />
+        </mesh>
+      ))}
+      {/* Side skirts */}
+      <mesh position={[-0.45, 0.6, 1.14]} material={matTrailerWhite}>
+        <boxGeometry args={[1.7, 0.55, 0.04]} />
+      </mesh>
+      <mesh position={[-0.45, 0.6, -1.14]} material={matTrailerWhite}>
+        <boxGeometry args={[1.7, 0.55, 0.04]} />
+      </mesh>
+      {/* Landing gear */}
+      {[0.75, -0.75].map((z, i) => (
+        <group key={i} position={[0.55, 0, z]}>
+          <mesh position={[0, 0.55, 0]} material={matSteelDark}>
+            <boxGeometry args={[0.1, 0.75, 0.1]} />
+          </mesh>
+          <mesh position={[0, 0.15, 0]} material={matSteelDark}>
+            <boxGeometry args={[0.18, 0.06, 0.18]} />
+          </mesh>
+        </group>
+      ))}
+      {/* Mudflaps */}
+      <mesh position={[-2.55, 0.25, 0.85]} material={matRubber}>
+        <boxGeometry args={[0.04, 0.4, 0.35]} />
+      </mesh>
+      <mesh position={[-2.55, 0.25, -0.85]} material={matRubber}>
+        <boxGeometry args={[0.04, 0.4, 0.35]} />
+      </mesh>
+      {/* Trailer tandem axles */}
+      <TruckAxle x={-2.2} />
+      <TruckAxle x={-1.5} />
+
+      {/* ---------- TRACTOR ---------- */}
+      {/* Chassis rails */}
+      <mesh position={[1.85, 0.8, 0.35]} material={matSteelDark}>
+        <boxGeometry args={[3.1, 0.18, 0.1]} />
+      </mesh>
+      <mesh position={[1.85, 0.8, -0.35]} material={matSteelDark}>
+        <boxGeometry args={[3.1, 0.18, 0.1]} />
+      </mesh>
+      {/* Fifth wheel */}
+      <mesh position={[1.15, 0.92, 0]} rotation={[0, 0, 0]} material={matSteelDark}>
+        <cylinderGeometry args={[0.35, 0.35, 0.08, 20]} />
+      </mesh>
+      {/* Cab */}
+      <mesh position={[2.02, 1.72, 0]} castShadow material={matTruck}>
+        <boxGeometry args={[1.05, 1.65, 2.2]} />
+      </mesh>
+      {/* Hood */}
+      <mesh position={[3.0, 1.21, 0]} castShadow material={matTruck}>
+        <boxGeometry args={[0.9, 0.62, 1.9]} />
+      </mesh>
+      {/* Windshield */}
+      <mesh position={[2.56, 2.05, 0]} material={matGlassDark}>
+        <boxGeometry args={[0.04, 0.75, 2.0]} />
+      </mesh>
+      {/* Side windows */}
+      <mesh position={[1.95, 2.0, 1.11]} material={matGlassDark}>
+        <boxGeometry args={[0.7, 0.5, 0.02]} />
+      </mesh>
+      <mesh position={[1.95, 2.0, -1.11]} material={matGlassDark}>
+        <boxGeometry args={[0.7, 0.5, 0.02]} />
+      </mesh>
+      {/* Mirrors */}
+      {[1.25, -1.25].map((z, i) => (
+        <group key={i}>
+          <mesh position={[2.5, 2.05, z]} material={matSteelDark}>
+            <boxGeometry args={[0.03, 0.03, 0.3]} />
+          </mesh>
+          <mesh position={[2.5, 1.95, z + (z > 0 ? 0.12 : -0.12)]} material={matGlassDark}>
+            <boxGeometry args={[0.03, 0.35, 0.18]} />
+          </mesh>
+        </group>
+      ))}
+      {/* Grille + bumper + headlights */}
+      <mesh position={[3.46, 1.15, 0]} material={matChrome}>
+        <boxGeometry args={[0.05, 0.5, 1.3]} />
+      </mesh>
+      <mesh position={[3.5, 0.55, 0]} castShadow material={matSteelDark}>
+        <boxGeometry args={[0.18, 0.35, 2.15]} />
+      </mesh>
+      <mesh position={[3.48, 0.95, 0.75]} material={matAmber}>
+        <boxGeometry args={[0.05, 0.14, 0.3]} />
+      </mesh>
+      <mesh position={[3.48, 0.95, -0.75]} material={matAmber}>
+        <boxGeometry args={[0.05, 0.14, 0.3]} />
+      </mesh>
+      {/* Exhaust stacks */}
+      <mesh position={[1.6, 1.85, 1.05]} material={matChrome}>
+        <cylinderGeometry args={[0.06, 0.06, 1.9, 12]} />
+      </mesh>
+      <mesh position={[1.6, 1.85, -1.05]} material={matChrome}>
+        <cylinderGeometry args={[0.06, 0.06, 1.9, 12]} />
+      </mesh>
+      {/* Fuel tanks */}
+      <mesh position={[2.35, 0.62, 1.0]} rotation={[0, 0, Math.PI / 2]} material={matChrome}>
+        <cylinderGeometry args={[0.26, 0.26, 0.95, 16]} />
+      </mesh>
+      <mesh position={[2.35, 0.62, -1.0]} rotation={[0, 0, Math.PI / 2]} material={matChrome}>
+        <cylinderGeometry args={[0.26, 0.26, 0.95, 16]} />
+      </mesh>
+      {/* Tractor axles: steer + drive tandem */}
+      <TruckAxle x={3.0} dual={false} />
+      <TruckAxle x={0.75} />
+      <TruckAxle x={1.55} />
+    </group>
+  );
+}
+
+/* ==========================================================================
+   6. TRUCK DOCK (With leveler, bumpers, and semi-truck)
    ========================================================================== */
 
 function TruckDock({ position }: { position: V3 }) {
@@ -240,38 +447,8 @@ function TruckDock({ position }: { position: V3 }) {
         <boxGeometry args={[0.92, 0.05, 2.42]} />
       </mesh>
 
-      {/* Semi-Truck Silhouette */}
-      <group position={[1.2, 0, 0]}>
-        {/* Trailer */}
-        <mesh position={[0, 1.1, 0]} castShadow material={matTruck}>
-          <boxGeometry args={[3.5, 2.0, 2.4]} />
-        </mesh>
-        {/* Trailer Undercarriage */}
-        <mesh position={[-0.5, 0.4, 0]} castShadow material={matSteelDark}>
-          <boxGeometry args={[2.0, 0.2, 1.8]} />
-        </mesh>
-        {/* Cab */}
-        <mesh position={[-2.2, 0.95, 0]} castShadow material={matTruckDark}>
-          <boxGeometry args={[1.0, 1.5, 2.2]} />
-        </mesh>
-        {/* Cab Window */}
-        <mesh position={[-2.7, 1.3, 0]} rotation={[0, Math.PI / 2, 0]}>
-          <planeGeometry args={[1.3, 0.8]} />
-          <meshStandardMaterial color="#111111" metalness={0.9} roughness={0.1} />
-        </mesh>
-        {/* Wheels */}
-        {[[-1.2, 0.35, 1.1], [-1.2, 0.35, -1.1], [0.8, 0.35, 1.1], [0.8, 0.35, -1.1], [-2.4, 0.35, 1.1], [-2.4, 0.35, -1.1]].map((pos, i) => (
-          <mesh key={i} position={pos as V3} rotation={[0, 0, Math.PI / 2]} castShadow material={matRubber}>
-            <cylinderGeometry args={[0.35, 0.35, 0.3, 16]} />
-          </mesh>
-        ))}
-        {/* Wheel Hubs */}
-        {[[-1.2, 0.35, 1.26], [-1.2, 0.35, -1.26], [0.8, 0.35, 1.26], [0.8, 0.35, -1.26], [-2.4, 0.35, 1.26], [-2.4, 0.35, -1.26]].map((pos, i) => (
-          <mesh key={`hub-${i}`} position={pos as V3} rotation={[0, 0, Math.PI / 2]} material={matSteel}>
-            <cylinderGeometry args={[0.15, 0.15, 0.32, 16]} />
-          </mesh>
-        ))}
-      </group>
+      {/* Semi-truck backed onto dock: trailer rear at bumpers (−X), cab facing out (+X) */}
+      <SemiTruck position={[1.2, 0, 0]} />
       
       <Text position={[0, 0.12, 1.9]} fontSize={0.12} color={COLORS.textYellow} anchorX="center" fontWeight="bold">
         TRUCK DOCK 01
