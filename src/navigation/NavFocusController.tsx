@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useDebugOrbit, useNavState } from './useNavState';
+import { useDebugOrbit, useNavFocus, useNavState } from './useNavState';
 import { frameZone, frameMachine } from './framing';
 import { overviewBoundsFromPlant, zoneBoundsFromRegistry } from './zoneRegistry';
 import { getMachine } from './MachineRegistry';
@@ -11,7 +11,8 @@ import { selectMachine } from '../twin/tags';
  * Zone/machine UI should call navigateTo once; this controller only flies.
  */
 export function NavFocusController() {
-  const { focus, historyIndex } = useNavState();
+  const focus = useNavFocus();
+  const { historyIndex } = useNavState();
   const debugOrbit = useDebugOrbit();
   const mounted = useRef(false);
 

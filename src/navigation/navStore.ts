@@ -10,19 +10,35 @@ const state: NavState = {
   cameraPose: { x: 0, z: 0, dirX: 0, dirZ: 1 },
 };
 
+/** Immutable snapshot for useSyncExternalStore (must change reference on updates). */
+let snapshot: NavState = { ...state, history: state.history.slice(), cameraPose: { ...state.cameraPose } };
+
 const listeners = new Set<Listener>();
 const poseListeners = new Set<Listener>();
 
+function refreshSnapshot() {
+  snapshot = {
+    focus: state.focus,
+    history: state.history.slice(),
+    historyIndex: state.historyIndex,
+    debugOrbit: state.debugOrbit,
+    cameraPose: { ...state.cameraPose },
+  };
+}
+
 function emit() {
+  refreshSnapshot();
   listeners.forEach((l) => l());
 }
 
 function emitPose() {
+  // Pose updates often — keep nav snapshot in sync for consumers of full state
+  snapshot = { ...snapshot, cameraPose: { ...state.cameraPose } };
   poseListeners.forEach((l) => l());
 }
 
 export function getNavState(): NavState {
-  return state;
+  return snapshot;
 }
 
 export function subscribeNav(listener: Listener): () => void {
@@ -36,7 +52,7 @@ export function subscribeCameraPose(listener: Listener): () => void {
 }
 
 export function getCameraPose(): CameraPose {
-  return state.cameraPose;
+  return snapshot.cameraPose;
 }
 
 export function setDebugOrbit(on: boolean) {
