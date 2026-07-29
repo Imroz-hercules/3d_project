@@ -1,5 +1,5 @@
 import { formatEventTime, useTimelineEvents } from '../services/timeline';
-import { focusMachine } from '../services/selection';
+import { inspectMachine } from '../services/selection';
 import type { FactoryEvent } from '../services/types';
 
 function severityMeta(s: FactoryEvent['severity']): { label: string; cls: string } {
@@ -32,7 +32,7 @@ export function TimelineDock() {
               key={e.id}
               type="button"
               className={`shell-timeline-item ${meta.cls}`}
-              onClick={() => e.machineId && focusMachine(e.machineId)}
+              onClick={() => e.machineId && inspectMachine(e.machineId)}
             >
               <span className="shell-timeline-item__sev">{meta.label}</span>
               <span className="shell-timeline-item__msg">{e.message}</span>

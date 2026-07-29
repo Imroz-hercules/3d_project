@@ -1,4 +1,11 @@
-export { focusMachine, focusZone, focusOverview, clearSelection, resetCamera } from './selection';
+export {
+  inspectMachine,
+  focusMachine,
+  focusZone,
+  focusOverview,
+  clearSelection,
+  resetCamera,
+} from './selection';
 export { usePanelChrome, toggleLeftPin, toggleRightPin, setInspectorTab, setNotifyPopoverOpen, toggleNotifyPopover, setLeftExpanded, setRightOpen } from './panelState';
 export { useTimelineEvents, formatEventTime } from './timeline';
 export {

@@ -1,6 +1,6 @@
 import { acknowledgeNotification, dismissToast, useActiveNotifications, useToasts } from '../services/notifications';
 import { toggleNotifyPopover, setNotifyPopoverOpen, usePanelChrome } from '../services/panelState';
-import { focusMachine } from '../services/selection';
+import { inspectMachine } from '../services/selection';
 import { formatEventTime } from '../services/timeline';
 import type { FactoryEvent } from '../services/types';
 
@@ -47,7 +47,7 @@ export function NotificationBadge() {
                     type="button"
                     className={`shell-notify-item ${severityClass(e.severity)}`}
                     onClick={() => {
-                      if (e.machineId) focusMachine(e.machineId);
+                      if (e.machineId) inspectMachine(e.machineId);
                       setNotifyPopoverOpen(false);
                     }}
                   >
@@ -88,7 +88,7 @@ export function ToastStack() {
                 type="button"
                 className="stwin-btn"
                 onClick={() => {
-                  focusMachine(t.machineId!);
+                  inspectMachine(t.machineId!);
                   if (!t.sticky) dismissToast(t.eventId);
                 }}
               >

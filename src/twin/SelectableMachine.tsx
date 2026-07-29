@@ -7,7 +7,7 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { focusMachine } from '../shell/services/selection';
+import { inspectMachine } from '../shell/services/selection';
 import { useMachineSelectAlarm } from './useTwinState';
 import type { MachineId } from './types';
 
@@ -50,7 +50,7 @@ export function SelectableMachine({
         visible={false}
         onClick={(e) => {
           e.stopPropagation();
-          focusMachine(id);
+          inspectMachine(id);
         }}
       >
         <boxGeometry args={size} />

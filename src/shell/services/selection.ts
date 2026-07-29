@@ -9,7 +9,18 @@ function ensureFlyCamera() {
   setDebugOrbit(false);
 }
 
-/** Selection + panel choreography for operator workflow. */
+/**
+ * Select a machine and open the inspector — does NOT move the camera.
+ * Use for 3D clicks, alarms, search, minimap, timeline.
+ */
+export function inspectMachine(machineId: MachineId) {
+  selectMachine(machineId);
+  setRightOpen(true);
+}
+
+/**
+ * Left-panel machine nav: select + fly the factory camera to that asset.
+ */
 export function focusMachine(machineId: MachineId) {
   ensureFlyCamera();
   navigateTo({ kind: 'machine', machineId });
@@ -31,9 +42,7 @@ export function focusOverview() {
 }
 
 export function clearSelection() {
-  ensureFlyCamera();
   selectMachine(null);
-  navigateTo({ kind: 'overview' });
   setRightOpen(false);
 }
 

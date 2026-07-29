@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { searchMachines } from './MachineRegistry';
-import { focusMachine } from '../shell/services/selection';
+import { inspectMachine } from '../shell/services/selection';
 import type { MachineId } from '../twin/types';
 
 export function MachineSearch() {
@@ -8,7 +8,7 @@ export function MachineSearch() {
   const hits = useMemo(() => searchMachines(q).slice(0, 8), [q]);
 
   function focus(id: MachineId) {
-    focusMachine(id);
+    inspectMachine(id);
     setQ('');
   }
 

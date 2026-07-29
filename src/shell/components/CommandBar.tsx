@@ -9,7 +9,7 @@ import { useTwinState } from '../../twin/useTwinState';
 import type { MachineId } from '../../twin/types';
 import type { ProcessZoneId } from '../../navigation/types';
 import { ZONE_LABELS } from '../../navigation/zoneRegistry';
-import { focusMachine } from '../services/selection';
+import { inspectMachine } from '../services/selection';
 import { useFactoryHealth, usePlantKpis } from '../services/kpi';
 import { cameraPresetOverview, cameraPresetZone, startLine, stopLine } from '../services/navigation';
 import { publishEvent } from '../services/events';
@@ -71,7 +71,7 @@ function MachineSearchField() {
   const hits = useMemo(() => searchMachines(q).slice(0, 8), [q]);
 
   function focus(id: MachineId) {
-    focusMachine(id);
+    inspectMachine(id);
     setQ('');
   }
 

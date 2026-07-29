@@ -9,7 +9,7 @@ import { useCameraPose, useNavState } from './useNavState';
 import { useTwinState } from '../twin/useTwinState';
 import { useTheme } from '../theme';
 import type { ProcessZoneId } from './types';
-import { focusMachine, focusZone } from '../shell/services/selection';
+import { inspectMachine, focusZone } from '../shell/services/selection';
 
 export function Minimap() {
   const zones = zoneBoundsFromRegistry();
@@ -115,7 +115,7 @@ export function Minimap() {
             style={{ cursor: 'pointer' }}
             onClick={(e) => {
               e.stopPropagation();
-              focusMachine(m.id);
+              inspectMachine(m.id);
             }}
           >
             <title>{m.name}</title>

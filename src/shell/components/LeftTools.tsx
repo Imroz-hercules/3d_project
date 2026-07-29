@@ -54,6 +54,7 @@ export function LeftTools() {
   const { leftExpanded, leftPinned } = usePanelChrome();
   const vis = useVisibilityLayers();
   const focus = useNavFocus();
+  const twin = useTwinState();
   const open = leftExpanded || leftPinned;
   const zones = ZONE_FLOW;
   const machines = buildMachineRegistry();
@@ -63,7 +64,7 @@ export function LeftTools() {
   const activeMachine =
     focus.kind === 'machine'
       ? focus.machineId
-      : null;
+      : twin.selectedId;
 
   return (
     <div
