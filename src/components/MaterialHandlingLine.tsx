@@ -59,6 +59,7 @@ import { FloorMarkings } from './factory/FloorMarkings';
 import { SafetyProps } from './factory/SafetyProps';
 import { EnvironmentalWear } from './factory/EnvironmentalWear';
 import { EquipmentIds } from './factory/EquipmentIds';
+import { FlourDust, MoistureVapor } from './effects/FlourDust';
 import {
   REF,
   ductBridgeY,
@@ -1206,6 +1207,24 @@ export function MaterialHandlingLine() {
       <MaterialFlow path={wheatPath} kind="wheat" active={lineActive} speed={0.065} />
       <MaterialFlow path={flourPath} kind="flour" active={lineActive} speed={0.075} />
       <DustMotes position={dustTakeoffWorldPos('vibro')} active={lineActive} />
+
+      {/* LOD-gated dust / vapor (near-camera only; overview pays nothing) */}
+      <FlourDust
+        position={[rmx, rmy - REF.rollerMill.height / 2 - 0.6, rmz]}
+        count={30}
+        scale={[1.6, 1.2, 1.2]}
+        active={lineActive}
+      />
+      <FlourDust
+        position={[pkx, pky + 1.6, pkz]}
+        count={32}
+        scale={[1.8, 1.6, 1.4]}
+        active={lineActive}
+      />
+      <MoistureVapor
+        position={[dampX, dampY + REF.dampener.radius + 0.5, dampZ]}
+        active={lineActive}
+      />
     </group>
   );
 }

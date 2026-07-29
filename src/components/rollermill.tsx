@@ -727,7 +727,7 @@ export function RollerMillComponent({
       {/* 10. Grain Flow Animation */}
       {active && (
         <Sparkles
-          count={80}
+          count={40}
           scale={[width * 0.5, height + 1, depth * 0.5]}
           size={3}
           speed={2}
