@@ -56,6 +56,8 @@ Grain Silo
 - Optional: swap demo simulate layer for MQTT / OPC-UA / REST
 - Optional: drive machine motors directly from twin tags (currently shared `lineActive`)
 
+**Realism enhancement track (detailed):** see [`docs/superpowers/plans/2026-07-29-realism-enhancement-full-plan.md`](./superpowers/plans/2026-07-29-realism-enhancement-full-plan.md) — Phases A (environment/safety), B (motion/particles/detail), C (post-FX/audio/live twin).
+
 ---
 
 ## Recommended development order (master stages)
