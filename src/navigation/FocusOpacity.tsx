@@ -13,9 +13,31 @@ type MeshFocusData = {
   clones: THREE.Material | THREE.Material[];
 };
 
+function isCloneableMaterial(m: unknown): m is THREE.Material {
+  return (
+    !!m &&
+    typeof m === 'object' &&
+    (m as THREE.Material).isMaterial === true &&
+    typeof (m as THREE.Material).clone === 'function'
+  );
+}
+
+function cloneMaterials(
+  orig: THREE.Material | THREE.Material[]
+): THREE.Material | THREE.Material[] | null {
+  if (Array.isArray(orig)) {
+    const clones = orig.filter(isCloneableMaterial).map((m) => m.clone());
+    return clones.length > 0 ? clones : null;
+  }
+  if (!isCloneableMaterial(orig)) return null;
+  return orig.clone();
+}
+
 function disposeMats(mats: THREE.Material | THREE.Material[]) {
   const list = Array.isArray(mats) ? mats : [mats];
-  for (const m of list) m.dispose();
+  for (const m of list) {
+    if (typeof m.dispose === 'function') m.dispose();
+  }
 }
 
 export function FocusableGroup({
@@ -42,7 +64,8 @@ export function FocusableGroup({
 
       if ((dimming || selected) && !data) {
         const orig = mesh.material;
-        const clones = Array.isArray(orig) ? orig.map((m) => m.clone()) : orig.clone();
+        const clones = cloneMaterials(orig);
+        if (!clones) return;
         mesh.material = clones;
         data = { orig, clones };
         mesh.userData._focus = data;
@@ -52,7 +75,7 @@ export function FocusableGroup({
 
       const mats = Array.isArray(data.clones) ? data.clones : [data.clones];
       for (const mat of mats) {
-        if (!('opacity' in mat)) continue;
+        if (!mat || !('opacity' in mat)) continue;
         const m = mat as THREE.Material & { opacity: number; transparent: boolean };
         m.transparent = true;
         m.opacity = dimming ? 0.35 : 1;
