@@ -14,6 +14,7 @@ import { useRef, useState } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
+import { InspectionDoor } from './machineParts/InspectionDoor';
 
 type V3 = [number, number, number];
 
@@ -64,12 +65,6 @@ const matSafety = new THREE.MeshStandardMaterial({
   color: '#e0a92c',
   metalness: 0.5,
   roughness: 0.6,
-});
-
-const matGasket = new THREE.MeshStandardMaterial({
-  color: '#1a1a1a',
-  metalness: 0.0,
-  roughness: 0.95,
 });
 
 const matRubber = new THREE.MeshStandardMaterial({
@@ -192,60 +187,8 @@ function SupportFrame({ width, depth, height: _height }: { width: number; depth:
 }
 
 /* ==========================================================================
-   4. INTERACTIVE INSPECTION DOOR
+   4. INTERACTIVE INSPECTION DOOR — shared part (see machineParts/InspectionDoor)
    ========================================================================== */
-
-function InspectionDoor({ position, rotation, width, height, isOpen, onToggle }: { position: V3; rotation: V3; width: number; height: number; isOpen: boolean; onToggle: () => void }) {
-  const doorRef = useRef<THREE.Group>(null!);
-  const [hovered, setHovered] = useState(false);
-  const targetAngle = isOpen ? -Math.PI * 0.65 : 0;
-
-  useFrame((_, delta) => {
-    if (doorRef.current) {
-      doorRef.current.rotation.y = THREE.MathUtils.damp(doorRef.current.rotation.y, targetAngle, 5, delta);
-    }
-  });
-
-  return (
-    <group position={position} rotation={rotation}>
-      {/* Frame */}
-      <mesh material={matStructure}>
-        <boxGeometry args={[0.05, height, width]} />
-      </mesh>
-      {/* Gasket */}
-      <mesh position={[rotation[1] === Math.PI ? -0.03 : 0.03, 0, 0]} material={matGasket}>
-        <boxGeometry args={[0.02, height - 0.08, width - 0.08]} />
-      </mesh>
-      {/* Hinged Door */}
-      <group ref={doorRef} position={[rotation[1] === Math.PI ? -0.04 : 0.04, 0, -width / 2]}>
-        <mesh
-          position={[0, 0, width / 2]}
-          castShadow
-          material={hovered ? matSafety : matBody}
-          onPointerOver={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); setHovered(true); }}
-          onPointerOut={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); setHovered(false); }}
-          onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onToggle(); }}
-        >
-          <boxGeometry args={[0.04, height - 0.04, width - 0.04]} />
-        </mesh>
-        {/* Handle */}
-        <mesh position={[rotation[1] === Math.PI ? -0.05 : 0.05, 0, width * 0.35]} material={matStructure}>
-          <boxGeometry args={[0.04, 0.15, 0.04]} />
-        </mesh>
-        {/* Hinges */}
-        {[-height * 0.35, height * 0.35].map((y, i) => (
-          <mesh key={i} position={[rotation[1] === Math.PI ? -0.04 : 0.04, y, 0]} rotation={[0, Math.PI / 2, 0]} material={matStructure}>
-            <cylinderGeometry args={[0.025, 0.025, 0.06, 12]} />
-          </mesh>
-        ))}
-      </group>
-      {/* Frame bolts */}
-      {[[-height * 0.4, -width * 0.4], [height * 0.4, -width * 0.4], [-height * 0.4, width * 0.4], [height * 0.4, width * 0.4]].map(([y, z], i) => (
-        <Bolt key={i} position={[rotation[1] === Math.PI ? -0.04 : 0.04, y, z]} rotation={[0, Math.PI / 2, 0]} size={0.016} />
-      ))}
-    </group>
-  );
-}
 
 /* ==========================================================================
    5. MAIN HOUSING (Enhanced with seams, ribs, flanges)
