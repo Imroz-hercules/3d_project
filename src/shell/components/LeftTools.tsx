@@ -1,8 +1,11 @@
 import { buildMachineRegistry } from '../../navigation/MachineRegistry';
-import { ZONE_LABELS } from '../../navigation/zoneRegistry';
+import { useNavFocus } from '../../navigation/useNavState';
+import { ZONE_LABELS, ZONE_FLOW } from '../../navigation/zoneRegistry';
 import type { ProcessZoneId } from '../../navigation/types';
 import { useTwinState } from '../../twin/useTwinState';
+import type { MachineId } from '../../twin/types';
 import {
+  goMachine,
   goOverview,
   goZone,
   pauseLine,
@@ -17,23 +20,18 @@ import {
 } from '../services/panelState';
 import { toggleVisibilityLayer, useVisibilityLayers } from '../services/visibility';
 
-const NAV_ICONS: Record<string, string> = {
-  overview: '🏭',
-  raw: '🌾',
-  cleaning: '🧹',
-  conditioning: '💧',
-  milling: '⚙',
-  storage: '🛢',
-  packing: '📦',
-  warehouse: '🚚',
-};
+type Health = 'ok' | 'warn' | 'alarm';
 
-type ZoneHealth = 'ok' | 'warn' | 'alarm';
+function alarmHealth(alarm: string | undefined): Health {
+  if (alarm === 'ALARM') return 'alarm';
+  if (alarm === 'WARN') return 'warn';
+  return 'ok';
+}
 
 function ZoneHealthDot({ zone }: { zone: ProcessZoneId }) {
   const twin = useTwinState();
   const machines = buildMachineRegistry().filter((m) => m.zone === zone);
-  let h: ZoneHealth = 'ok';
+  let h: Health = 'ok';
   for (const m of machines) {
     const tags = twin.machines[m.id];
     if (!tags) continue;
@@ -46,11 +44,26 @@ function ZoneHealthDot({ zone }: { zone: ProcessZoneId }) {
   return <span className={`shell-zone-dot shell-zone-dot--${h}`} aria-hidden />;
 }
 
+function MachineHealthDot({ id }: { id: MachineId }) {
+  const twin = useTwinState();
+  const h = alarmHealth(twin.machines[id]?.alarm);
+  return <span className={`shell-zone-dot shell-zone-dot--${h}`} aria-hidden />;
+}
+
 export function LeftTools() {
   const { leftExpanded, leftPinned } = usePanelChrome();
   const vis = useVisibilityLayers();
+  const focus = useNavFocus();
   const open = leftExpanded || leftPinned;
-  const zones = Object.keys(ZONE_LABELS) as ProcessZoneId[];
+  const zones = ZONE_FLOW;
+  const machines = buildMachineRegistry();
+
+  const overviewActive = focus.kind === 'overview';
+  const activeZone = focus.kind === 'zone' ? focus.zone : null;
+  const activeMachine =
+    focus.kind === 'machine'
+      ? focus.machineId
+      : null;
 
   return (
     <div
@@ -79,17 +92,51 @@ export function LeftTools() {
           </button>
         </div>
 
-        <button type="button" className="shell-nav-item" onClick={() => goOverview()}>
-          <span>{NAV_ICONS.overview} Entire Factory</span>
-        </button>
-        {zones.map((z) => (
-          <button key={z} type="button" className="shell-nav-item" onClick={() => goZone(z)}>
-            <span>
-              {NAV_ICONS[z]} {ZONE_LABELS[z]}
+        <nav className="shell-nav-list" aria-label="Plant zones">
+          <button
+            type="button"
+            className={`shell-nav-item${overviewActive ? ' is-active' : ''}`}
+            onClick={() => goOverview()}
+          >
+            <span className="shell-nav-item__label">
+              <span className="shell-nav-bullet" aria-hidden />
+              Overview
             </span>
-            <ZoneHealthDot zone={z} />
           </button>
-        ))}
+          {zones.map((z) => (
+            <button
+              key={z}
+              type="button"
+              className={`shell-nav-item${activeZone === z ? ' is-active' : ''}`}
+              onClick={() => goZone(z)}
+            >
+              <span className="shell-nav-item__label">
+                <span className="shell-nav-bullet" aria-hidden />
+                {ZONE_LABELS[z]}
+              </span>
+              <ZoneHealthDot zone={z} />
+            </button>
+          ))}
+        </nav>
+
+        <div className="shell-section-label">Machines</div>
+        <nav className="shell-nav-list" aria-label="Machines">
+          {machines.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={`shell-nav-item${activeMachine === m.id ? ' is-active' : ''}`}
+              onClick={() => goMachine(m.id)}
+              title={`Focus ${m.name}`}
+            >
+              <span className="shell-nav-item__label">
+                <span className="shell-nav-bullet" aria-hidden />
+                {m.name}
+              </span>
+              <MachineHealthDot id={m.id} />
+            </button>
+          ))}
+        </nav>
 
         <div className="shell-section-label">Visibility</div>
         {(

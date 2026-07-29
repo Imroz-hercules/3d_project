@@ -48,7 +48,8 @@ export function frameZone(bounds: ZoneBounds, fovDeg = 48): FramedView {
   return toCameraSpace(pos, center);
 }
 
-export function frameMachine(m: MachineRecord, fovDeg = 48): FramedView {
+/** Tight framing so the selected machine fills most of the viewport. */
+export function frameMachine(m: MachineRecord, fovDeg = 40): FramedView {
   const [x, y, z] = m.position;
   const [sx, sy, sz] = m.size;
   const min = new THREE.Vector3(x - sx / 2, y - sy / 2, z - sz / 2);
@@ -58,7 +59,7 @@ export function frameMachine(m: MachineRecord, fovDeg = 48): FramedView {
     ? new THREE.Vector3(...m.cameraTarget)
     : new THREE.Vector3(x, y + sy * 0.35, z);
   const fov = THREE.MathUtils.degToRad(fovDeg);
-  const dist = (Math.max(radius, 1.2) * 1.5) / Math.sin(fov / 2);
+  const dist = (Math.max(radius, 1.2) * 1.2) / Math.sin(fov / 2);
   const pos = new THREE.Vector3(
     target.x + dist * ISO.x,
     target.y + dist * ISO.y,
