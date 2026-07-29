@@ -1156,10 +1156,11 @@ export function MaterialHandlingLine() {
       {/* Metal Detector → Robotic Palletizer (final packing cell) */}
       <FocusableGroup machineId="palletizer">
         <MachineLOD
+          position={PALLETIZER_POS}
           distance={32}
           full={
             <PalletizerComponent
-              position={PALLETIZER_POS}
+              position={[0, 0, 0]}
               cellSize={REF.palletizer.cellSize}
               height={REF.palletizer.height}
               active={lineActive}
@@ -1168,7 +1169,7 @@ export function MaterialHandlingLine() {
             />
           }
           simple={
-            <mesh position={PALLETIZER_POS} castShadow={false}>
+            <mesh position={[0, 1.5, 0]} castShadow={false}>
               <boxGeometry args={[5, 3, 5]} />
               <meshStandardMaterial color="#6a7278" />
             </mesh>
