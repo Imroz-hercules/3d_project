@@ -11,10 +11,11 @@
  * ------------------------------------------------------------------------
  */
 
-import { useRef, useState } from 'react';
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
+import { REF } from './layoutConstants';
 
 type V3 = [number, number, number];
 
@@ -283,11 +284,18 @@ function TruckDock({ position }: { position: V3 }) {
    6. ANIMATED FORKLIFT (Upgraded with mast, overhead guard, counterweight)
    ========================================================================== */
 
-function AnimatedForklift({ active = true }: { active?: boolean }) {
+function AnimatedForklift({
+  active = true,
+  dockLocal = [8, 0, 0] as V3,
+}: {
+  active?: boolean;
+  dockLocal?: V3;
+}) {
   const groupRef = useRef<THREE.Group>(null!);
-  // Note: In a real app, these would come from layoutConstants
-  const wx = 0, wz = 0; 
-  const dx = 8, dz = 0;
+  const wx = 0;
+  const wz = 0;
+  const dx = dockLocal[0];
+  const dz = dockLocal[2];
   const bayX = -3.5;
   const bayZ = 0.9;
 
@@ -436,39 +444,48 @@ function FloorLanes({ length }: { length: number }) {
    8. MAIN WAREHOUSE STAGING COMPONENT
    ========================================================================== */
 
-export function WarehouseStaging({ active = true }: { active?: boolean }) {
-  // Mock positions for standalone preview
-  const wx = 0, wz = 0;
-  const dx = 8, dz = 0;
-  const wrapX = -2, wrapZ = 0;
-  const bayCount = 4;
-  const aisleSpacingZ = 3.0;
-  const baySpacingX = 1.4;
+export function WarehouseStaging({
+  active = true,
+  position,
+}: {
+  active?: boolean;
+  /** Plant-local origin (defaults to warehouseStagingPosition). */
+  position?: V3;
+}) {
+  const origin = position ?? ([0, 0, 0] as V3);
+  const bayCount = REF.warehouse.bayCount;
+  const aisleSpacingZ = REF.warehouse.aisleSpacingZ;
+  const baySpacingX = REF.warehouse.baySpacingX;
   const rackLen = bayCount * baySpacingX;
+  // Local offsets from staging origin (dock / wrapper relative to racks)
+  const wrapLocal: V3 = [-2.2, 0, 0.9];
+  const dockLocal: V3 = [rackLen + 4.5, 0, 0];
 
   return (
-    <group>
-      <StretchWrapperStub position={[wrapX, 0, wrapZ]} />
+    <group position={origin}>
+      <StretchWrapperStub position={wrapLocal} />
 
-      <group position={[wx, 0, wz]}>
-        <FloorLanes length={rackLen + 12} />
-        
-        {/* Racking Aisles */}
-        <PalletRack position={[rackLen / 2, 0, aisleSpacingZ / 2]} bayCount={bayCount} />
-        <PalletRack position={[rackLen / 2, 0, -aisleSpacingZ / 2]} bayCount={bayCount} />
-        
-        {/* Ground Staging Positions */}
-        {[0, 1, 2].map((i) => (
-          <StagedPallet key={i} position={[1.5 + i * 2.0, 0, 0]} wrapped={i !== 1} />
-        ))}
-        
-        <Text position={[rackLen / 2, 0.05, aisleSpacingZ + 1.5]} fontSize={0.16} color={COLORS.textYellow} anchorX="center" fontWeight="bold">
-          WAREHOUSE STAGING
-        </Text>
-      </group>
+      <FloorLanes length={rackLen + 12} />
 
-      <TruckDock position={[dx, 0, dz]} />
-      <AnimatedForklift active={active} />
+      <PalletRack position={[rackLen / 2, 0, aisleSpacingZ / 2]} bayCount={bayCount} />
+      <PalletRack position={[rackLen / 2, 0, -aisleSpacingZ / 2]} bayCount={bayCount} />
+
+      {[0, 1, 2].map((i) => (
+        <StagedPallet key={i} position={[1.5 + i * 2.0, 0, 0]} wrapped={i !== 1} />
+      ))}
+
+      <Text
+        position={[rackLen / 2, 0.05, aisleSpacingZ + 1.5]}
+        fontSize={0.16}
+        color={COLORS.textYellow}
+        anchorX="center"
+        fontWeight="bold"
+      >
+        WAREHOUSE STAGING
+      </Text>
+
+      <TruckDock position={dockLocal} />
+      <AnimatedForklift active={active} dockLocal={dockLocal} />
     </group>
   );
 }

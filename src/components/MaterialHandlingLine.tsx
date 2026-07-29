@@ -35,8 +35,9 @@ import { PalletizerComponent } from './Palletizer';
 import { WarehouseStaging } from './WarehouseStaging';
 import { MaterialFlow, DustMotes } from './MaterialFlow';
 import { SelectableMachine } from '../twin/SelectableMachine';
-import { useLineActive } from '../twin/useTwinState';
+import { useLineActive, useTwinState } from '../twin/useTwinState';
 import { buildMachineRegistry } from '../navigation/MachineRegistry';
+import { useNavFocus } from '../navigation/useNavState';
 import { FocusableGroup } from '../navigation/FocusOpacity';
 import { MachineLOD } from '../navigation/MachineLOD';
 import { MezzanineBay, Walkway, AccessLadder, SafetyRailing, SteelFrameBay, SteelPlatform } from './factory/PlantStructure';
@@ -595,10 +596,17 @@ function DestonerPlatform() {
 
 export function MaterialHandlingLine() {
   const lineActive = useLineActive();
+  const twin = useTwinState();
+  const navFocus = useNavFocus();
   const [wx, wy, wz] = warehouseStagingPosition();
   const [cx, , cz] = plantCenter();
   // App mounts this line under position={[-cx,0,-cz]} — convert to world for distance checks.
   const warehouseNear = useCameraNear([wx - cx, wy, wz - cz], 55);
+  const warehouseFocused =
+    twin.selectedId === 'warehouse' ||
+    (navFocus.kind === 'machine' && navFocus.machineId === 'warehouse') ||
+    (navFocus.kind === 'zone' && navFocus.zone === 'warehouse');
+  const showWarehouse = warehouseNear || warehouseFocused;
 
   const bridgeY = ductBridgeY();
   const inletY = hopperTopY() + 0.02;
@@ -1177,7 +1185,11 @@ export function MaterialHandlingLine() {
         />
       </FocusableGroup>
 
-      {warehouseNear && <WarehouseStaging active={lineActive} />}
+      <FocusableGroup machineId="warehouse">
+        {showWarehouse && (
+          <WarehouseStaging active={lineActive} position={[wx, wy, wz]} />
+        )}
+      </FocusableGroup>
 
       {/* Packing cell belt bridges + byproduct gravity chutes */}
       <PackingCellBridges />
