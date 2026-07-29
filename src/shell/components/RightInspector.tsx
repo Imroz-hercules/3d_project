@@ -84,7 +84,7 @@ export function RightInspector() {
   const { rightOpen, rightPinned, inspectorTab } = usePanelChrome();
   const selected = twin.selectedId ? twin.machines[twin.selectedId] : null;
   const events = useTimelineEvents();
-  const open = rightOpen || rightPinned || !!selected;
+  const open = rightOpen || rightPinned;
 
   const reg = selected ? buildMachineRegistry().find((m) => m.id === selected.id) : null;
   const zoneLabel = reg ? ZONE_LABELS[reg.zone] : null;
@@ -119,7 +119,6 @@ export function RightInspector() {
             type="button"
             className="stwin-close"
             onClick={() => {
-              clearSelection();
               setRightOpen(false);
             }}
           >

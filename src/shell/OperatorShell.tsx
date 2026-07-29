@@ -19,6 +19,7 @@ import { setRightOpen } from './services/panelState';
 function SimulationHost() {
   const last = useRef(performance.now());
   const seenAlarms = useRef(new Set<string>());
+  const lastSelectedId = useRef(getTwinState().selectedId);
 
   useEffect(() => {
     seedDemoEvents();
@@ -72,7 +73,10 @@ function SimulationHost() {
   useEffect(() => {
     return subscribeTwin(() => {
       const { selectedId } = getTwinState();
-      setRightOpen(!!selectedId);
+      if (selectedId !== lastSelectedId.current) {
+        setRightOpen(!!selectedId);
+        lastSelectedId.current = selectedId;
+      }
     });
   }, []);
 
