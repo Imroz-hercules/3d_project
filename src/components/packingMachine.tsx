@@ -14,6 +14,7 @@ import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Sky, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import { StatusBeacon } from './machineParts/StatusBeacon';
 
 type V3 = [number, number, number];
 
@@ -571,6 +572,10 @@ export function PackingMachineComponent({
       <AnimatedBag width={width} depth={depth} cycleProgressRef={bagMeshProgress} active={active} />
       <OperatorPanel position={[width / 2 + 0.1, 1.5, depth / 2 - 0.2]} />
       <SafetyGuards width={width} depth={depth} />
+      <StatusBeacon
+        position={[-width / 2 + 0.25, height + 1.35, -depth / 2 + 0.25]}
+        status={active ? 'run' : 'idle'}
+      />
       
       {showDataPanel && (
         <DataPanel 

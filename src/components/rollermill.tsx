@@ -708,6 +708,25 @@ export function RollerMillComponent({
       {/* 6. Adjustment Handwheels (Front) */}
       <AdjustmentHandwheels position={[0, -height * 0.2, depth / 2 + 0.2]} active={active} />
 
+      {/* 6b. Grease nipples on roller bearing housings (front face) */}
+      {[
+        [-width * 0.3, 0.12],
+        [width * 0.3, 0.12],
+        [-width * 0.3, -0.28],
+        [width * 0.3, -0.28],
+      ].map(([gx, gy], i) => (
+        <group key={`grease-${i}`} position={[gx, gy, depth / 2 + 0.02]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.016, 0.02, 0.05, 6]} />
+            <meshStandardMaterial color="#b08d3f" metalness={0.85} roughness={0.3} />
+          </mesh>
+          <mesh position={[0, 0, 0.035]}>
+            <sphereGeometry args={[0.013, 6, 6]} />
+            <meshStandardMaterial color="#c9a85a" metalness={0.9} roughness={0.25} />
+          </mesh>
+        </group>
+      ))}
+
       {/* 7. Inspection Doors (Front, Interactive) */}
       <InspectionDoor 
         position={[0, 0, depth / 2 + 0.02]} 

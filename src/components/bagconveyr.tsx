@@ -231,6 +231,20 @@ function BeltAndRollers({ length, width, height, active }: { length: number; wid
           </mesh>
         </group>
       ))}
+
+      {/* Belt cleaner / scraper blade against the drive roller underside */}
+      <group position={[length / 2 - 0.32, height - 0.2, 0]} rotation={[0, 0, -0.55]}>
+        <mesh material={matStructure} castShadow={false}>
+          <boxGeometry args={[0.16, 0.025, width - 0.3]} />
+        </mesh>
+        {/* Tensioner arms to the frame rails */}
+        <mesh position={[-0.1, -0.06, (width - 0.3) / 2]} material={matBodyDark} castShadow={false}>
+          <cylinderGeometry args={[0.015, 0.015, 0.18, 6]} />
+        </mesh>
+        <mesh position={[-0.1, -0.06, -(width - 0.3) / 2]} material={matBodyDark} castShadow={false}>
+          <cylinderGeometry args={[0.015, 0.015, 0.18, 6]} />
+        </mesh>
+      </group>
     </group>
   );
 }
