@@ -25,6 +25,10 @@ export interface VisibilityLayers {
   pipes: boolean;
   dust: boolean;
   electrical: boolean;
+  /** Semi-transparent housings so internals & flow show through. */
+  xray: boolean;
+  /** Click-two-points distance measurement. */
+  measure: boolean;
 }
 
 export interface PanelChrome {

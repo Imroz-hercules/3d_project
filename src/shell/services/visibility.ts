@@ -10,6 +10,8 @@ let layers: VisibilityLayers = {
   pipes: true,
   dust: false,
   electrical: false,
+  xray: false,
+  measure: false,
 };
 
 const listeners = new Set<Listener>();

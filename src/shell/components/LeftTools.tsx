@@ -148,6 +148,8 @@ export function LeftTools() {
             ['pipes', 'Pipes'],
             ['dust', 'Dust'],
             ['electrical', 'Electrical'],
+            ['xray', 'X-Ray'],
+            ['measure', 'Measure Tool'],
           ] as const
         ).map(([key, label]) => (
           <label key={key} className="shell-check">

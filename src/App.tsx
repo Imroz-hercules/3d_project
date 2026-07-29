@@ -11,6 +11,8 @@ import { HDRI_FACTORY } from "./materials/paths";
 import { CameraRig } from "./navigation/CameraRig";
 import { NavFocusController } from "./navigation/NavFocusController";
 import { PostFX, usePostFxEnabled } from "./perf/PostFX";
+import { MeasureTool } from "./tools/MeasureTool";
+import { XRayMode } from "./tools/XRayMode";
 import { OperatorShell } from "./shell";
 import { useVisibilityLayers } from "./shell/services/visibility";
 import {
@@ -87,10 +89,12 @@ function App() {
               <IndustrialFloor radius={groundR} />
               <group position={[-cx, 0, -cz]}>
                 <MaterialHandlingLine />
+                <XRayMode />
                 {vis.building && (
                   <BuildingEnvelope cutaway={vis.cutaway} showLights={false} />
                 )}
               </group>
+              <MeasureTool />
               <ContactShadows
                 key={tokens.name}
                 position={[0, 0.01, 0]}
